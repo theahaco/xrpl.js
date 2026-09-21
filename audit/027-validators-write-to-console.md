@@ -35,6 +35,11 @@ Actual: any service that signs MPT issuance transactions with non-conforming met
 or during migration) gets untagged multi-line stderr output on every sign; there is no option, event,
 or logger to redirect it, and unit tests of the validator have to stub `console`.
 
+Round-3 extension (sweep f): the same channel is used on the connect path —
+`Client.getServerInfo` (`packages/xrpl/src/client/index.ts:538-550`) catches a failed `server_info`,
+prints it with `console.error`, and lets `connect()` resolve with `networkID`/`buildVersion`
+`undefined`, so `autofill` later omits `NetworkID` silently on networks that need it.
+
 ## Root cause
 
 XLS-89 conformance is advisory ("not mandatory"), so the authors chose a warning over an error and

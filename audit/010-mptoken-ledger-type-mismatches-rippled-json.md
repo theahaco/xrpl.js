@@ -47,6 +47,10 @@ Actual: `Account` missing, `MPTAmount` wrongly required, `OwnerNode` wrongly opt
 type is also unreachable by narrowing ([006](006-mptoken-missing-from-ledgerentry-union.md)) the
 mismatch has gone unnoticed; the repo's own tests only ever read `MPTAmount` on funded holders.
 
+Round-3 evidence (sweep f): the codec's own fixture already carries the field the type lacks —
+`packages/ripple-binary-codec/test/uint.test.ts:118-127` (`mptokenEntryJson` has `Account:
+'raDQ…'`, `MPTAmount: '100'`, `OwnerNode: '0000000000000000'`).
+
 ## Root cause
 
 The interface was written from the spec's field list rather than from rippled's object template,

@@ -64,6 +64,12 @@ export function hashMPToken(issuanceId: string, holder: string): string
   // sha512Half(0x0074 ‖ hashMPTokenIssuance(issuanceId) ‖ accountId(holder))
 ```
 
+Round-3 evidence (sweep f): three test files each wrote their own "create → get the ID" helper
+with three different narrowings — `test/integration/transactions/mptokenIssuanceSet.test.ts:485-505`
+(`assert.isString` + `!`), `test/integration/confidentialMPTUtils.ts:91-133` (`== null` → throw),
+`test/integration/transactions/lendingProtocol.test.ts:790-799`
+(`(meta as MPTokenIssuanceCreateMetadata).mpt_issuance_id as string`).
+
 Round-2 correction ([047](047-mptokenissuance-sequence-doc-wrong-for-ticketed-creates.md)): the
 sequence half of the ID is the sequence the transaction *consumed*, i.e. `TicketSequence` when a
 ticket was used (verified on-ledger: `Sequence: 0, TicketSequence: 656` → ID `00000290…`). The
