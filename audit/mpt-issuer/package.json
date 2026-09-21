@@ -1,0 +1,30 @@
+{
+  "name": "mpt-issuer-audit",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Executable evidence for the xrpl.js MPT API audit: issues and operates a clawback/lock/allow-list MPT against a local standalone rippled using this checkout's xrpl package.",
+  "type": "commonjs",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "check-amendments": "tsx src/check-amendments.ts",
+    "issue": "tsx src/issue.ts",
+    "holders": "tsx src/holders.ts",
+    "ban": "tsx src/ban.ts",
+    "freeze": "tsx src/freeze.ts",
+    "clawback": "tsx src/clawback.ts",
+    "inspect": "tsx src/inspect.ts",
+    "scenario": "tsx src/scenario.ts",
+    "type-repros": "tsc --noEmit -p tsconfig.repros.json; exit 0"
+  },
+  "dependencies": {
+    "xrpl": "file:../../packages/xrpl"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}
