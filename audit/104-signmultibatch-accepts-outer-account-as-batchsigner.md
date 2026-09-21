@@ -42,6 +42,11 @@ Actual: accepted at every layer; the SDK's delegation rule ("the delegate is the
 delegate to call `signMultiBatch(ops)` — which then also destroys the holder's co-signature via
 [102](102-combinebatchsigners-drops-multisign-fragments-per-account.md).
 
+Round-7 addition (same root cause, verified offline): an unsorted `BatchSigners` array also passes
+`validate()` and `Wallet.sign` and goes on the wire unsorted — only `combineBatchSigners` sorts —
+so the hand-merge workaround of [102](102-combinebatchsigners-drops-multisign-fragments-per-account.md)
+must sort by account as well.
+
 ## Root cause
 
 The outer-account exclusion was implemented in the combiner, not in the signer or the validator.

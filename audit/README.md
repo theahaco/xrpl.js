@@ -8,7 +8,7 @@ checkout's build of `xrpl`; every rough edge hit on the way is a numbered findin
 
 ## Executive summary
 
-- **105 findings**: 2 blockers, 24 major, 59 minor, 20 paper-cuts (table below). Round 1 (building
+- **107 findings**: 2 blockers, 24 major, 60 minor, 21 paper-cuts (table below). Round 1 (building
   the issuer) produced 42; round 2 (five adversarial sweeps, every candidate re-verified on the
   ledger or against the built package) produced 38; round 3 (four more sweeps: the repo's tests as
   evidence, the codec's MPT paths, cross-feature interactions, and a dry-run repeat of the core
@@ -16,7 +16,11 @@ checkout's build of `xrpl`; every rough edge hit on the way is a numbered findin
   both on the Batch surface, and the second sweep produced nothing beyond them; round 5 (one
   targeted pass over the Batch/ticket/signing surface, the only area still yielding) produced 4,
   three of them major; round 6 (a general user-journey pass and a second targeted Batch pass)
-  produced 0 and 2 minor respectively.
+  produced 0 and 2 minor; round 7 (a third targeted Batch pass) produced 1 minor and 1 paper-cut.
+  **Stopping point**: the general MPT surface returned nothing new in two consecutive sweeps
+  (rounds 4 and 6); the Batch/ticket/signing surface, which the audit's scope only touched in
+  passing, still yields but with strictly falling severity (major → minor → paper-cut) — it
+  deserves its own audit rather than more passes here.
 - **Batch is the least trustworthy part of the SDK for an issuer**: beyond the ticket bugs, a
   retried Batch object reuses stale inner sequences and reports `tesSUCCESS` having done nothing
   ([100](100-autofill-mutates-inner-batch-transactions-stale-retry.md), reproduced live), a
@@ -248,6 +252,8 @@ validator change with tests; L = structural (new helper module, breaking type ch
 | [103](103-signmultibatch-has-no-autofill-precondition.md) | `signMultiBatch` has no autofill precondition; co-signatures bound to pre-autofill hashes | minor | runtime | S |
 | [104](104-signmultibatch-accepts-outer-account-as-batchsigner.md) | `signMultiBatch` accepts the outer account as a `BatchSigner`; only `combineBatchSigners` strips it | minor | runtime | S |
 | [105](105-no-batchsigner-verification-helper.md) | No way to verify a `BatchSigner`; `verifySignature` returns `true` with tampered co-signatures | minor | missing-helper | S |
+| [106](106-combinebatchsigners-doc-claims-signed-result.md) | `combineBatchSigners` doc claims a signed result; it returns an unsigned blob | paper-cut | docs | S |
+| [107](107-batch-fee-cap-bypass-is-outer-only.md) | `maxFeeXRP` cap bypass is outer-only; a Batch with a reserve-priced inner is under-fed | minor | runtime | S |
 
 ## Cross-cutting themes
 
@@ -470,5 +476,32 @@ Round 5 total: 4 new findings (0 blocker, 3 major, 1 minor).
   outer Batch, `NetworkID` propagation, second `autofill` of a returned object, ticketed inner in
   `hashSignedTx`.
 
-Round 6 total: 2 new findings (0 blocker, 0 major, 2 minor). The general pass is the first
-consecutive empty sweep; round 7 is one final targeted Batch/signing pass to provide the second.
+Round 6 total: 2 new findings (0 blocker, 0 major, 2 minor).
+
+**Round 7** — one final targeted Batch/ticket/autofill/signing pass with all 105 findings as
+exclusions and seven angles not yet taken (blob/object round-trips, `submit(blob)` vs
+`submit(object)`, `isSigned`/`getLastLedgerSequence` on batches, `hashSignedTx` with
+`BatchSigners`, outer multisign + `BatchSigners`, fee for fee-multiplied or reserve-priced
+inners, `LastLedgerSequence` with ticketed inners). 2 candidates → 2 filed (106 paper-cut, 107
+minor), both verified offline (unsigned `combineBatchSigners` output rejected by
+`hashSignedTx`/`verifySignature`/`submit`; Batch containing `AccountDelete` capped at 2,000,000
+drops where the top-level form is fee'd 5,000,000 at a 5 XRP owner reserve). Two fold-ins (unsorted
+`BatchSigners` accepted → 104; inner `Payment.DeliverMax` not normalised → 065); one contrived case
+not counted (`Signers: []` passes `isSigned`). Verified clean: `encode(decode(blob)) === blob` for
+signed batches, `hashSignedTx` agreement across blob/object/`sign().hash`, mixed blob/object input
+to `combineBatchSigners`, `submit(object)` ≡ `submit(blob)`, `isSigned` ignoring `BatchSigners`,
+outer multisign + `BatchSigners`, ticketed inners leaving `LastLedgerSequence` untouched.
+
+Round 7 total: 2 new findings (0 blocker, 0 major, 1 minor, 1 paper-cut).
+
+**Stop decision.** The rule was "stop when two consecutive sweeps produce no new finding". For the
+MPT surface proper (types, validators, RPC narrowing, helpers, docs, tests, codec, error surfaces)
+that condition was met: the round-4 docs/tests/codec/cross-feature pass and the round-6 general
+user-journey pass both returned nothing new. The Batch/ticket/signing surface — reached through
+the "how do I get an emergency lock out atomically" question, not part of the original scope — did
+not run dry, but its yield fell from 8 (round 3) to 2/4/2/2 with severity dropping from major to
+paper-cut, and the last three passes re-found each other's items before finding their own. That is
+the point at which further passes cost more than they return; the recommendation is a dedicated
+Batch/XLS-56 audit (tickets, multisign co-signing, sponsorship, delegation, fees, outcomes) rather
+than continuing here. Final state: 107 findings, `npm run scenario` 63/63, `npm run type-repros`
+and `npm run typecheck` green.

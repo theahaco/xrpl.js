@@ -40,6 +40,11 @@ transactions — `Client.autofill` converts only the outer `Flags` (`client/inde
 tfMPTUnlock: true }` as an object, so `submitAndWait(batch, { wallet })` (autofill on) still ends
 in `Error: Cannot construct UInt32 from given value`.
 
+Round-7 addition (verified offline): the same "outer-only normalisation" applies to `DeliverMax` —
+`autofill` rewrites it into `Amount` on a top-level `Payment` only; an inner `Payment` carrying
+`DeliverMax` is left alone, so `Wallet.sign` fails with `PaymentTransaction: missing field Amount`
+and `encode` with `Field DeliverMax is not defined`.
+
 ## Root cause
 
 `validate` mutates a copy; `sign` encodes the original.
