@@ -57,8 +57,23 @@ export function parseMPTokenFlags(flags: number): MPTokenFlagsInterface {
  */
 export type MPTokenIssuanceOnLedger = MPTokenIssuance & { mpt_issuance_id?: string }
 
+/**
+ * AUDIT-035: a `ledger_entry` miss surfaces as a thrown `RippledError` whose
+ * machine-readable code lives in `err.data.error`, but `XrplError.data` is
+ * typed `unknown`, so telling "not found" apart from a real failure needs a
+ * hand-written structural guard (the message is only "Entry not found.").
+ */
 function isNotFound(err: unknown): boolean {
-  return err instanceof RippledError && /entryNotFound|objectNotFound/u.test(String(err.message))
+  if (!(err instanceof RippledError)) {
+    return false
+  }
+  const data: unknown = err.data
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'error' in data &&
+    (data.error === 'entryNotFound' || data.error === 'objectNotFound')
+  )
 }
 
 /** Read the issuance via `ledger_entry` + `mpt_issuance`. */

@@ -13,8 +13,10 @@
     "freeze": "tsx src/freeze.ts",
     "clawback": "tsx src/clawback.ts",
     "inspect": "tsx src/inspect.ts",
+    "domain": "tsx src/domain.ts",
+    "probes": "tsx src/probes.ts",
     "scenario": "tsx src/scenario.ts",
-    "type-repros": "tsc --noEmit -p tsconfig.repros.json; exit 0"
+    "type-repros": "tsc --noEmit -p tsconfig.repros.json"
   },
   "dependencies": {
     "xrpl": "file:../../packages/xrpl"
