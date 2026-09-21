@@ -39,6 +39,10 @@ Actual: a developer following the `autofill` doc under-fees every multi-account 
 fee per co-signer and gets `telINSUF_FEE_P`, a `tel*` result that `submitAndWait` neither throws
 on nor resolves until `LastLedgerSequence` passes ([025](025-submitandwait-three-failure-surfaces-no-result-helper.md)).
 
+Round-6 refinement: a multisigned `BatchSigner` (`BatchSigner.Signers[]`,
+[102](102-combinebatchsigners-drops-multisign-fragments-per-account.md)) carries one signature per
+co-signer, so the fee term should count *signatures*, not `BatchSigner` entries.
+
 ## Root cause
 
 Batch fee logic written for single-account batches; the doc was not updated when `signersCount`

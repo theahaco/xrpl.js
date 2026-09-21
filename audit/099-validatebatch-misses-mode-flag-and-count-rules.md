@@ -45,6 +45,10 @@ Additional surface (verified offline): `signMultiBatch` on a flagless batch does
 (`packages/xrpl/src/Wallet/batchSigner.ts:122` binds `transaction.Flags` unconverted) — so the
 first co-signer gets an unexplained codec error instead of "exactly one mode flag is required".
 
+Round-6 addition (verified offline): `validate()` also accepts `Delegate` on the outer `Batch`
+although `delegateSet.ts:12-23` lists `Batch` among `NON_DELEGABLE_TRANSACTIONS`; the rule exists
+in the SDK and is not applied where the transaction is built.
+
 ## Root cause
 
 `validateBatch` was written around the inner-transaction constraints only.

@@ -8,14 +8,15 @@ checkout's build of `xrpl`; every rough edge hit on the way is a numbered findin
 
 ## Executive summary
 
-- **103 findings**: 2 blockers, 24 major, 57 minor, 20 paper-cuts (table below). Round 1 (building
+- **105 findings**: 2 blockers, 24 major, 59 minor, 20 paper-cuts (table below). Round 1 (building
   the issuer) produced 42; round 2 (five adversarial sweeps, every candidate re-verified on the
   ledger or against the built package) produced 38; round 3 (four more sweeps: the repo's tests as
   evidence, the codec's MPT paths, cross-feature interactions, and a dry-run repeat of the core
   lenses) produced 17; round 4 (two dry-run sweeps with all 97 findings as exclusions) produced 2,
   both on the Batch surface, and the second sweep produced nothing beyond them; round 5 (one
   targeted pass over the Batch/ticket/signing surface, the only area still yielding) produced 4,
-  three of them major.
+  three of them major; round 6 (a general user-journey pass and a second targeted Batch pass)
+  produced 0 and 2 minor respectively.
 - **Batch is the least trustworthy part of the SDK for an issuer**: beyond the ticket bugs, a
   retried Batch object reuses stale inner sequences and reports `tesSUCCESS` having done nothing
   ([100](100-autofill-mutates-inner-batch-transactions-stale-retry.md), reproduced live), a
@@ -245,6 +246,8 @@ validator change with tests; L = structural (new helper module, breaking type ch
 | [101](101-batch-inner-sequences-ignore-caller-supplied-outer-sequence.md) | Batch inner sequences ignore a caller-supplied outer `Sequence` | major | runtime | S |
 | [102](102-combinebatchsigners-drops-multisign-fragments-per-account.md) | `combineBatchSigners` drops multisign fragments per account; `signMultiBatch` overwrites | major | runtime | S |
 | [103](103-signmultibatch-has-no-autofill-precondition.md) | `signMultiBatch` has no autofill precondition; co-signatures bound to pre-autofill hashes | minor | runtime | S |
+| [104](104-signmultibatch-accepts-outer-account-as-batchsigner.md) | `signMultiBatch` accepts the outer account as a `BatchSigner`; only `combineBatchSigners` strips it | minor | runtime | S |
+| [105](105-no-batchsigner-verification-helper.md) | No way to verify a `BatchSigner`; `verifySignature` returns `true` with tampered co-signatures | minor | missing-helper | S |
 
 ## Cross-cutting themes
 
@@ -447,6 +450,25 @@ binds inner hashes that `autofill` then changes. Four near-duplicates not counte
 vs rippled, `NetworkID` symmetry, delegated inners, sponsor fee flags, `TicketCreate`, and the
 `LastLedgerSequence`/`checkAccountDeleteBlockers`/`hashSignedTx`/fee paths for ticket interactions.
 
-Round 5 total: 4 new findings (0 blocker, 3 major, 1 minor). Round 6 runs two sweeps in
-parallel — one more over the same Batch surface and one general user-journey pass — and stops
-when both return nothing.
+Round 5 total: 4 new findings (0 blocker, 3 major, 1 minor).
+
+**Round 6** — two sweeps in parallel with all 103 findings as exclusions.
+
+- **General user-journey pass** (README + typedoc + export list only; ten steps from "create the
+  issuance" to "batch lock + clawback"; plus a fresh re-read of `mptokenMetadata.ts` against XLS-89
+  with 40 offline cases, and `sugar/balances.ts`, `sugar/getOrderbook.ts`, `client/partialPayment.ts`):
+  **0 new candidates**. Every rough edge on the journey mapped to an existing finding; seven
+  near-duplicates examined and rejected (7-character ticker warning vs "recommended", `shortenKeys`
+  order dependence on `undefined` keys, `decodeMPTokenMetadata` odd-length/UTF-8 leniency,
+  `fetchMPToken` argument order, `requestAll` example command, `accounts` subscription semantics).
+- **Second targeted Batch/ticket/autofill/signing pass**: 2 candidates, both minor → filed (104,
+  105), verified offline (outer account accepted as a `BatchSigner` at every layer and stripped
+  only by `combineBatchSigners`; `verifySignature` returns `true` with a tampered
+  `BatchSigner.TxnSignature`). Three fold-ins: `Delegate` accepted on an outer `Batch` (→ 099),
+  fee should count multisign signatures (→ 091), duplicate inner sequence when one is
+  caller-supplied (→ 101). Verified clean: outer multisign + `BatchSigners`, `signAsSponsor` on an
+  outer Batch, `NetworkID` propagation, second `autofill` of a returned object, ticketed inner in
+  `hashSignedTx`.
+
+Round 6 total: 2 new findings (0 blocker, 0 major, 2 minor). The general pass is the first
+consecutive empty sweep; round 7 is one final targeted Batch/signing pass to provide the second.
