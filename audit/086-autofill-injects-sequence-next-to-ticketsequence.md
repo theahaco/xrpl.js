@@ -9,11 +9,12 @@ Category: runtime
   (`if (tx.Sequence == null) { promises.push(setNextValidSequenceNumber(this, tx)) }` — no `TicketSequence` gate)
 - `setNextValidSequenceNumber` — `packages/xrpl/src/sugar/autofill.ts:256-262`
 - `validateBaseTransaction` — `models/transactions/common.ts:991,1015` (`Sequence`, `TicketSequence` each `isNumber`; no "non-zero Sequence with TicketSequence" rule)
-- Contrast, where the SDK knows the rule: inner-Batch path `autofill.ts:621`
-  (`if (txn.Sequence == null && txn.TicketSequence == null)`), `Wallet/batchSigner.ts:60`
-  (`transaction.TicketSequence ?? 0`), fixture `test/fixtures/requests/signTicket.json`
-  (`"Sequence": 0, "TicketSequence": 23`), `BaseTransaction.TicketSequence` doc ("If this is
-  provided, Sequence must be 0")
+- Where the SDK documents the rule: `Wallet/batchSigner.ts:60` (`transaction.TicketSequence ?? 0`),
+  fixture `test/fixtures/requests/signTicket.json` (`"Sequence": 0, "TicketSequence": 23`),
+  `BaseTransaction.TicketSequence` doc ("If this is provided, Sequence must be 0"). The inner-Batch
+  path `autofill.ts:621` (`if (txn.Sequence == null && txn.TicketSequence == null)`) avoids
+  injecting a live sequence but does not emit the required `0` either — see
+  [098](098-batch-autofill-emits-ticketed-inner-without-sequence.md) (round-4 correction).
 
 ## Repro
 

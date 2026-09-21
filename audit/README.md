@@ -8,17 +8,21 @@ checkout's build of `xrpl`; every rough edge hit on the way is a numbered findin
 
 ## Executive summary
 
-- **97 findings**: 2 blockers, 20 major, 55 minor, 20 paper-cuts (table below). Round 1 (building
+- **99 findings**: 2 blockers, 21 major, 56 minor, 20 paper-cuts (table below). Round 1 (building
   the issuer) produced 42; round 2 (five adversarial sweeps, every candidate re-verified on the
   ledger or against the built package) produced 38; round 3 (four more sweeps: the repo's tests as
   evidence, the codec's MPT paths, cross-feature interactions, and a dry-run repeat of the core
-  lenses) produced 17, the dry run contributing only one.
-- **The ticket path is broken at both levels**: `autofill` injects a live `Sequence` next to a
+  lenses) produced 17; round 4 (two dry-run sweeps with all 97 findings as exclusions) produced 2,
+  both on the Batch surface, and the second sweep produced nothing beyond them.
+- **The ticket path is broken at every level**: `autofill` injects a live `Sequence` next to a
   caller's `TicketSequence` (`temSEQ_AND_TICKET`, [086](086-autofill-injects-sequence-next-to-ticketsequence.md)),
-  and a ticketed `Batch` gets inner sequences off by one so the outer reports `tesSUCCESS` while
-  none of the inner locks applied ([087](087-batch-autofill-off-by-one-under-ticketed-outer.md),
+  a ticketed inner Batch transaction is emitted with no `Sequence` at all (`invalidTransaction`,
+  [098](098-batch-autofill-emits-ticketed-inner-without-sequence.md)), and a ticketed outer
+  `Batch` gets inner sequences off by one so the outer reports `tesSUCCESS` while none of the
+  inner locks applied ([087](087-batch-autofill-off-by-one-under-ticketed-outer.md),
   [088](088-batch-outcome-silent-no-inner-results.md)). Tickets and batches are exactly what an
-  issuer reaches for to get an emergency freeze out atomically.
+  issuer reaches for to get an emergency freeze out atomically, and rippled's `simulate` cannot
+  dry-run a `Batch` ([099](099-validatebatch-misses-mode-flag-and-count-rules.md)).
 - **Two blockers put a different transaction on the wire than the developer wrote, with no error
   from any layer**: the binary codec encodes an MPT `value` of 2^64 + 5 as **5**
   ([022](022-binary-codec-silently-truncates-mpt-values-above-2-64.md)), and a lowercase field name
@@ -227,6 +231,8 @@ validator change with tests; L = structural (new helper module, breaking type ch
 | [095](095-issue-from-empty-issuer-emits-malformed-blob.md) | `Issue.from` with `issuer: ''` emits a malformed blob | minor | runtime | S |
 | [096](096-codec-lenient-uint-numeric-and-string-inputs.md) | Codec `UInt32`/`UInt64` lenient numeric and string inputs | minor | runtime | S |
 | [097](097-codec-error-messages-wrong-class-and-unwrapped.md) | Codec error messages: wrong class name, hex overflow text, unwrapped `TypeError`s | paper-cut | runtime | S |
+| [098](098-batch-autofill-emits-ticketed-inner-without-sequence.md) | Batch autofill emits a ticketed inner transaction with no `Sequence` (`invalidTransaction`) | major | runtime | S |
+| [099](099-validatebatch-misses-mode-flag-and-count-rules.md) | `validateBatch` misses mode-flag and 2–8 count rules; `simulate` cannot dry-run a `Batch` | minor | validation | S |
 
 ## Cross-cutting themes
 
@@ -396,3 +402,21 @@ stopping condition. Every candidate re-verified before filing.
 
 Round 3 total: 17 new findings (0 blocker, 3 major, 10 minor, 4 paper-cuts). The core lenses are
 dry (one overlapping candidate); round 4 repeats the remaining lenses to confirm.
+
+**Round 4** — two dry-run sweeps, each reading all 97 findings first and instructed to report only
+genuinely new items.
+
+- **Sweep n (core lenses a/b/c/e, second consecutive pass)**: 3 candidates, all on the Batch
+  surface that round 3 opened → 2 filed (098, 099), 1 folded into 069. Verified live: a ticketed
+  inner transaction leaves `autofill` with no `Sequence` and rippled rejects the batch at `submit`
+  (`invalidTransaction: Field 'Sequence' is required but missing`); Batch without a mode flag or
+  with two → `temINVALID_FLAG`; 0 or 1 inner → `temARRAY_EMPTY`; 9 inner → RPC "too many inner
+  transactions"; duplicate inner → `tesSUCCESS` (claim dropped); `simulate` of any `Batch` →
+  "Not implemented".
+- **Sweep m (lenses d/f/g/j)**: reached the same two Batch candidates independently and **nothing
+  else**; contributed two evidence lines (HISTORY 2.13.0 contradicts 094/066; `signMultiBatch`
+  leaks a bare `No field flags` error, added to 099). Six near-duplicates listed and not counted.
+
+Round 4 total: 2 new findings (0 blocker, 1 major, 1 minor). One sweep produced zero new items;
+round 5 runs a single targeted pass over the Batch/ticket/autofill/signing surface — the only
+area still yielding — to satisfy the "two consecutive empty sweeps" stop rule.

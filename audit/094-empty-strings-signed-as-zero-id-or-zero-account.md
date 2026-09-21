@@ -42,6 +42,12 @@ fails at signing-key mismatch further along). Same family as
 [061](061-lowercase-field-names-silently-dropped-when-signing.md): a silent substitution on the
 wire.
 
+Round-4 evidence: `packages/xrpl/HISTORY.md:264` (2.13.0) announces "Transaction fields that
+represent an address no longer allow an empty string (`''`). If you want to specify ACCOUNT_ZERO,
+you can specify `rrrrrrrrrrrrrrrrrrrrrhoLvTp`" — the behaviour this finding shows is exactly the
+one the changelog says was removed (it holds for `Destination`/`Holder` via `isAccount`, not for
+`Account`, `Subject`, `Issuer`).
+
 ## Root cause
 
 Two codec conveniences (zero-fill on empty) plus string-only guards in `xrpl`.

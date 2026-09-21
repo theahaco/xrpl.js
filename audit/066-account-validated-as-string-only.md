@@ -30,6 +30,10 @@ Actual: the one field present on every transaction is the one validated most loo
 leaks from a dependency at sign time. For a service that derives `Account` from configuration, a
 mis-pasted issuer address is the first thing that goes wrong.
 
+Round-4 evidence: `packages/xrpl/HISTORY.md:265` (2.13.0) announces "Invalid addresses on a
+transaction now throws a `ValidationError` when submitting a transaction instead of
+`Error('checksum_invalid')`" — for `Account` the old behaviour is what ships today.
+
 ## Root cause
 
 Historical: `isAccount` was added later and applied to new fields only.

@@ -41,6 +41,11 @@ Actual: for "lock + claw back atomically" — the reason a compliance issuer rea
 the SDK's success signal is meaningless and it says so nowhere. An operator logs "locked and clawed
 back" on a no-op.
 
+Round-4 addition: there is no dry run either — rippled's `simulate` answers `Not implemented.`
+for every `Batch` (verified live for six shapes,
+[099](099-validatebatch-misses-mode-flag-and-count-rules.md)), so the SDK's `client.simulate`
+doc ([044](044-simulate-doc-copy-pasted-from-submit.md)) should say so.
+
 ## Root cause
 
 Batch support was added at the model/signing level without an outcome story.

@@ -36,6 +36,13 @@ Expected: `ValidationError('Clawback: invalid flag "tfMPTLock". Valid flags: tfF
 Actual: minor noise, but it is the error a developer sees when they confuse the `MPTokenIssuanceSet`
 flags with `Clawback` (a realistic mistake given [037](037-mpt-validators-do-not-check-flag-masks.md)).
 
+Round-4 extension: the Batch inner-transaction rules are enforced twice with different error
+classes and texts — `autofillBatchTxn` (`sugar/autofill.ts:641-659`) throws
+``XrplError: Must have `Fee of "0" in inner Batch transaction.`` (stray backtick) while
+`validateBatchInnerTransaction` (`batch.ts:86-104`) throws
+`ValidationError: Batch: invalid field RawTransactions[0].RawTransaction.Fee`; `submitAndWait`
+callers see the former, `signMultiBatch` callers the latter.
+
 ## Root cause
 
 `JSON.stringify(GlobalFlags)` on a TypeScript numeric enum (which contains reverse mappings); dead
