@@ -8,12 +8,20 @@ checkout's build of `xrpl`; every rough edge hit on the way is a numbered findin
 
 ## Executive summary
 
-- **99 findings**: 2 blockers, 21 major, 56 minor, 20 paper-cuts (table below). Round 1 (building
+- **103 findings**: 2 blockers, 24 major, 57 minor, 20 paper-cuts (table below). Round 1 (building
   the issuer) produced 42; round 2 (five adversarial sweeps, every candidate re-verified on the
   ledger or against the built package) produced 38; round 3 (four more sweeps: the repo's tests as
   evidence, the codec's MPT paths, cross-feature interactions, and a dry-run repeat of the core
   lenses) produced 17; round 4 (two dry-run sweeps with all 97 findings as exclusions) produced 2,
-  both on the Batch surface, and the second sweep produced nothing beyond them.
+  both on the Batch surface, and the second sweep produced nothing beyond them; round 5 (one
+  targeted pass over the Batch/ticket/signing surface, the only area still yielding) produced 4,
+  three of them major.
+- **Batch is the least trustworthy part of the SDK for an issuer**: beyond the ticket bugs, a
+  retried Batch object reuses stale inner sequences and reports `tesSUCCESS` having done nothing
+  ([100](100-autofill-mutates-inner-batch-transactions-stale-retry.md), reproduced live), a
+  pre-assigned outer `Sequence` is ignored for the inners ([101](101-batch-inner-sequences-ignore-caller-supplied-outer-sequence.md)),
+  and a multisig issuer cannot co-sign at all because `combineBatchSigners` drops all but one
+  co-signature ([102](102-combinebatchsigners-drops-multisign-fragments-per-account.md)).
 - **The ticket path is broken at every level**: `autofill` injects a live `Sequence` next to a
   caller's `TicketSequence` (`temSEQ_AND_TICKET`, [086](086-autofill-injects-sequence-next-to-ticketsequence.md)),
   a ticketed inner Batch transaction is emitted with no `Sequence` at all (`invalidTransaction`,
@@ -233,6 +241,10 @@ validator change with tests; L = structural (new helper module, breaking type ch
 | [097](097-codec-error-messages-wrong-class-and-unwrapped.md) | Codec error messages: wrong class name, hex overflow text, unwrapped `TypeError`s | paper-cut | runtime | S |
 | [098](098-batch-autofill-emits-ticketed-inner-without-sequence.md) | Batch autofill emits a ticketed inner transaction with no `Sequence` (`invalidTransaction`) | major | runtime | S |
 | [099](099-validatebatch-misses-mode-flag-and-count-rules.md) | `validateBatch` misses mode-flag and 2–8 count rules; `simulate` cannot dry-run a `Batch` | minor | validation | S |
+| [100](100-autofill-mutates-inner-batch-transactions-stale-retry.md) | `autofill` mutates inner Batch transactions; a retry reuses stale sequences and reports `tesSUCCESS` doing nothing | major | runtime | S |
+| [101](101-batch-inner-sequences-ignore-caller-supplied-outer-sequence.md) | Batch inner sequences ignore a caller-supplied outer `Sequence` | major | runtime | S |
+| [102](102-combinebatchsigners-drops-multisign-fragments-per-account.md) | `combineBatchSigners` drops multisign fragments per account; `signMultiBatch` overwrites | major | runtime | S |
+| [103](103-signmultibatch-has-no-autofill-precondition.md) | `signMultiBatch` has no autofill precondition; co-signatures bound to pre-autofill hashes | minor | runtime | S |
 
 ## Cross-cutting themes
 
@@ -418,5 +430,23 @@ genuinely new items.
   leaks a bare `No field flags` error, added to 099). Six near-duplicates listed and not counted.
 
 Round 4 total: 2 new findings (0 blocker, 1 major, 1 minor). One sweep produced zero new items;
-round 5 runs a single targeted pass over the Batch/ticket/autofill/signing surface — the only
-area still yielding — to satisfy the "two consecutive empty sweeps" stop rule.
+round 5 ran a single targeted pass over the Batch/ticket/autofill/signing surface — the only
+area still yielding.
+
+**Round 5** — one targeted sweep over `sugar/autofill.ts`, `sugar/submit.ts`, `Wallet/batchSigner.ts`,
+`Wallet/signer.ts`, the Batch/ticket models and the codec's batch signing payload, with all 99
+findings as exclusions. 4 candidates → 4 filed (100–103). Verified live: an unlock Batch
+autofilled once, then retried with the same object after an intervening issuer payment →
+`tesSUCCESS` with outer `1019` and inner `[1019, 1020]`, holders still locked. Verified offline
+(stubbed client): `autofill` shares inner objects with the caller and skips them on the second
+call; a caller-supplied outer `Sequence: 800` yields inner `[791, 792]`; `combineBatchSigners` of
+two multisign fragments for one account keeps one `Signer`; `signMultiBatch` before `autofill`
+binds inner hashes that `autofill` then changes. Four near-duplicates not counted (X-address inner
+`Account`, parallel `account_info` calls, X-address `batchAccount`, ticketed top-level with
+`autofill: false`). Checked clean: `multisign` with MPT amounts and of a Batch outer, inner tx ID
+vs rippled, `NetworkID` symmetry, delegated inners, sponsor fee flags, `TicketCreate`, and the
+`LastLedgerSequence`/`checkAccountDeleteBlockers`/`hashSignedTx`/fee paths for ticket interactions.
+
+Round 5 total: 4 new findings (0 blocker, 3 major, 1 minor). Round 6 runs two sweeps in
+parallel — one more over the same Batch surface and one general user-journey pass — and stops
+when both return nothing.
