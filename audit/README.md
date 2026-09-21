@@ -8,7 +8,7 @@ checkout's build of `xrpl`; every rough edge hit on the way is a numbered findin
 
 ## Executive summary
 
-- **80 findings**: 2 blockers, 17 major, 46 minor, 15 paper-cuts (table below). Round 1 (building
+- **80 findings**: 2 blockers, 17 major, 45 minor, 16 paper-cuts (table below). Round 1 (building
   the issuer) produced 42; round 2 (five adversarial sweeps, every candidate re-verified on the
   ledger or against the built package) produced 38 more.
 - **Two blockers put a different transaction on the wire than the developer wrote, with no error
@@ -332,5 +332,5 @@ MPT-touching file, each candidate re-verified by the auditor before filing. Swee
 - **Sweep d (doc accuracy)**: every doc comment in the MPT-touching files, `client/index.ts` docs, `Wallet.sign`, README/HISTORY/CONTRIBUTING/cfg. 15 candidates → 10 filed (043–052), 3 folded into 008, 012, 019; 2 dropped as accurate on re-read. Verified live: ticketed create derives the ID from `TicketSequence` (656) not `Sequence` (0); `OfferCreate` with an MPT amount → `temDISABLED`.
 - **Sweep e (error surfaces)**: `submitAndWait` → `autofill` → `sign` → `submit` → polling; `RequestManager`; `errors.ts`. 12 candidates → 9 filed (061–069), 1 folded into 068, 2 dropped (not on the MPT surface). Verified offline against the built package: lowercase `holder` dropped (decoded `Holder === undefined`), `assetScale` dropped; `TypeError`s from `removeTrailingZeros`; Payment-only `"10.0"` → `10`; interface `Flags` → codec `UInt32` error; `Account: 'not-an-address'` → address-codec error; tagged X-address `Holder` → codec error; flag error text. Verified live: `LastLedgerSequence = validated + 2` payment validated `tesSUCCESS` but `submitAndWait` threw "expired … Preliminary result: tesSUCCESS". Historical claims checked against local git: `07f36e12` (#1883) reordered the expiry check; `2442ef14` (#2293) removed `checkTxSerialization`.
 
-Round 2 total: 38 new findings (1 blocker, 6 major, 21 minor, 10 paper-cuts). Round 3 sweeps are
+Round 2 total: 38 new findings (1 blocker, 6 major, 20 minor, 11 paper-cuts). Round 3 sweeps are
 logged below as they complete.
