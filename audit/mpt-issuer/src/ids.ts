@@ -19,7 +19,9 @@ function sha512Half(hexInput: string): string {
 }
 
 /**
- * MPTokenIssuanceID = 32-bit big-endian issuer Sequence ‖ 160-bit issuer AccountID.
+ * MPTokenIssuanceID = 32-bit big-endian sequence ‖ 160-bit issuer AccountID,
+ * where the sequence is the one the create transaction CONSUMED: `Sequence`,
+ * or `TicketSequence` when a ticket was used (AUDIT-047; verified on-ledger).
  *
  * AUDIT-012: the SDK has `getNFTokenID` for NFTs but nothing for MPTs; every
  * caller re-derives this or reaches for `meta.mpt_issuance_id!`.

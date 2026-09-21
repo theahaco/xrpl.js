@@ -45,6 +45,13 @@ a typo; "globally lock" does not mention that issuer-direction payments are exem
 non-obvious `tfMPTokenIssuanceSetEnableFlagMask` constant (`MPTokenIssuanceSet.ts:79-83`), not on
 the members a developer autocompletes.
 
+Round-2 additions (sweep d): the `tfMPTSet*` members of `MPTokenIssuanceSetFlagsInterface`
+(`MPTokenIssuanceSet.ts:103-111`) and `MPTokenIssuanceCreate.DomainID` (`MPTokenIssuanceCreate.ts:267`)
+are commented with `/* … */`, not `/** … */`, so editors and typedoc show nothing for them;
+`MPTokenIssuanceCreateFlagsInterface.tfMPTCanLock` (`:138`) has no comment at all; and no doc states
+the precondition the validator enforces at `MPTokenIssuanceCreate.ts:293-304` ("Cannot set DomainID
+unless tfMPTRequireAuth flag is set").
+
 ## Root cause
 
 Doc comments were not updated when DynamicMPT / permissioned-domain / confidential-MPT fields were

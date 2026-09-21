@@ -64,6 +64,11 @@ export function hashMPToken(issuanceId: string, holder: string): string
   // sha512Half(0x0074 ‖ hashMPTokenIssuance(issuanceId) ‖ accountId(holder))
 ```
 
+Round-2 correction ([047](047-mptokenissuance-sequence-doc-wrong-for-ticketed-creates.md)): the
+sequence half of the ID is the sequence the transaction *consumed*, i.e. `TicketSequence` when a
+ticket was used (verified on-ledger: `Sequence: 0, TicketSequence: 656` → ID `00000290…`). The
+helper must take `tx.TicketSequence ?? tx.Sequence`.
+
 and, in the metadata type, a doc line: "Present iff `TransactionResult === 'tesSUCCESS'`". A
 discriminated `MPTokenIssuanceCreateMetadata = Success & { mpt_issuance_id: string } | Failure`
 keyed on `TransactionResult` would remove the `!` entirely but touches

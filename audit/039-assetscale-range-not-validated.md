@@ -48,6 +48,11 @@ if (typeof tx.AssetScale === 'number' && (!Number.isInteger(tx.AssetScale) || tx
 The same `isUInt8`/`isUInt16`/`isUInt32` guards would serve `TransferFee` (already bounded),
 `DestinationTag`, `TickSize`, etc.
 
+Round-2 extension (sweep b): `AssetScale: 2.5`, `AssetScale: NaN`, `TransferFee: 12.5`,
+`TransferFee: NaN` and `CredentialCreate.Expiration: -1` / `1.5` all pass `validate()` (`isNumber`
+accepts any JS number) and fail in the codec with `Cannot construct UInt8/UInt16/UInt32 from given
+value`. `Number.isInteger` belongs in the same guard.
+
 ## Workaround today
 
 Bound-check in application code.

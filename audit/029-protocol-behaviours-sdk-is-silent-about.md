@@ -25,6 +25,8 @@ runs; step names in parentheses):
 | 6 | Clawback ignores every freeze state (per-holder lock, global lock, unauthorized) and clamps to the balance (`5000` from `600` → `tesSUCCESS`, balance `0`); an empty holder gives `tecINSUFFICIENT_FUNDS`, a missing entry `tecOBJECT_NOT_FOUND` | clawback run |
 | 7 | A payment from a holder with zero balance fails with `tecPATH_PARTIAL`, not `tecUNFUNDED_PAYMENT`/`tecINSUFFICIENT_FUNDS`, even when the holder is locked (the lock check comes later) | scenario: "empty locked holder paying issuer surfaces as tecPATH_PARTIAL" |
 | 8 | A locked holder cannot delete its own zero-balance `MPToken` (`tecNO_PERMISSION`), so lock-on-arrival permanently pins their reserve | ban: "mallory opts out while locked tecNO_PERMISSION" |
+| 9 | (round 2) Issuer `MPTokenAuthorize` + `Holder` on an issuance **without** `lsfMPTRequireAuth` fails with `tecNO_AUTH` — authorization is meaningless there, and `onboardHolder` broke on it | round-2 verification run |
+| 10 | (round 2) `tfPartialPayment` is allowed on MPT payments (`tesSUCCESS`), so a compliance flow must check `delivered_amount`, which needs `fixMPTDeliveredAmount` ([021](021-ci-xrpld-cfg-missing-newer-amendments.md)) | probes: "Payment: MPT with tfPartialPayment tesSUCCESS" |
 
 ## Expected vs actual
 

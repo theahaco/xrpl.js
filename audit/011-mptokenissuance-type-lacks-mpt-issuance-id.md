@@ -68,6 +68,12 @@ If the maintainers prefer to keep ledger types "pure", export a `deriveMPTokenIs
 instead ([012](012-no-helper-to-derive-mpt-issuance-id-or-keylets.md)) and document the injected
 field.
 
+Round-2 note (sweep a): the package already models the injected field once —
+`VaultInfoResponse.result.vault.shares.mpt_issuance_id?: string`
+(`packages/xrpl/src/models/methods/vaultInfo.ts:135`) on a hand-copied share-issuance type that also
+carries `ReferenceHolding` (`:185`). That is the precedent for this fix and a second copy of the
+issuance shape that will drift from `MPTokenIssuance`.
+
 ## Workaround today
 
 ```ts

@@ -36,6 +36,12 @@ exist, so the script fails with `ENOENT` before doing anything.
 while the same file relies on it and CI depends on it working (it does: see
 [020](020-feature-rpc-misreports-standalone-presets.md)).
 
+Round-2 additions (sweep d): `CONTRIBUTING.md:223` and `:227` ("Updating the Docker container")
+also name `/.ci-config/rippled.cfg`; `.ci-config/xrpld.cfg:98` tells readers to request newer
+rippled builds at `github.com/WietseWind/docker-rippled` although CI runs `rippleci/xrpld:develop`;
+`.ci-config/xrpld.cfg:198` reads "3.3.0 Amednments". Running `node .ci-config/getNewAmendments.js`
+fails immediately with `ENOENT … rippled.cfg` (verified).
+
 ## Expected vs actual
 
 Expected: one recipe, in one place, that a contributor can paste. The working one (verified in this
