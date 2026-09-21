@@ -34,6 +34,12 @@ its copy) or rejects with a `ValidationError` saying "convert flags first".
 Actual: a codec `Error` with no field or transaction name, from a value the SDK's own validator
 just accepted.
 
+Round-3 extension (sweep j, verified live): the `autofill` workaround does not cover Batch inner
+transactions — `Client.autofill` converts only the outer `Flags` (`client/index.ts:694`);
+`autofillBatchTxn` (`sugar/autofill.ts:617-665`) leaves inner `Flags: { tfInnerBatchTxn: true,
+tfMPTUnlock: true }` as an object, so `submitAndWait(batch, { wallet })` (autofill on) still ends
+in `Error: Cannot construct UInt32 from given value`.
+
 ## Root cause
 
 `validate` mutates a copy; `sign` encodes the original.

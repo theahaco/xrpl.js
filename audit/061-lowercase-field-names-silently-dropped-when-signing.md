@@ -43,6 +43,14 @@ difference is per-holder lock vs. issuance-wide freeze of all holders; for
 `MPTokenIssuanceCreate` it is losing `AssetScale`/`MaximumAmount` on an immutable object. No layer
 reports anything; the transaction succeeds.
 
+Round-3 extension (sweep g): the same outcome through a different door —
+`{ TransactionType: 'MPTokenIssuanceSet', Flags: tfMPTLock, Holder: registry.get(addr) }` with a
+missing registry entry yields `Holder: undefined`, which the codec omits (standard JSON semantics;
+verified: the signed transaction has no `Holder`), i.e. again a global freeze. The "reject unknown
+keys" fix below does not cover it; the issuer-side guard is `if (holder === undefined) throw` before
+building the transaction, or a builder that takes `holder: string` (the issuer project's
+`holderLockTx` does).
+
 ## Root cause
 
 Three layers each assume another one checks: the types (index signature), `validate()` (no

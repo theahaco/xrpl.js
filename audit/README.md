@@ -8,9 +8,17 @@ checkout's build of `xrpl`; every rough edge hit on the way is a numbered findin
 
 ## Executive summary
 
-- **80 findings**: 2 blockers, 17 major, 45 minor, 16 paper-cuts (table below). Round 1 (building
+- **97 findings**: 2 blockers, 20 major, 55 minor, 20 paper-cuts (table below). Round 1 (building
   the issuer) produced 42; round 2 (five adversarial sweeps, every candidate re-verified on the
-  ledger or against the built package) produced 38 more.
+  ledger or against the built package) produced 38; round 3 (four more sweeps: the repo's tests as
+  evidence, the codec's MPT paths, cross-feature interactions, and a dry-run repeat of the core
+  lenses) produced 17, the dry run contributing only one.
+- **The ticket path is broken at both levels**: `autofill` injects a live `Sequence` next to a
+  caller's `TicketSequence` (`temSEQ_AND_TICKET`, [086](086-autofill-injects-sequence-next-to-ticketsequence.md)),
+  and a ticketed `Batch` gets inner sequences off by one so the outer reports `tesSUCCESS` while
+  none of the inner locks applied ([087](087-batch-autofill-off-by-one-under-ticketed-outer.md),
+  [088](088-batch-outcome-silent-no-inner-results.md)). Tickets and batches are exactly what an
+  issuer reaches for to get an emergency freeze out atomically.
 - **Two blockers put a different transaction on the wire than the developer wrote, with no error
   from any layer**: the binary codec encodes an MPT `value` of 2^64 + 5 as **5**
   ([022](022-binary-codec-silently-truncates-mpt-values-above-2-64.md)), and a lowercase field name
@@ -202,6 +210,23 @@ validator change with tests; L = structural (new helper module, breaking type ch
 | [078](078-client-request-never-infers-api-version.md) | `request` never infers `api_version`; v1 typed as v2 | minor | types | M |
 | [079](079-requestall-skips-partial-payment-warnings-and-address-normalisation.md) | `requestAll` skips partial-payment warnings and address normalisation | minor | rpc | S |
 | [080](080-no-mpt-transferfee-helper-max-not-exported.md) | No MPT `TransferFee` helper; `MAX_TRANSFER_FEE` not exported | minor | missing-helper | S |
+| [081](081-no-client-side-sequence-allocation-for-concurrent-submissions.md) | No sequence reservation; concurrent `submitAndWait` → `tefPAST_SEQ` after full timeout | minor | runtime | M |
+| [082](082-no-permissioned-domain-or-credential-id-helpers.md) | No helper to derive `PermissionedDomain`/`Credential` IDs | minor | missing-helper | S |
+| [083](083-fetchmptoken-helpers-exist-but-hidden-in-confidential-module.md) | `fetchMPToken*` helpers exist but hidden in the confidential module | minor | missing-helper | S |
+| [084](084-integration-harness-never-exercises-submitandwait-or-validated.md) | Integration harness never exercises `submitAndWait`/`validated` | minor | test-infra | M |
+| [085](085-codec-mpt-error-fixtures-assert-bare-throw.md) | Codec MPT error fixtures assert a bare `toThrow()` | paper-cut | test-infra | S |
+| [086](086-autofill-injects-sequence-next-to-ticketsequence.md) | `autofill` injects `Sequence` next to `TicketSequence` (`temSEQ_AND_TICKET`) | major | runtime | S |
+| [087](087-batch-autofill-off-by-one-under-ticketed-outer.md) | Batch autofill off by one under a ticketed outer; batch "succeeds" doing nothing | major | runtime | S |
+| [088](088-batch-outcome-silent-no-inner-results.md) | Batch outcome undocumented; outer `tesSUCCESS` with inners reverted; no inner-result helper | major | docs | M |
+| [089](089-delegateset-permission-values-unvalidated-and-undiscoverable.md) | `DelegateSet` permission values unvalidated; MPT granular permissions undiscoverable | minor | validation | S |
+| [090](090-signmultibatch-refuses-sponsor-of-inner-transaction.md) | `signMultiBatch` refuses the sponsor of an inner transaction | minor | runtime | S |
+| [091](091-batch-fee-ignores-batchsigners-signerscount-doc-wrong.md) | Batch fee ignores `BatchSigners`; `signersCount` doc wrong | minor | docs | S |
+| [092](092-batch-type-admits-what-validatebatch-rejects.md) | `Batch` type admits what `validateBatch` rejects; `Flags` interface not accepted | paper-cut | types | S |
+| [093](093-confidential-clawback-docs-contradict-plain-clawback-silent.md) | Confidential clawback docs contradict each other; `Clawback` silent on confidential balances | paper-cut | docs | S |
+| [094](094-empty-strings-signed-as-zero-id-or-zero-account.md) | Empty strings signed as the zero issuance / zero account | minor | validation | S |
+| [095](095-issue-from-empty-issuer-emits-malformed-blob.md) | `Issue.from` with `issuer: ''` emits a malformed blob | minor | runtime | S |
+| [096](096-codec-lenient-uint-numeric-and-string-inputs.md) | Codec `UInt32`/`UInt64` lenient numeric and string inputs | minor | runtime | S |
+| [097](097-codec-error-messages-wrong-class-and-unwrapped.md) | Codec error messages: wrong class name, hex overflow text, unwrapped `TypeError`s | paper-cut | runtime | S |
 
 ## Cross-cutting themes
 
@@ -332,5 +357,42 @@ MPT-touching file, each candidate re-verified by the auditor before filing. Swee
 - **Sweep d (doc accuracy)**: every doc comment in the MPT-touching files, `client/index.ts` docs, `Wallet.sign`, README/HISTORY/CONTRIBUTING/cfg. 15 candidates → 10 filed (043–052), 3 folded into 008, 012, 019; 2 dropped as accurate on re-read. Verified live: ticketed create derives the ID from `TicketSequence` (656) not `Sequence` (0); `OfferCreate` with an MPT amount → `temDISABLED`.
 - **Sweep e (error surfaces)**: `submitAndWait` → `autofill` → `sign` → `submit` → polling; `RequestManager`; `errors.ts`. 12 candidates → 9 filed (061–069), 1 folded into 068, 2 dropped (not on the MPT surface). Verified offline against the built package: lowercase `holder` dropped (decoded `Holder === undefined`), `assetScale` dropped; `TypeError`s from `removeTrailingZeros`; Payment-only `"10.0"` → `10`; interface `Flags` → codec `UInt32` error; `Account: 'not-an-address'` → address-codec error; tagged X-address `Holder` → codec error; flag error text. Verified live: `LastLedgerSequence = validated + 2` payment validated `tesSUCCESS` but `submitAndWait` threw "expired … Preliminary result: tesSUCCESS". Historical claims checked against local git: `07f36e12` (#1883) reordered the expiry check; `2442ef14` (#2293) removed `checkTxSerialization`.
 
-Round 2 total: 38 new findings (1 blocker, 6 major, 20 minor, 11 paper-cuts). Round 3 sweeps are
-logged below as they complete.
+Round 2 total: 38 new findings (1 blocker, 6 major, 20 minor, 11 paper-cuts).
+
+**Round 3** — four sweeps, one of them a deliberate dry run of the round-2 lenses to test the
+stopping condition. Every candidate re-verified before filing.
+
+- **Sweep f (the repo's tests as evidence)**: every `as`/`!`/`@ts-expect-error`/`any` and every
+  test-local helper in `packages/xrpl/test` and the codec tests. 7 candidates → 5 filed (081–085),
+  2 folded into 083 and 027; six evidence lines added to 010, 012. Verified live: two concurrent
+  `submitAndWait` calls from one account → one `tefPAST_SEQ` after 9 s. Verified offline:
+  `fetchMPToken`/`fetchMPTokenIssuance` are exported (`typeof … === 'function'`) and built on the
+  cast; codec fixture `mptokenEntryJson` carries `Account`/`MPTAmount`; `amount.test.ts` asserts a
+  bare `toThrow()`.
+- **Sweep g (codec MPT paths)**: `amount.ts`, `hash*.ts`, `account-id.ts`, `st-object.ts`,
+  `issue.ts`, `uint*.ts`, `definitions.json`, ~150 offline round-trips. 11 candidates → 4 filed
+  (094–097), 3 folded into 070, 061, 023; 4 dropped (performance of `isValidXAddress` on large
+  blobs, confidential key-epoch fields without models, hex fixture reconciliation, already-covered
+  DEX fields). Verified offline: `MPTokenIssuanceID: ''` signed as the zero ID; `Account: ''`
+  signed as `rrrrrrrrrrrrrrrrrrrrrhoLvTp`; 49-hex IDs shifted; `Invalid Function: 256 …`;
+  `Issue.from({ issuer: '' })` blob fails its own decode; `UInt32.from('-1')` → 4294967295;
+  `MaximumAmount: 1e20` → 7766279631452241920.
+- **Sweep j (cross-feature: Batch, Sponsorship, Delegation, Confidential, Vault, tickets,
+  multisign)**: 9 candidates → 8 filed (086–093), 1 folded into 065. Verified live: autofill on a
+  ticketed `MPTokenIssuanceSet` → `Sequence: 790, TicketSequence: 787` → `temSEQ_AND_TICKET`
+  (`Sequence: 0` → `tesSUCCESS`); ticketed outer Batch → inner sequences 791/792 with account
+  sequence 790 → outer `tesSUCCESS`, holders not locked; sequence-based outer → locked. Verified
+  offline: `DelegateSet` typo passes `validate()`, fails in codec; `signMultiBatch` refuses the
+  reserve sponsor; nested `Batch` and inner `Fee` compile; `Flags: { tfAllOrNothing }` rejected.
+  Not verified live: the batch fee requirement (the audit's multi-signer construction returned
+  `temBAD_SIGNER`; 091 rests on the repo's own test and the doc contradiction). Multisign key
+  order, delegated signing, sponsorship types, vault typing and the confidential fee table were
+  checked and are fine.
+- **Sweep l (dry-run repeat of lenses a/b/c/e with all 80 findings as exclusions)**: read every
+  finding, re-read every MPT-touching file, ran offline experiments. **1 candidate**, identical to
+  sweep j's 086. Six near-duplicates deliberately not counted (`sign` + `DeliverMax` codec error,
+  bare `Error`s in `ensureClassicAddress`/`decodeMPTokenMetadata`, nested lookup addresses not
+  normalised, `encodeMPTokenMetadata` not capping 1024 bytes, `MaximumAmount` leading zeros).
+
+Round 3 total: 17 new findings (0 blocker, 3 major, 10 minor, 4 paper-cuts). The core lenses are
+dry (one overlapping candidate); round 4 repeats the remaining lenses to confirm.

@@ -37,6 +37,14 @@ Actual: two different credentials get created depending on whether the developer
 `AB`. For `MPTokenMetadata` the stored JSON silently loses its last nibble (usually the closing
 brace, making it unparseable by `decodeMPTokenMetadata`).
 
+Round-3 extension (sweep g): the fixed-width `Hash` path has the same hole — `Hash.from`
+(`packages/ripple-binary-codec/src/types/hash.ts:29-34`) checks the byte width only *after*
+`hexToBytes` dropped the odd nibble, so a 49-character `MPTokenIssuanceID` is accepted and shifted:
+`signed Set MPTokenIssuanceID "F"+ID -> F00000001AAAA…AAA` (a different issuance), and
+`CredentialIDs: ["F" + 64×C]` is signed as `FCCC…C` (64). 47 characters are caught
+(`Invalid Hash length 23`); 49 are not. `isDomainID` is the one field protected by its own length
+check.
+
 ## Root cause
 
 `isHex` checks the alphabet only; `hexToBytes` is documented as "without the length checks. This

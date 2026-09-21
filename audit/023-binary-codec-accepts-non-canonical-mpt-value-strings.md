@@ -36,6 +36,13 @@ whitespace and exponents), then `BigInt(amount)` (which accepts `0x`/`0o`/`0b`, 
 not exponents). Inputs a UI or CSV import might produce are silently reinterpreted; `"0x10"` is
 worth sixteen times what a reader of the transaction JSON would assume.
 
+Round-3 note (sweep g): the codec's own fixtures
+(`packages/ripple-binary-codec/test/fixtures/data-driven-tests.json:2952-3017`) expect errors for
+`"0xy"`, `"/"` and for *hex values out of range*, which implies in-range `0x…` MPT values were
+intended to be accepted. Whoever fixes this should decide deliberately (rippled's JSON parser does
+not accept `0x` for MPT values as far as this audit could tell; not verified live) and reconcile
+the fixtures with [085](085-codec-mpt-error-fixtures-assert-bare-throw.md).
+
 ## Root cause
 
 Two lenient parsers with different grammars used as a validator.
