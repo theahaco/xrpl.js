@@ -13,6 +13,7 @@ import {
 } from '../models/methods'
 import { Batch, Payment, Transaction } from '../models/transactions'
 import { Account, areAddressesEqual } from '../models/transactions/common'
+import { convertImmutableFlagsToNumber } from '../models/transactions/MPTokenIssuanceCreate'
 import { xrpToDrops } from '../utils'
 
 import getFeeXrp from './getFeeXrp'
@@ -573,6 +574,25 @@ export async function checkAccountDeleteBlockers(
     throw new XrplError(
       `Account ${tx.Account} cannot be deleted; its Sponsor (${accountRoot.Sponsor}) does not match the AccountDelete Destination (${tx.Destination}).`,
     )
+  }
+}
+
+/**
+ * Converts the `ImmutableFlags` field of an MPTokenIssuanceCreate or
+ * MPTokenIssuanceSet transaction from its boolean-map form to the numeric
+ * bitmask, mirroring what `convertTxFlagsToNumber` does for `Flags`.
+ *
+ * @param tx - The transaction object.
+ * @throws ValidationError if the map contains an unknown flag name.
+ */
+export function setImmutableFlagsToNumber(tx: Transaction): void {
+  if (
+    (tx.TransactionType === 'MPTokenIssuanceCreate' ||
+      tx.TransactionType === 'MPTokenIssuanceSet') &&
+    tx.ImmutableFlags != null
+  ) {
+    // eslint-disable-next-line no-param-reassign -- param reassign is safe
+    tx.ImmutableFlags = convertImmutableFlagsToNumber(tx.ImmutableFlags)
   }
 }
 

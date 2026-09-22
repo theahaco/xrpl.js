@@ -2,6 +2,7 @@ import { ValidationError } from '../../errors'
 import { ClawbackAmount } from '../common'
 
 import {
+  Account,
   BaseTransaction,
   validateBaseTransaction,
   isIssuedCurrencyAmount,
@@ -14,15 +15,11 @@ import {
 
 /**
  * The Clawback transaction is used by the token issuer to claw back
- * issued tokens from a holder.
+ * issued tokens from a holder. The submitting `Account` MUST be the issuer
+ * of the currency or MPT.
  */
 export interface Clawback extends BaseTransaction {
   TransactionType: 'Clawback'
-  /**
-   * Indicates the AccountID that submitted this transaction. The account MUST
-   * be the issuer of the currency or MPT.
-   */
-  Account: string
   /**
    * The amount of currency or MPT to clawback, and it must be non-XRP. The nested field
    * names MUST be lower-case. If the amount is IOU, the `issuer` field MUST be the holder's address,
@@ -33,7 +30,7 @@ export interface Clawback extends BaseTransaction {
    * Indicates the AccountID that the issuer wants to clawback. This field is only valid for clawing back
    * MPTs.
    */
-  Holder?: string
+  Holder?: Account
 }
 
 /**

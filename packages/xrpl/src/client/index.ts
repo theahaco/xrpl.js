@@ -62,6 +62,7 @@ import {
 } from '../sugar'
 import {
   setValidAddresses,
+  setImmutableFlagsToNumber,
   setNextValidSequenceNumber,
   setLatestValidatedLedgerSequence,
   checkAccountDeleteBlockers,
@@ -691,6 +692,7 @@ class Client extends EventEmitter<EventTypes> {
 
     setValidAddresses(tx)
     tx.Flags = convertTxFlagsToNumber(tx)
+    setImmutableFlagsToNumber(tx)
 
     const promises: Array<Promise<void>> = []
     tx.NetworkID ??= txNeedsNetworkID(this) ? this.networkID : undefined

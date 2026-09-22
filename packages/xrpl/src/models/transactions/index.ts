@@ -84,6 +84,7 @@ export {
   MPTokenIssuanceCreateFlagsInterface,
   MPTokenIssuanceCreateImmutableFlags,
   MPTokenIssuanceCreateImmutableFlagsInterface,
+  convertImmutableFlagsToNumber,
 } from './MPTokenIssuanceCreate'
 export { MPTokenIssuanceDestroy } from './MPTokenIssuanceDestroy'
 export {

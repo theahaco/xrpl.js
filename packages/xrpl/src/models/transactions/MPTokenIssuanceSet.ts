@@ -23,7 +23,10 @@ import {
   CONFIDENTIAL_EC_POINT_BYTES,
 } from './common'
 import {
+  convertImmutableFlagsToNumber,
+  isImmutableFlags,
   MAX_TRANSFER_FEE,
+  MPTokenIssuanceCreateImmutableFlagsInterface,
   tifMPTokenIssuanceImmutableMask,
 } from './MPTokenIssuanceCreate'
 
@@ -171,8 +174,13 @@ export interface MPTokenIssuanceSet extends BaseTransaction {
    * corresponding field or flag can never be set or modified again. The
    * `ImmutableFlags` provided here are added to the current ledger object's
    * `ImmutableFlags`; it is not a complete replacement. (XLS-94D)
+   *
+   * Like `Flags`, this accepts either the numeric bitmask or a
+   * {@link MPTokenIssuanceCreateImmutableFlagsInterface} map such as
+   * `{ tifMPTMetadata: true }`; `autofill` and `validate` convert the map form
+   * with {@link convertImmutableFlagsToNumber}.
    */
-  ImmutableFlags?: number
+  ImmutableFlags?: number | MPTokenIssuanceCreateImmutableFlagsInterface
   /**
    * The PermissionedDomain object ID that gates who may hold this MPT. Cannot
    * be set together with the `Holder` field.
@@ -208,7 +216,7 @@ export function validateMPTokenIssuanceSet(tx: Record<string, unknown>): void {
   }
   validateOptionalField(tx, 'MPTokenMetadata', isString)
   validateOptionalField(tx, 'TransferFee', isNumber)
-  validateOptionalField(tx, 'ImmutableFlags', isNumber)
+  validateOptionalField(tx, 'ImmutableFlags', isImmutableFlags)
   validateOptionalField(tx, 'DomainID', isDomainID)
 
   if (tx.DomainID != null && tx.Holder != null) {
@@ -217,11 +225,12 @@ export function validateMPTokenIssuanceSet(tx: Record<string, unknown>): void {
     )
   }
 
-  if (typeof tx.ImmutableFlags === 'number') {
+  if (isImmutableFlags(tx.ImmutableFlags)) {
+    const immutableFlags = convertImmutableFlagsToNumber(tx.ImmutableFlags)
     // eslint-disable-next-line no-bitwise -- Need bitwise operations to replicate rippled behavior
-    const invalidBits = tx.ImmutableFlags & tifMPTokenIssuanceImmutableMask
+    const invalidBits = immutableFlags & tifMPTokenIssuanceImmutableMask
     // rippled rejects a present-but-zero ImmutableFlags, as well as out-of-mask bits.
-    if (tx.ImmutableFlags === 0 || invalidBits !== 0) {
+    if (immutableFlags === 0 || invalidBits !== 0) {
       throw new ValidationError(
         'MPTokenIssuanceSet: Invalid ImmutableFlags value',
       )

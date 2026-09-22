@@ -1,6 +1,13 @@
 import { stringToHex } from '@xrplf/isomorphic/src/utils'
+import { assert } from 'chai'
 
-import { MPTokenIssuanceCreateFlags, MPTokenMetadata } from '../../src'
+import {
+  MPTokenIssuanceCreate,
+  MPTokenIssuanceCreateFlags,
+  MPTokenMetadata,
+  ValidationError,
+  convertImmutableFlagsToNumber,
+} from '../../src'
 import {
   MPTokenIssuanceCreateImmutableFlags,
   tifMPTokenIssuanceImmutableMask,
@@ -204,6 +211,49 @@ describe('MPTokenIssuanceCreate', function () {
     )
   })
 
+  it(`verifies valid MPTokenIssuanceCreate w/ ImmutableFlags in interface form`, function () {
+    // Typed (not `as any`) so the interface form is also checked at compile time.
+    const tx: MPTokenIssuanceCreate = {
+      TransactionType: 'MPTokenIssuanceCreate',
+      Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+      Flags: { tfMPTCanTrade: true, tfMPTCanEscrow: true },
+      ImmutableFlags: { tifMPTCanTrade: true, tifMPTCanEscrow: true },
+    }
+
+    assertValid(tx)
+  })
+
+  it(`throws w/ unknown flag name in ImmutableFlags interface form`, function () {
+    const invalid = {
+      TransactionType: 'MPTokenIssuanceCreate',
+      Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+      // tfMPTCanTrade is a Flags name, not a tif* ImmutableFlags name.
+      ImmutableFlags: { tfMPTCanTrade: true },
+    } as any
+
+    assertInvalid(invalid, 'Invalid ImmutableFlags flag tfMPTCanTrade.')
+  })
+
+  it(`throws w/ ImmutableFlags interface form that sets no flag`, function () {
+    // {} and all-false convert to 0, which rippled rejects like an explicit 0.
+    assertInvalid(
+      {
+        TransactionType: 'MPTokenIssuanceCreate',
+        Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+        ImmutableFlags: {},
+      } as any,
+      'MPTokenIssuanceCreate: Invalid ImmutableFlags value',
+    )
+    assertInvalid(
+      {
+        TransactionType: 'MPTokenIssuanceCreate',
+        Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+        ImmutableFlags: { tifMPTCanTrade: false },
+      } as any,
+      'MPTokenIssuanceCreate: Invalid ImmutableFlags value',
+    )
+  })
+
   it(`throws w/ ImmutableFlags explicitly set to 0`, async () => {
     // rippled rejects a present-but-zero ImmutableFlags with temINVALID_FLAG.
     const invalid = {
@@ -305,3 +355,60 @@ describe('MPTokenMetadata warnings', function () {
   })
 })
 /* eslint-enable no-console  */
+
+describe('convertImmutableFlagsToNumber', function () {
+  it('returns a numeric bitmask unchanged', function () {
+    assert.strictEqual(convertImmutableFlagsToNumber(0x18), 0x18)
+    assert.strictEqual(convertImmutableFlagsToNumber(0), 0)
+  })
+
+  it('converts the interface form to its bitmask', function () {
+    assert.strictEqual(
+      convertImmutableFlagsToNumber({
+        tifMPTCanTrade: true,
+        tifMPTCanEscrow: true,
+      }),
+      0x18,
+    )
+    assert.strictEqual(
+      convertImmutableFlagsToNumber({
+        tifMPTCanLock: true,
+        tifMPTRequireAuth: true,
+        tifMPTCanEscrow: true,
+        tifMPTCanTrade: true,
+        tifMPTCanTransfer: true,
+        tifMPTCanClawback: true,
+        tifMPTCanHoldConfidentialBalance: true,
+        tifMPTMetadata: true,
+        tifMPTTransferFee: true,
+      }),
+      // eslint-disable-next-line no-bitwise -- the mask is the complement of every valid bit
+      ~tifMPTokenIssuanceImmutableMask,
+    )
+  })
+
+  it('ignores flags set to false and returns 0 for an empty map', function () {
+    assert.strictEqual(
+      convertImmutableFlagsToNumber({
+        tifMPTMetadata: true,
+        tifMPTTransferFee: false,
+      }),
+      MPTokenIssuanceCreateImmutableFlags.tifMPTMetadata,
+    )
+    assert.strictEqual(convertImmutableFlagsToNumber({}), 0)
+  })
+
+  it('throws on a key that is not a tif* flag', function () {
+    assert.throws(
+      () => convertImmutableFlagsToNumber({ tifBogus: true } as any),
+      ValidationError,
+      'Invalid ImmutableFlags flag tifBogus.',
+    )
+    // Numeric enum reverse mappings (e.g. "2" -> "tifMPTCanLock") are not flags.
+    assert.throws(
+      () => convertImmutableFlagsToNumber({ 2: true } as any),
+      ValidationError,
+      'Invalid ImmutableFlags flag 2.',
+    )
+  })
+})

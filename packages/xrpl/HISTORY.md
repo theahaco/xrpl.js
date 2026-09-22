@@ -6,6 +6,10 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 
 ### Added
 * Add `LendingProtocolV1_1` support.
+* Add `convertImmutableFlagsToNumber` and accept the `MPTokenIssuanceCreateImmutableFlagsInterface` map form (e.g. `{ tifMPTCanTrade: true }`) for `ImmutableFlags` on `MPTokenIssuanceCreate` and `MPTokenIssuanceSet`, matching how `Flags` works. `autofill` and `validate` convert it to the numeric bitmask.
+
+### Fixed
+* Type `Clawback.Holder` as `Account`, consistent with `MPTokenIssuanceSet.Holder` and `MPTokenAuthorize.Holder`, and drop the redundant `Account: string` redeclaration on `Clawback`.
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES

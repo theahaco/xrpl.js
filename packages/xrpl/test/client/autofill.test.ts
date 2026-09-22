@@ -9,6 +9,10 @@ import {
   Transaction,
   Batch,
   type LoanSet,
+  type MPTokenIssuanceCreate,
+  type MPTokenIssuanceSet,
+  decode,
+  encode,
 } from '../../src'
 import { ValidationError } from '../../src/errors'
 import rippled from '../fixtures/rippled'
@@ -123,6 +127,75 @@ describe('client.autofill', function () {
     assert.strictEqual(txResult.Fee, Fee)
     assert.strictEqual(txResult.Sequence, Sequence)
     assert.strictEqual(txResult.LastLedgerSequence, LastLedgerSequence)
+  })
+
+  it('converts ImmutableFlags interface form to a number in MPTokenIssuanceCreate', async function () {
+    const tx: MPTokenIssuanceCreate = {
+      TransactionType: 'MPTokenIssuanceCreate',
+      Account: 'rGWrZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf',
+      Flags: { tfMPTCanTrade: true, tfMPTCanEscrow: true },
+      ImmutableFlags: { tifMPTCanTrade: true, tifMPTCanEscrow: true },
+      NetworkID,
+      Fee,
+      Sequence,
+      LastLedgerSequence,
+    }
+    const txResult = await testContext.client.autofill(tx)
+
+    assert.strictEqual(txResult.Flags, 0x18)
+    assert.strictEqual(txResult.ImmutableFlags, 0x18)
+    // The autofilled transaction must be encodable, and the value round-trips.
+    assert.strictEqual(decode(encode(txResult)).ImmutableFlags, 0x18)
+  })
+
+  it('converts ImmutableFlags interface form to a number in MPTokenIssuanceSet', async function () {
+    const tx: MPTokenIssuanceSet = {
+      TransactionType: 'MPTokenIssuanceSet',
+      Account: 'rGWrZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf',
+      MPTokenIssuanceID: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+      ImmutableFlags: { tifMPTMetadata: true },
+      NetworkID,
+      Fee,
+      Sequence,
+      LastLedgerSequence,
+    }
+    const txResult = await testContext.client.autofill(tx)
+
+    assert.strictEqual(txResult.ImmutableFlags, 0x00010000)
+    assert.strictEqual(decode(encode(txResult)).ImmutableFlags, 0x00010000)
+  })
+
+  it('leaves a numeric ImmutableFlags untouched', async function () {
+    const tx: MPTokenIssuanceCreate = {
+      TransactionType: 'MPTokenIssuanceCreate',
+      Account: 'rGWrZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf',
+      ImmutableFlags: 0x00020000,
+      NetworkID,
+      Fee,
+      Sequence,
+      LastLedgerSequence,
+    }
+    const txResult = await testContext.client.autofill(tx)
+
+    assert.strictEqual(txResult.ImmutableFlags, 0x00020000)
+  })
+
+  it('rejects an unknown ImmutableFlags flag name', async function () {
+    const tx = {
+      TransactionType: 'MPTokenIssuanceCreate',
+      Account: 'rGWrZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf',
+      ImmutableFlags: { tifBogus: true },
+      NetworkID,
+      Fee,
+      Sequence,
+      LastLedgerSequence,
+    } as unknown as MPTokenIssuanceCreate
+
+    await assertRejects(
+      testContext.client.autofill(tx),
+      ValidationError,
+      'Invalid ImmutableFlags flag tifBogus.',
+    )
   })
 
   it('ignores network ID if missing', async function () {

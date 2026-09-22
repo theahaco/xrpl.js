@@ -1,7 +1,7 @@
 /* eslint-disable max-statements -- many validation cases in one describe block */
 import { stringToHex } from '@xrplf/isomorphic/utils'
 
-import { MPTokenIssuanceSetFlags } from '../../src'
+import { MPTokenIssuanceSet, MPTokenIssuanceSetFlags } from '../../src'
 import {
   MAX_TRANSFER_FEE,
   MPTokenIssuanceCreateImmutableFlags,
@@ -109,6 +109,18 @@ describe('MPTokenIssuanceSet', function () {
         MPTokenIssuanceID: TOKEN_ID,
         ImmutableFlags: MPTokenIssuanceCreateImmutableFlags.tifMPTMetadata,
       } as any)
+    })
+
+    it(`accepts ImmutableFlags in interface form`, function () {
+      // Typed (not `as any`) so the interface form is also checked at compile time.
+      const tx: MPTokenIssuanceSet = {
+        TransactionType: 'MPTokenIssuanceSet',
+        Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+        MPTokenIssuanceID: TOKEN_ID,
+        ImmutableFlags: { tifMPTMetadata: true, tifMPTTransferFee: true },
+      }
+
+      assertValid(tx)
     })
   })
 
@@ -286,6 +298,29 @@ describe('MPTokenIssuanceSet', function () {
       Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
       MPTokenIssuanceID: TOKEN_ID,
       ImmutableFlags: tifMPTokenIssuanceImmutableMask,
+    } as any
+
+    assertInvalid(invalid, 'MPTokenIssuanceSet: Invalid ImmutableFlags value')
+  })
+
+  it(`Throws w/ unknown flag name in ImmutableFlags interface form`, function () {
+    const invalid = {
+      TransactionType: 'MPTokenIssuanceSet',
+      Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+      MPTokenIssuanceID: TOKEN_ID,
+      // lsifMPTMetadata is the ledger-entry name; the transaction takes tif*.
+      ImmutableFlags: { lsifMPTMetadata: true },
+    } as any
+
+    assertInvalid(invalid, 'Invalid ImmutableFlags flag lsifMPTMetadata.')
+  })
+
+  it(`Throws w/ ImmutableFlags interface form that sets no flag`, function () {
+    const invalid = {
+      TransactionType: 'MPTokenIssuanceSet',
+      Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+      MPTokenIssuanceID: TOKEN_ID,
+      ImmutableFlags: {},
     } as any
 
     assertInvalid(invalid, 'MPTokenIssuanceSet: Invalid ImmutableFlags value')
