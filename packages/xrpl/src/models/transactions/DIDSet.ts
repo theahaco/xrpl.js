@@ -7,6 +7,11 @@ import {
   validateOptionalField,
 } from './common'
 
+// rippled's maxDIDURILength is 256 bytes; the field is hex-encoded, so the
+// string may be up to twice that many characters.
+const MAX_URI_BYTE_LENGTH = 256
+const MAX_URI_LENGTH = MAX_URI_BYTE_LENGTH * 2
+
 // TODO: add docs
 
 /**
@@ -19,6 +24,7 @@ export interface DIDSet extends BaseTransaction {
 
   DIDDocument?: string
 
+  /** Hex-encoded URI of the DID document. At most 256 bytes (512 hex characters). */
   URI?: string
 }
 
@@ -36,6 +42,12 @@ export function validateDIDSet(tx: Record<string, unknown>): void {
   validateOptionalField(tx, 'DIDDocument', isString)
 
   validateOptionalField(tx, 'URI', isString)
+
+  if (typeof tx.URI === 'string' && tx.URI.length > MAX_URI_LENGTH) {
+    throw new ValidationError(
+      `DIDSet: URI length must be <= ${MAX_URI_LENGTH} hex characters (${MAX_URI_BYTE_LENGTH} bytes)`,
+    )
+  }
 
   if (
     tx.Data === undefined &&

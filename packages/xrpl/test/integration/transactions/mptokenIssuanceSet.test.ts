@@ -434,6 +434,49 @@ describe('MPTokenIssuanceSet', function () {
   )
 
   it(
+    'clears DomainID on the MPTokenIssuance ledger object via an all-zero DomainID',
+    async () => {
+      const domainId = await createPermissionedDomain(testContext)
+
+      const createTx: MPTokenIssuanceCreate = {
+        TransactionType: 'MPTokenIssuanceCreate',
+        Account: testContext.wallet.classicAddress,
+        Flags: MPTokenIssuanceCreateFlags.tfMPTRequireAuth,
+        DomainID: domainId,
+      }
+      const issuanceId = await submitMPTCreateAndGetId(testContext, createTx)
+      const issuanceBeforeClear = await readMPTokenIssuance(
+        testContext,
+        issuanceId,
+      )
+      assert.equal(issuanceBeforeClear.DomainID, domainId)
+
+      // rippled treats an all-zero DomainID as "remove the field".
+      const clearDomainTx: MPTokenIssuanceSet = {
+        TransactionType: 'MPTokenIssuanceSet',
+        Account: testContext.wallet.classicAddress,
+        MPTokenIssuanceID: issuanceId,
+        DomainID: '0'.repeat(64),
+      }
+      await testTransaction(
+        testContext.client,
+        clearDomainTx,
+        testContext.wallet,
+      )
+
+      const issuanceAfterClear = await readMPTokenIssuance(
+        testContext,
+        issuanceId,
+      )
+      assert.isUndefined(
+        issuanceAfterClear.DomainID,
+        'DomainID should be absent after clearing it with an all-zero value',
+      )
+    },
+    TIMEOUT,
+  )
+
+  it(
     'rejects DomainID mutation via MPTokenIssuanceSet on an issuance created without tfMPTRequireAuth',
     async () => {
       const domainId = await createPermissionedDomain(testContext)

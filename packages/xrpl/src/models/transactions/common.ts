@@ -1197,9 +1197,24 @@ const _DOMAIN_ID_LENGTH = 64
  */
 export function isDomainID(domainID: unknown): domainID is string {
   return (
+    isDomainIDOrZero(domainID) && domainID !== '0'.repeat(_DOMAIN_ID_LENGTH)
+  )
+}
+
+/**
+ * Validate a DomainID on transactions where the all-zero value is meaningful.
+ * `MPTokenIssuanceSet` uses an all-zero `DomainID` to remove the domain from
+ * the issuance (rippled makes the field absent), so unlike {@link isDomainID}
+ * this accepts `'0'.repeat(64)`.
+ *
+ * @param domainID - The domainID is a 64-character hex string.
+ *
+ * @returns true if the domainID is a 64-character hex string (including all zeros), false otherwise
+ */
+export function isDomainIDOrZero(domainID: unknown): domainID is string {
+  return (
     isString(domainID) &&
     domainID.length === _DOMAIN_ID_LENGTH &&
-    isHex(domainID) &&
-    domainID !== '0'.repeat(_DOMAIN_ID_LENGTH)
+    isHex(domainID)
   )
 }
