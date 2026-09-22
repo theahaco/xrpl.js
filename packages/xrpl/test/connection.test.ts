@@ -334,7 +334,6 @@ describe('Connection', function () {
     'DisconnectedError',
     async () => {
       await clientContext.client
-        // @ts-expect-error -- Intentionally invalid command
         .request({ command: 'test_command', data: { closeServer: true } })
         .then(() => {
           assert.fail('Should throw DisconnectedError')
@@ -445,7 +444,6 @@ describe('Connection', function () {
     async () => {
       await clientContext.client
         .request({
-          // @ts-expect-error -- Intentionally invalid command
           command: 'test_command',
           data: { unrecognizedResponse: true },
         })
