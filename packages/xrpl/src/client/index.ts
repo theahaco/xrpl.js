@@ -35,12 +35,16 @@ import {
   TxResponse,
 } from '../models/methods'
 import type {
+  BaseRequest,
+  BaseResponse,
   RequestResponseMap,
   RequestAllResponseMap,
   MarkerRequest,
   MarkerResponse,
+  StrictRequest,
   SubmitResponse,
   SimulateRequest,
+  UnknownCommandRequest,
 } from '../models/methods'
 import type { BookOffer, BookOfferCurrency } from '../models/methods/bookOffers'
 import {
@@ -339,6 +343,12 @@ class Client extends EventEmitter<EventTypes> {
    * Makes a request to the client with the given command and
    * additional request body parameters.
    *
+   * A key that the command's request type does not declare is a compile
+   * error, so a misspelled key (`ledger_indx`, `typ`) cannot be silently
+   * ignored by the server. To send a key that xrpl.js does not know about
+   * yet, assert the literal to the command's request type
+   * (`{ ... } as LedgerEntryRequest`); the key is still sent.
+   *
    * @category Network
    * @param req - Request to send to the server.
    * @returns The response from the server.
@@ -356,13 +366,38 @@ class Client extends EventEmitter<EventTypes> {
     R extends Request,
     V extends APIVersion = typeof DEFAULT_API_VERSION,
     T = RequestResponseMap<R, V>,
-  >(req: R): Promise<T> {
+  >(req: StrictRequest<R>): Promise<T>
+
+  /**
+   * Makes a request with a command that xrpl.js has no types for: an
+   * admin-only command such as `log_level`, a Clio-only command, or a command
+   * added by a new amendment. The response is a {@link BaseResponse} unless a
+   * response type is given as the second type argument.
+   *
+   * @category Network
+   * @param req - Request to send to the server.
+   * @returns The response from the server.
+   *
+   * @example
+   * ```ts
+   * const response = await client.request({
+   *   command: 'log_level',
+   *   severity: 'debug',
+   * })
+   * console.log(response.result)
+   * ```
+   */
+  public async request<
+    R extends BaseRequest,
+    T extends BaseResponse = BaseResponse,
+  >(req: UnknownCommandRequest<R>): Promise<T>
+
+  public async request<R extends BaseRequest, T>(req: R): Promise<T> {
+    const account: unknown = 'account' in req ? req.account : undefined
     const request = {
       ...req,
       account:
-        typeof req.account === 'string'
-          ? ensureClassicAddress(req.account)
-          : undefined,
+        typeof account === 'string' ? ensureClassicAddress(account) : undefined,
       api_version: req.api_version ?? this.apiVersion,
     }
     const response = await this.connection.request<R, T>(request)
@@ -406,7 +441,7 @@ class Client extends EventEmitter<EventTypes> {
         new NotFoundError('response does not have a next page'),
       )
     }
-    const nextPageRequest = { ...req, marker: resp.result.marker }
+    const nextPageRequest: Request = { ...req, marker: resp.result.marker }
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Necessary for overloading
     return this.request(nextPageRequest) as unknown as U
   }

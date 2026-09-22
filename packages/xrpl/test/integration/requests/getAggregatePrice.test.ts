@@ -56,7 +56,6 @@ describe('get_aggregate_price', function () {
       // confirm that the Oracle was actually created
       const getAggregatePriceResponse = await testContext.client.request({
         command: 'get_aggregate_price',
-        account: testContext.wallet.classicAddress,
         base_asset: 'XRP',
         quote_asset: 'USD',
         trim: 20,

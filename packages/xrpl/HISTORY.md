@@ -4,8 +4,13 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 
 ## Unreleased
 
+### BREAKING CHANGES
+* `BaseRequest` no longer carries a `[x: string]: unknown` index signature, and `Client.request` now rejects any key that the command's request type does not declare. A misspelled key such as `ledger_indx` or `typ` used to compile and be silently ignored by the server; it is now a compile error (reported as `command: never` on the fallback overload). Migration: fix the key. To send a key that xrpl.js does not know about yet, assert the literal to the command's request type (`client.request({ command: 'ledger_entry', loan: id } as LedgerEntryRequest)`); the key is still sent. Requests that extend `BaseRequest` to add their own keys must now declare each key.
+
 ### Added
 * Add `LendingProtocolV1_1` support.
+* Add the admin-only `ledger_accept` method (`LedgerAcceptRequest` / `LedgerAcceptResponse`; stand-alone mode) to the typed request methods.
+* `Client.request` accepts commands that are not in the `Request` union (admin-only, Clio-only, or newly amended commands) and resolves them to `BaseResponse`, or to the response type passed as the second type argument (`client.request<MyRequest, MyResponse>(req)`), so callers no longer need `client.connection.request`.
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES

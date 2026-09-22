@@ -103,6 +103,7 @@ import {
   LedgerRequestExpandedTransactionsBinary,
   LedgerVersionResponseMap,
 } from './ledger'
+import { LedgerAcceptRequest, LedgerAcceptResponse } from './ledgerAccept'
 import { LedgerClosedRequest, LedgerClosedResponse } from './ledgerClosed'
 import { LedgerCurrentRequest, LedgerCurrentResponse } from './ledgerCurrent'
 import {
@@ -263,6 +264,8 @@ type Request =
   | GetAggregatePriceRequest
   // Vault methods
   | VaultInfoRequest
+  // admin methods (stand-alone mode)
+  | LedgerAcceptRequest
 
 /**
  * @category Responses
@@ -325,6 +328,8 @@ type Response<Version extends APIVersion = typeof DEFAULT_API_VERSION> =
   | GetAggregatePriceResponse
   // Vault methods
   | VaultInfoResponse
+  // admin methods (stand-alone mode)
+  | LedgerAcceptResponse
 
 export type RequestResponseMap<
   T,
@@ -491,7 +496,45 @@ export type RequestResponseMap<
   ? NFTHistoryResponse
   : T extends VaultInfoRequest
   ? VaultInfoResponse
+  : T extends LedgerAcceptRequest
+  ? LedgerAcceptResponse
   : Response<Version>
+
+/**
+ * The keys of every member of a union, rather than only the keys shared by
+ * all of its members.
+ */
+export type KeysOfUnion<T> = T extends unknown ? keyof T : never
+
+/**
+ * `R`, with every key that the matching {@link Request} member does not
+ * declare typed as `never`.
+ *
+ * `Client.request` infers `R` from the request literal, and TypeScript does
+ * not apply excess-property checks to an inferred type parameter, so a
+ * misspelled key such as `ledger_indx` would otherwise compile and be
+ * silently ignored by the server. With this type it is a compile error
+ * instead. A request whose `command` is not in {@link Request} is left
+ * untouched; see {@link UnknownCommandRequest}.
+ */
+export type StrictRequest<R extends BaseRequest> = R & {
+  [K in Exclude<
+    keyof R,
+    KeysOfUnion<Extract<Request, { command: R['command'] }>>
+  >]?: never
+}
+
+/**
+ * `R`, accepted only when its `command` is not one of the commands in
+ * {@link Request}. Used by the `Client.request` overload that sends commands
+ * xrpl.js has no types for (admin-only, Clio-only, or newly amended
+ * commands), so that a typed command with a misspelled key is not routed
+ * through it: if `command` shows up as `never` in a compile error, the
+ * request literal has a key that its request type does not declare.
+ */
+export type UnknownCommandRequest<R extends BaseRequest> = R & {
+  command: R['command'] extends Request['command'] ? never : R['command']
+}
 
 export type MarkerRequest = Request & {
   limit?: number
@@ -592,6 +635,9 @@ export {
   LedgerEntryBinaryResponse,
   LedgerEntryJsonResponse,
   LedgerEntryResponse,
+  // admin methods (stand-alone mode)
+  LedgerAcceptRequest,
+  LedgerAcceptResponse,
   // transaction methods with types
   SimulateRequest,
   SimulateResponse,
