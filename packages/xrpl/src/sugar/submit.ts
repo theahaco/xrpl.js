@@ -9,6 +9,7 @@ import type {
 import { ValidationError, XrplError } from '../errors'
 import { Signer } from '../models/common'
 import { TxResponse } from '../models/methods'
+import type { Batch } from '../models/transactions/batch'
 import { BaseTransaction } from '../models/transactions/common'
 import { decode, encode } from '../utils'
 
@@ -286,8 +287,18 @@ export function getLastLedgerSequence(
   return tx.LastLedgerSequence as number | null
 }
 
-// checks if the transaction is an AccountDelete transaction
+// checks if the transaction is an AccountDelete transaction, or a Batch containing one
 function isAccountDelete(transaction: Transaction | string): boolean {
   const tx = typeof transaction === 'string' ? decode(transaction) : transaction
-  return tx.TransactionType === 'AccountDelete'
+  if (tx.TransactionType === 'AccountDelete') {
+    return true
+  }
+  if (tx.TransactionType !== 'Batch') {
+    return false
+  }
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- a decoded blob is untyped
+  const { RawTransactions } = tx as Batch
+  return RawTransactions.some(
+    (rawTxn) => rawTxn.RawTransaction.TransactionType === 'AccountDelete',
+  )
 }

@@ -6,6 +6,11 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 
 ### Added
 * Add `LendingProtocolV1_1` support.
+
+### Fixed
+* `Client.autofill` now sets `Sequence: 0` on a ticketed transaction (one with `TicketSequence`), both top-level and inside a `Batch`, instead of fetching a live `Sequence` (`temSEQ_AND_TICKET`) or emitting none at all; `validate()` rejects a non-zero `Sequence` alongside `TicketSequence`.
+* `Client.autofill` derives the inner `Sequence`s of a `Batch` from the outer `Sequence` (a caller-supplied one is honoured, and a ticketed outer no longer skips a sequence number), and copies the inner transactions so the caller's objects are never mutated and retrying the same `Batch` recomputes every `Sequence`.
+* The `maxFeeXRP` cap bypass for reserve-priced transactions (`AccountDelete`, `AMMCreate`, `VaultCreate`) now also applies to a `Batch` that contains one; such a `Batch` is also checked for `AccountDelete` blockers and submitted with `fail_hard`.
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES

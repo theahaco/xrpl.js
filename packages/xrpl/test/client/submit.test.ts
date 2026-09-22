@@ -3,7 +3,7 @@ import { assert } from 'chai'
 import cloneDeep from 'lodash/cloneDeep'
 
 import { multisign, ValidationError } from '../../src'
-import { Transaction } from '../../src/models/transactions'
+import { Batch, Transaction } from '../../src/models/transactions'
 import { Wallet } from '../../src/Wallet'
 import rippled from '../fixtures/rippled'
 import {
@@ -59,6 +59,44 @@ describe('client.submit', function () {
       } catch (error) {
         assert(false, `Did not expect an error to be thrown: ${error}`)
       }
+    })
+
+    it('should submit a Batch containing an AccountDelete with fail_hard', async function () {
+      const wallet = new Wallet(publicKey, privateKey)
+      const batch: Batch = {
+        TransactionType: 'Batch',
+        Account: address,
+        RawTransactions: [
+          {
+            RawTransaction: {
+              TransactionType: 'AccountDelete',
+              Flags: 0x40000000,
+              Account: address,
+              Destination: 'rQ3PTWGLCbPz8ZCicV5tCX3xuymojTng5r',
+            },
+          },
+        ],
+        Sequence: 1,
+        Fee: '12',
+        LastLedgerSequence: 12312,
+      }
+
+      testContext.mockRippled!.addResponse(
+        'account_info',
+        rippled.account_info.normal,
+      )
+      testContext.mockRippled!.addResponse(
+        'account_objects',
+        rippled.account_objects.empty,
+      )
+      let failHard: unknown
+      testContext.mockRippled!.addResponse('submit', (request) => {
+        failHard = request.fail_hard
+        return rippled.submit.success
+      })
+
+      await testContext.client.submit(batch, { wallet })
+      assert.strictEqual(failHard, true)
     })
 
     it('should throw a ValidationError when submitting an unsigned transaction without a wallet', async function () {

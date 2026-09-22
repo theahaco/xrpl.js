@@ -526,6 +526,63 @@ describe('client.autofill', function () {
       assert.strictEqual(txResult.Fee, '2000000')
     })
 
+    it('should bypass the fee cap for a Batch containing an AccountDelete', async function () {
+      const sender = 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn'
+      const tx: Batch = {
+        TransactionType: 'Batch',
+        Account: sender,
+        RawTransactions: [
+          {
+            RawTransaction: {
+              TransactionType: 'DepositPreauth',
+              Flags: 0x40000000,
+              Account: sender,
+              Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+            },
+          },
+          {
+            RawTransaction: {
+              TransactionType: 'AccountDelete',
+              Flags: 0x40000000,
+              Account: sender,
+              Destination: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+            },
+          },
+        ],
+        Sequence,
+        LastLedgerSequence,
+      }
+      testContext.mockRippled!.addResponse(
+        'account_info',
+        rippled.account_info.normal,
+      )
+      testContext.mockRippled!.addResponse('ledger', rippled.ledger.normal)
+      testContext.mockRippled!.addResponse('server_state', {
+        status: 'success',
+        type: 'response',
+        result: {
+          state: {
+            validated_ledger: {
+              // Above the default 2 XRP `maxFeeXRP` cap.
+              reserve_inc: 5000000,
+            },
+          },
+        },
+      })
+      testContext.mockRippled!.addResponse(
+        'server_info',
+        rippled.server_info.normal,
+      )
+      testContext.mockRippled!.addResponse(
+        'account_objects',
+        rippled.account_objects.empty,
+      )
+      const txResult = await testContext.client.autofill(tx)
+
+      // 2 × base fee (12) + inner DepositPreauth (12) + inner AccountDelete (owner reserve)
+      assert.strictEqual(txResult.Fee, '5000036')
+    })
+
     it('should autofill Fee of an EscrowFinish transaction with signersCount', async function () {
       const tx: EscrowFinish = {
         Account: 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn',
@@ -690,7 +747,8 @@ describe('client.autofill', function () {
     const txResult = await testContext.client.autofill(tx)
     txResult.RawTransactions.forEach((rawTxOuter, index) => {
       const rawTx = rawTxOuter.RawTransaction
-      assert.strictEqual(rawTx.Sequence, 23 + index + 1)
+      // Anchored to the supplied outer Sequence, not to account_info.
+      assert.strictEqual(rawTx.Sequence, Sequence + index + 1)
     })
   })
 
@@ -732,8 +790,295 @@ describe('client.autofill', function () {
       },
     })
     const txResult = await testContext.client.autofill(tx)
-    assert.strictEqual(txResult.RawTransactions[0].RawTransaction.Sequence, 24)
+    assert.strictEqual(
+      txResult.RawTransactions[0].RawTransaction.Sequence,
+      Sequence + 1,
+    )
     assert.strictEqual(txResult.RawTransactions[1].RawTransaction.Sequence, 23)
+  })
+
+  it('should set Sequence to 0 for a ticketed transaction instead of fetching one', async function () {
+    const tx: Transaction = {
+      TransactionType: 'DepositPreauth',
+      Account: 'rGWrZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf',
+      Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+      TicketSequence: 787,
+      Fee,
+      LastLedgerSequence,
+    }
+    let accountInfoRequests = 0
+    testContext.mockRippled!.addResponse('account_info', () => {
+      accountInfoRequests += 1
+      return {
+        status: 'success',
+        type: 'response',
+        result: { account_data: { Sequence: 790 } },
+      }
+    })
+    const txResult = await testContext.client.autofill(tx)
+
+    assert.strictEqual(txResult.Sequence, 0)
+    assert.strictEqual(txResult.TicketSequence, 787)
+    assert.strictEqual(accountInfoRequests, 0)
+  })
+
+  it('should set Sequence to 0 on a ticketed inner Batch transaction', async function () {
+    const sender = 'rGWrZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf'
+    const tx: Batch = {
+      TransactionType: 'Batch',
+      Account: sender,
+      RawTransactions: [
+        {
+          RawTransaction: {
+            TransactionType: 'DepositPreauth',
+            Flags: 0x40000000,
+            Account: sender,
+            Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+            TicketSequence: 959,
+          },
+        },
+        {
+          RawTransaction: {
+            TransactionType: 'DepositPreauth',
+            Flags: 0x40000000,
+            Account: sender,
+            Authorize: 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn',
+          },
+        },
+      ],
+      Fee,
+      Sequence,
+      LastLedgerSequence,
+    }
+    const txResult = await testContext.client.autofill(tx)
+
+    const [ticketed, sequenced] = txResult.RawTransactions
+    assert.strictEqual(ticketed.RawTransaction.Sequence, 0)
+    assert.strictEqual(ticketed.RawTransaction.TicketSequence, 959)
+    // The ticketed inner does not consume a sequence number.
+    assert.strictEqual(sequenced.RawTransaction.Sequence, Sequence + 1)
+  })
+
+  it('should not skip a sequence for the outer account when the outer Batch is ticketed', async function () {
+    const sender = 'rGWrZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf'
+    const tx: Batch = {
+      TransactionType: 'Batch',
+      Account: sender,
+      TicketSequence: 788,
+      RawTransactions: [
+        {
+          RawTransaction: {
+            TransactionType: 'DepositPreauth',
+            Flags: 0x40000000,
+            Account: sender,
+            Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+          },
+        },
+        {
+          RawTransaction: {
+            TransactionType: 'DepositPreauth',
+            Flags: 0x40000000,
+            Account: sender,
+            Authorize: 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn',
+          },
+        },
+      ],
+      Fee,
+      LastLedgerSequence,
+    }
+    testContext.mockRippled!.addResponse('account_info', {
+      status: 'success',
+      type: 'response',
+      result: { account_data: { Sequence: 790 } },
+    })
+    const txResult = await testContext.client.autofill(tx)
+
+    assert.strictEqual(txResult.Sequence, 0)
+    assert.strictEqual(txResult.TicketSequence, 788)
+    // A ticketed outer does not consume a sequence, so the inner ones start at the account's.
+    assert.strictEqual(txResult.RawTransactions[0].RawTransaction.Sequence, 790)
+    assert.strictEqual(txResult.RawTransactions[1].RawTransaction.Sequence, 791)
+  })
+
+  it("should anchor the outer account's inner sequences to a caller-supplied outer Sequence", async function () {
+    const sender = 'rGWrZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf'
+    const other = 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn'
+    const tx: Batch = {
+      TransactionType: 'Batch',
+      Account: sender,
+      Sequence: 800,
+      RawTransactions: [
+        {
+          RawTransaction: {
+            TransactionType: 'DepositPreauth',
+            Flags: 0x40000000,
+            Account: sender,
+            Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+          },
+        },
+        {
+          RawTransaction: {
+            TransactionType: 'DepositPreauth',
+            Flags: 0x40000000,
+            Account: other,
+            Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+          },
+        },
+        {
+          RawTransaction: {
+            TransactionType: 'DepositPreauth',
+            Flags: 0x40000000,
+            Account: sender,
+            Authorize: 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn',
+          },
+        },
+      ],
+      Fee,
+      LastLedgerSequence,
+    }
+    testContext.mockRippled!.addResponse('account_info', {
+      status: 'success',
+      type: 'response',
+      result: { account_data: { Sequence: 790 } },
+    })
+    const txResult = await testContext.client.autofill(tx)
+
+    assert.strictEqual(txResult.Sequence, 800)
+    // The outer account's inner sequences follow the pre-assigned outer Sequence, not account_info...
+    assert.strictEqual(txResult.RawTransactions[0].RawTransaction.Sequence, 801)
+    assert.strictEqual(txResult.RawTransactions[2].RawTransaction.Sequence, 802)
+    // ...while other accounts still start at their own next sequence.
+    assert.strictEqual(txResult.RawTransactions[1].RawTransaction.Sequence, 790)
+  })
+
+  it('should autofill the outer Batch Sequence before deriving the inner sequences', async function () {
+    const sender = 'rGWrZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf'
+    const tx: Batch = {
+      TransactionType: 'Batch',
+      Account: sender,
+      RawTransactions: [
+        {
+          RawTransaction: {
+            TransactionType: 'DepositPreauth',
+            Flags: 0x40000000,
+            Account: sender,
+            Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+          },
+        },
+        {
+          RawTransaction: {
+            TransactionType: 'DepositPreauth',
+            Flags: 0x40000000,
+            Account: sender,
+            Authorize: 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn',
+          },
+        },
+      ],
+      Fee,
+      LastLedgerSequence,
+    }
+    testContext.mockRippled!.addResponse('account_info', {
+      status: 'success',
+      type: 'response',
+      result: { account_data: { Sequence: 790 } },
+    })
+    const txResult = await testContext.client.autofill(tx)
+
+    assert.strictEqual(txResult.Sequence, 790)
+    assert.strictEqual(txResult.RawTransactions[0].RawTransaction.Sequence, 791)
+    assert.strictEqual(txResult.RawTransactions[1].RawTransaction.Sequence, 792)
+  })
+
+  it("should not mutate the caller's inner Batch transactions and should recompute them on a second autofill", async function () {
+    const sender = 'rGWrZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf'
+    const tx: Batch = {
+      TransactionType: 'Batch',
+      Account: sender,
+      RawTransactions: [
+        {
+          RawTransaction: {
+            TransactionType: 'DepositPreauth',
+            Flags: 0x40000000,
+            Account: sender,
+            Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+          },
+        },
+        {
+          RawTransaction: {
+            TransactionType: 'DepositPreauth',
+            Flags: 0x40000000,
+            Account: sender,
+            Authorize: 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn',
+          },
+        },
+      ],
+      Fee,
+      LastLedgerSequence,
+    }
+    let accountSequence = 790
+    testContext.mockRippled!.addResponse('account_info', () => ({
+      status: 'success',
+      type: 'response',
+      result: { account_data: { Sequence: accountSequence } },
+    }))
+
+    const first = await testContext.client.autofill(tx)
+    assert.strictEqual(first.Sequence, 790)
+    assert.strictEqual(first.RawTransactions[0].RawTransaction.Sequence, 791)
+    assert.strictEqual(first.RawTransactions[1].RawTransaction.Sequence, 792)
+
+    // The caller's objects are left untouched...
+    tx.RawTransactions.forEach((rawTxOuter, index) => {
+      const rawTx = rawTxOuter.RawTransaction
+      assert.notStrictEqual(rawTx, first.RawTransactions[index].RawTransaction)
+      assert.strictEqual(rawTx.Sequence, undefined)
+      assert.strictEqual(rawTx.Fee, undefined)
+      assert.strictEqual(rawTx.SigningPubKey, undefined)
+    })
+
+    // ...so a retry after the account moved on recomputes every Sequence.
+    accountSequence = 795
+    const second = await testContext.client.autofill(tx)
+    assert.strictEqual(second.Sequence, 795)
+    assert.strictEqual(second.RawTransactions[0].RawTransaction.Sequence, 796)
+    assert.strictEqual(second.RawTransactions[1].RawTransaction.Sequence, 797)
+  })
+
+  it('should throw error if an inner Batch AccountDelete has deletion blockers', async function () {
+    const sender = 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn'
+    testContext.mockRippled!.addResponse(
+      'account_info',
+      rippled.account_info.normal,
+    )
+    testContext.mockRippled!.addResponse('ledger', rippled.ledger.normal)
+    testContext.mockRippled!.addResponse(
+      'server_info',
+      rippled.server_info.normal,
+    )
+    testContext.mockRippled!.addResponse(
+      'account_objects',
+      rippled.account_objects.normal,
+    )
+
+    const tx: Batch = {
+      TransactionType: 'Batch',
+      Account: sender,
+      RawTransactions: [
+        {
+          RawTransaction: {
+            TransactionType: 'AccountDelete',
+            Flags: 0x40000000,
+            Account: sender,
+            Destination: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+          },
+        },
+      ],
+      Fee,
+      Sequence,
+      LastLedgerSequence,
+    }
+
+    await assertRejects(testContext.client.autofill(tx), XrplError)
   })
 
   it('should autofill LoanSet transaction', async function () {
