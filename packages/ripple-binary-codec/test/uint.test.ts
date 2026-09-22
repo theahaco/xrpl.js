@@ -212,6 +212,40 @@ it('UInt64 is parsed as base 10 for MPT amounts', () => {
   )
 })
 
+describe('UInt range errors name the concrete class', () => {
+  it('UInt8', () => {
+    expect(() => UInt8.from(256)).toThrow(
+      new Error('Invalid UInt8: 256 must be >= 0 and <= 255'),
+    )
+  })
+  it('UInt16', () => {
+    expect(() => UInt16.from(65536)).toThrow(
+      new Error('Invalid UInt16: 65536 must be >= 0 and <= 65535'),
+    )
+  })
+  it('UInt32', () => {
+    expect(() => UInt32.from(4294967296)).toThrow(
+      new Error('Invalid UInt32: 4294967296 must be >= 0 and <= 4294967295'),
+    )
+  })
+})
+
+describe('UInt64 base-10 overflow', () => {
+  it('reports the decimal the caller wrote, not its hex form', () => {
+    expect(() => UInt64.from('18446744073709551616', 'MaximumAmount')).toThrow(
+      new Error('MaximumAmount 18446744073709551616 exceeds 2^64-1'),
+    )
+  })
+  it('accepts 2^64-1', () => {
+    expect(
+      UInt64.from('18446744073709551615', 'MaximumAmount').toJSON(
+        undefined,
+        'MaximumAmount',
+      ),
+    ).toBe('18446744073709551615')
+  })
+})
+
 describe('UInt decimal validation', () => {
   describe('UInt8', () => {
     it('should throw error when passed a decimal number', () => {

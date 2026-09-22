@@ -80,6 +80,21 @@ describe('Amount', function () {
       })
     }
   })
+  it('rejects a non-string MPT amount value with a validation error', function () {
+    const mpt = {
+      value: 5,
+      mpt_issuance_id: '00002403C84A0A28E0190E208E982C352BBD5006600555CF',
+    }
+    expect(() => Amount.from(mpt)).toThrow(
+      new Error('MPT amount value must be a decimal string, got number'),
+    )
+  })
+
+  it('rejects an empty MPT issuance id', function () {
+    const mpt = { value: '1', mpt_issuance_id: '' }
+    expect(() => Amount.from(mpt)).toThrow(new Error('Invalid Hash length 0'))
+  })
+
   it('rejects non-numeric MPT amount values with a validation error', function () {
     const mpt = {
       value: 'abc',

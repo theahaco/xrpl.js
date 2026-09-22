@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixed
+* `encode` rejects odd-length hex (`CredentialType: 'ABC'`, a 49-character `MPTokenIssuanceID`, ...) instead of truncating it, so a signed blob can no longer differ from what `simulate`/JSON submit sends.
+* `Hash192.from('')` and `AccountID.from('')` throw instead of silently encoding the all-zero issuance ID / `rrrrrrrrrrrrrrrrrrrrrhoLvTp`. Use the explicit base58 form to encode ACCOUNT_ZERO.
+* `Issue.from` throws when a non-XRP currency has a missing or empty `issuer` instead of emitting a malformed 20-byte blob.
+* Codec errors raised while encoding a field are prefixed with the field name (e.g. `AssetScale: Invalid UInt8: 256 must be >= 0 and <= 255`); range errors name the concrete `UInt` class instead of `Function`; base-10 `UInt64` overflow reports the decimal the caller wrote; a non-string MPT `value` gets a clear error instead of a `TypeError`.
+
 ## 2.11.0 (2026-09-11)
 
 ### Added

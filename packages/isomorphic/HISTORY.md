@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Fixed
+* `hexToBytes` and `hexToString` now throw on an odd-length hex string instead of silently dropping the trailing nibble (node) or flooring the byte count (browser).
+
 ## 1.0.2 (2026-06-04)
 * bump @noble/hashes from 1.8.0 to 2.0.1
 

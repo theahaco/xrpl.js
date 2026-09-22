@@ -307,6 +307,11 @@ class Amount extends SerializedType {
    * @returns void, but will throw if invalid amount
    */
   private static assertMptIsValid(amount: string): void {
+    if (typeof amount !== 'string') {
+      throw new Error(
+        `MPT amount value must be a decimal string, got ${typeof amount}`,
+      )
+    }
     if (amount.indexOf('.') !== -1) {
       throw new Error(`${amount.toString()} is an illegal amount`)
     }

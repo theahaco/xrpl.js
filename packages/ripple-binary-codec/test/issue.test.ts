@@ -74,6 +74,23 @@ describe('Issue type conversion functions', () => {
     expect(parserIssue.toJSON()).toEqual(mptJson)
   })
 
+  it(`throws when a non-XRP currency has an empty issuer`, () => {
+    expect(() => Issue.from({ currency: 'USD', issuer: '' })).toThrow(
+      new Error('Issue: issuer is required for non-XRP currency USD'),
+    )
+  })
+
+  it(`throws when a non-XRP currency has no issuer`, () => {
+    expect(() => Issue.from({ currency: 'USD' })).toThrow(
+      new Error('Issue: issuer is required for non-XRP currency USD'),
+    )
+  })
+
+  it(`accepts XRP in its 40-character hex form`, () => {
+    const xrpIssue = Issue.from({ currency: '0'.repeat(40) })
+    expect(xrpIssue.toJSON()).toEqual({ currency: 'XRP' })
+  })
+
   it(`throws with invalid input`, () => {
     const invalidJson = { random: 123 }
     expect(() => {
