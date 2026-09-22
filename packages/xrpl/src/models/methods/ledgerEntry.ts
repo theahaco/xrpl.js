@@ -1,5 +1,27 @@
 import { Currency, XChainBridge } from '../common'
-import { LedgerEntry } from '../ledger'
+import {
+  AccountRoot,
+  AMM,
+  Bridge,
+  Check,
+  Credential,
+  Delegate,
+  DepositPreauth,
+  DID,
+  DirectoryNode,
+  Escrow,
+  LedgerEntry,
+  MPToken,
+  MPTokenIssuance,
+  NFTokenPage,
+  Offer,
+  PayChannel,
+  RippleState,
+  Sponsorship,
+  Ticket,
+  XChainOwnedClaimID,
+  XChainOwnedCreateAccountClaimID,
+} from '../ledger'
 
 import { BaseRequest, BaseResponse, LookupByLedgerRequest } from './baseMethod'
 
@@ -251,6 +273,67 @@ export type LedgerEntryBinaryRequest = LedgerEntryRequest & {
 export type LedgerEntryJsonRequest = LedgerEntryRequest & {
   binary?: false
 }
+
+/**
+ * Maps each `ledger_entry` lookup field to the ledger entry type it resolves
+ * to. `index` is absent because it can address any entry, and
+ * `bridge_account` because it only qualifies a `bridge` lookup.
+ */
+export interface LedgerEntryLookupMap {
+  account_root: AccountRoot
+  amm: AMM
+  bridge: Bridge
+  check: Check
+  credential: Credential
+  delegate: Delegate
+  deposit_preauth: DepositPreauth
+  did: DID
+  directory: DirectoryNode
+  escrow: Escrow
+  mpt_issuance: MPTokenIssuance
+  mptoken: MPToken
+  nft_page: NFTokenPage
+  offer: Offer
+  payment_channel: PayChannel
+  ripple_state: RippleState
+  sponsorship: Sponsorship
+  ticket: Ticket
+  xchain_owned_claim_id: XChainOwnedClaimID
+  xchain_owned_create_account_claim_id: XChainOwnedCreateAccountClaimID
+}
+
+type IsUnion<T, U = T> = T extends unknown
+  ? [U] extends [T]
+    ? false
+    : true
+  : never
+
+/**
+ * The lookup fields that a request type `T` sets as required (not optional
+ * and not possibly `undefined`).
+ */
+type RequiredLookupKeys<T> = {
+  [K in keyof T & keyof LedgerEntryLookupMap]-?: undefined extends T[K]
+    ? never
+    : K
+}[keyof T & keyof LedgerEntryLookupMap]
+
+/**
+ * The ledger entry type a `ledger_entry` request `T` resolves to. When the
+ * request pins exactly one lookup field (for example `mpt_issuance`) this is
+ * the entry type that field implies; when it uses `index`, sets several
+ * lookup fields, or leaves them optional, this is the full {@link LedgerEntry}
+ * union.
+ */
+export type LedgerEntryNode<T> = T extends { index: string }
+  ? LedgerEntry
+  : [RequiredLookupKeys<T>] extends [never]
+    ? LedgerEntry
+    : true extends IsUnion<RequiredLookupKeys<T>>
+      ? LedgerEntry
+      : RequiredLookupKeys<T> extends keyof LedgerEntryLookupMap
+        ? LedgerEntryLookupMap[RequiredLookupKeys<T>]
+        : LedgerEntry
 
 interface LedgerEntryResponseResultBase {
   /** The unique ID of this ledger object. */

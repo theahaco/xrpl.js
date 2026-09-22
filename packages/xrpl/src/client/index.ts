@@ -24,7 +24,7 @@ import {
   AccountLinesRequest,
   AccountLinesResponse,
   AccountObjectsRequest,
-  AccountObjectsResponse,
+  AccountObjectsResponseMap,
   AccountOffersRequest,
   AccountOffersResponse,
   AccountTxRequest,
@@ -35,6 +35,7 @@ import {
   TxResponse,
 } from '../models/methods'
 import type {
+  RequestAPIVersion,
   RequestResponseMap,
   RequestAllResponseMap,
   MarkerRequest,
@@ -134,7 +135,7 @@ type RequestNextPageReturnMap<T> = T extends AccountChannelsRequest
   : T extends AccountLinesRequest
     ? AccountLinesResponse
     : T extends AccountObjectsRequest
-      ? AccountObjectsResponse
+      ? AccountObjectsResponseMap<T>
       : T extends AccountOffersRequest
         ? AccountOffersResponse
         : T extends AccountTxRequest
@@ -226,7 +227,11 @@ class Client extends EventEmitter<EventTypes> {
   public buildVersion: string | undefined
 
   /**
-   * API Version used by the server this client is connected to
+   * API version sent with every request that does not set its own
+   * `api_version`. Changing it changes the runtime shape of responses but not
+   * their TypeScript types: {@link Client.request} infers the response type
+   * from the request's own `api_version` field, so set `api_version: 1` on the
+   * request itself to get the version 1 response type.
    *
    */
   public apiVersion: APIVersion = DEFAULT_API_VERSION
@@ -354,7 +359,7 @@ class Client extends EventEmitter<EventTypes> {
    */
   public async request<
     R extends Request,
-    V extends APIVersion = typeof DEFAULT_API_VERSION,
+    V extends APIVersion = RequestAPIVersion<R>,
     T = RequestResponseMap<R, V>,
   >(req: R): Promise<T> {
     const request = {
@@ -477,7 +482,7 @@ class Client extends EventEmitter<EventTypes> {
 
   public async requestAll<
     T extends MarkerRequest,
-    U = RequestAllResponseMap<T, APIVersion>,
+    U = RequestAllResponseMap<T, RequestAPIVersion<T>>,
   >(request: T, collect?: string): Promise<U[]> {
     /*
      * The data under collection is keyed based on the command. Fail if command

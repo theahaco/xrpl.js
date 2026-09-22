@@ -6,6 +6,7 @@ import {
   ResponseOnlyTxInfo,
 } from '../common'
 import { Transaction, TransactionMetadata } from '../transactions'
+import { BaseTransaction } from '../transactions/common'
 
 import { BaseRequest, BaseResponse, LookupByLedgerRequest } from './baseMethod'
 
@@ -55,8 +56,15 @@ export interface AccountTxRequest extends BaseRequest, LookupByLedgerRequest {
   marker?: unknown
 }
 
+/**
+ * One row of an `account_tx` response. `T` is the transaction type carried in
+ * `tx_json` (or `tx` under API version 1); `meta` is the metadata type for
+ * that same transaction, so narrowing a row to
+ * `AccountTxTransaction<2, MPTokenIssuanceCreate>` also narrows `meta`.
+ */
 export interface AccountTxTransaction<
   Version extends APIVersion = typeof DEFAULT_API_VERSION,
+  T extends BaseTransaction = Transaction,
 > {
   /** The ledger index of the ledger version that included this transaction. */
   ledger_index: number
@@ -64,15 +72,13 @@ export interface AccountTxTransaction<
    * If binary is True, then this is a hex string of the transaction metadata.
    * Otherwise, the transaction metadata is included in JSON format.
    */
-  meta: string | TransactionMetadata
+  meta: string | TransactionMetadata<T>
   /** JSON object defining the transaction. */
   tx_json?: Version extends typeof RIPPLED_API_V2
-    ? Transaction & ResponseOnlyTxInfo
+    ? T & ResponseOnlyTxInfo
     : never
   /** JSON object defining the transaction in rippled API v1. */
-  tx?: Version extends typeof RIPPLED_API_V1
-    ? Transaction & ResponseOnlyTxInfo
-    : never
+  tx?: Version extends typeof RIPPLED_API_V1 ? T & ResponseOnlyTxInfo : never
   /** The hash of the transaction. */
   hash?: Version extends typeof RIPPLED_API_V2 ? string : never
   /** Unique hashed String representing the transaction. */

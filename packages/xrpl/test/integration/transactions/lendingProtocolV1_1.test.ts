@@ -14,7 +14,6 @@ import {
   VaultWithdrawalPolicy,
   Wallet,
 } from '../../../src'
-import { Vault } from '../../../src/models/ledger'
 import serverUrl from '../serverUrl'
 import {
   setupClient,
@@ -68,7 +67,7 @@ describe('LendingProtocolV1_1', function () {
         account: vaultOwnerWallet.classicAddress,
         type: 'vault',
       })
-      const vault = result.result.account_objects[0] as Vault
+      const vault = result.result.account_objects[0]
 
       assert.equal(result.result.account_objects.length, 1)
       assert.equal(vault.Owner, vaultOwnerWallet.classicAddress)
@@ -97,7 +96,7 @@ describe('LendingProtocolV1_1', function () {
         account: vaultOwnerWallet.classicAddress,
         type: 'vault',
       })
-      const vaultId = (result.result.account_objects[0] as Vault).index
+      const vaultId = result.result.account_objects[0].index
 
       const deleteTx: VaultDelete = {
         TransactionType: 'VaultDelete',
@@ -193,7 +192,7 @@ describe('LendingProtocolV1_1', function () {
         account: vaultOwnerWallet.classicAddress,
         type: 'vault',
       })
-      const vaultId = (vaultResult.result.account_objects[0] as Vault).index
+      const vaultId = vaultResult.result.account_objects[0].index
 
       // --- Fetch the depositor's credential ID ---
       const credentials = await testContext.client.request({
@@ -227,7 +226,7 @@ describe('LendingProtocolV1_1', function () {
         account: vaultOwnerWallet.classicAddress,
         type: 'vault',
       })
-      const afterVault = afterWithdraw.result.account_objects[0] as Vault
+      const afterVault = afterWithdraw.result.account_objects[0]
       assert.equal(afterVault.AssetsTotal ?? '0', '500000')
     },
     TIMEOUT,
