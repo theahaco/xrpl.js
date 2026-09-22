@@ -2,6 +2,8 @@ import { UInt } from './uint'
 import { BinaryParser } from '../serdes/binary-parser'
 import { readUInt32BE, writeUInt32BE } from '../utils'
 
+const UINT32_STRING_REGEX = /^[0-9]{1,10}$/
+
 /**
  * Derived UInt class for serializing/deserializing 32 bit UInt
  */
@@ -32,7 +34,13 @@ class UInt32 extends UInt {
     const buf = new Uint8Array(UInt32.width)
 
     if (typeof val === 'string') {
-      const num = Number.parseInt(val)
+      if (!UINT32_STRING_REGEX.test(val)) {
+        throw new Error(
+          `Invalid UInt32: ${val} is not a base 10 integer string`,
+        )
+      }
+      const num = Number(val)
+      UInt32.checkUintRange(num, 0, 0xffffffff)
       writeUInt32BE(buf, num, 0)
       return new UInt32(buf)
     }
