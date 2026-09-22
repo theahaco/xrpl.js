@@ -152,6 +152,13 @@ export function validateBatch(tx: Record<string, unknown>): void {
       paramName: `BatchSigners[${index}].BatchSigner.Account`,
       txType: 'Batch',
     })
+    // rippled rejects the Batch Account as a BatchSigner (temBAD_SIGNER); it
+    // authorizes the Batch with the outer signature instead.
+    if (signer.Account === tx.Account) {
+      throw new ValidationError(
+        `Batch: BatchSigners[${index}].BatchSigner.Account is the Batch Account; it signs the outer transaction, not as a BatchSigner.`,
+      )
+    }
     validateOptionalField(signer, 'SigningPubKey', isString, {
       paramName: `BatchSigners[${index}].BatchSigner.SigningPubKey`,
       txType: 'Batch',

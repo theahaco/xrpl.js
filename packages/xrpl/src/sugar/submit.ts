@@ -12,6 +12,7 @@ import { TxResponse } from '../models/methods'
 import type { Batch } from '../models/transactions/batch'
 import { BaseTransaction } from '../models/transactions/common'
 import { decode, encode } from '../utils'
+import { getBatchEquivalenceKey } from '../Wallet/batchSigner'
 
 /** Approximate time for a ledger to close, in milliseconds */
 const LEDGER_CLOSE_TIME = 1000
@@ -203,7 +204,14 @@ function isSigned(transaction: SubmittableTransaction | string): boolean {
  * an unsigned transaction. Default is undefined.
  * @returns A promise that resolves with the signed transaction.
  *
+ * A co-signed Batch (one carrying `BatchSigners` from `signMultiBatch`) must
+ * have been autofilled before it was co-signed: the co-signatures bind the
+ * outer sequence value and every inner transaction hash. Autofilling it here
+ * is allowed only when it changes none of those fields; pass
+ * `autofill: false` to skip it.
+ *
  * @throws {ValidationError} If the transaction is not signed and no wallet is provided.
+ * @throws {ValidationError} If autofilling a co-signed Batch would change a field its `BatchSigners` signed over.
  *
  * @example
  * import { Client } from "xrpl"
@@ -253,10 +261,34 @@ export async function getSignedTx(
       : transaction
 
   if (autofill) {
+    const signedPayload = getBatchSignersPayload(tx)
     tx = await client.autofill(tx)
+    if (signedPayload != null && signedPayload !== getBatchSignersPayload(tx)) {
+      throw new ValidationError(
+        'Autofill changed a field the BatchSigners signed over (outer Sequence/TicketSequence or an inner transaction), so the co-signatures would no longer verify. Autofill the Batch before co-signing it with signMultiBatch and submit it with autofill: false.',
+      )
+    }
   }
 
   return wallet.sign(tx).tx_blob
+}
+
+/**
+ * The payload the `BatchSigners` of a co-signed Batch signed over, or null
+ * for anything that is not a Batch carrying `BatchSigners`.
+ *
+ * @param tx - The transaction about to be autofilled.
+ * @returns A comparison key for the fields bound into the co-signatures.
+ */
+function getBatchSignersPayload(tx: SubmittableTransaction): string | null {
+  if (
+    tx.TransactionType !== 'Batch' ||
+    tx.BatchSigners == null ||
+    tx.BatchSigners.length === 0
+  ) {
+    return null
+  }
+  return getBatchEquivalenceKey(tx)
 }
 
 // checks if there is a LastLedgerSequence as a part of the transaction

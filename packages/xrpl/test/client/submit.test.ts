@@ -4,7 +4,9 @@ import cloneDeep from 'lodash/cloneDeep'
 
 import { multisign, ValidationError } from '../../src'
 import { Batch, Transaction } from '../../src/models/transactions'
+import { BatchFlags } from '../../src/models/transactions/batch'
 import { Wallet } from '../../src/Wallet'
+import { signMultiBatch } from '../../src/Wallet/batchSigner'
 import rippled from '../fixtures/rippled'
 import {
   setupClient,
@@ -97,6 +99,62 @@ describe('client.submit', function () {
 
       await testContext.client.submit(batch, { wallet })
       assert.strictEqual(failHard, true)
+    })
+
+    it('should throw a ValidationError when autofill would invalidate BatchSigners', async function () {
+      const wallet = new Wallet(publicKey, privateKey)
+      const cosigner = Wallet.generate()
+      const batch: Batch = {
+        TransactionType: 'Batch',
+        Account: address,
+        Flags: BatchFlags.tfAllOrNothing,
+        RawTransactions: [
+          {
+            RawTransaction: {
+              TransactionType: 'Payment',
+              Flags: 0x40000000,
+              Account: cosigner.classicAddress,
+              Destination: address,
+              Amount: '1000',
+              Fee: '0',
+              Sequence: 5,
+              SigningPubKey: '',
+            },
+          },
+        ],
+        Sequence: 1,
+        Fee: '12',
+        LastLedgerSequence: 12312,
+      }
+      // Co-sign at Sequence 1, then submit without it so that autofill binds
+      // the account's real sequence (23) and invalidates the co-signature.
+      signMultiBatch(cosigner, batch)
+      const staleBatch = cloneDeep(batch)
+      delete staleBatch.Sequence
+
+      testContext.mockRippled!.addResponse(
+        'account_info',
+        rippled.account_info.normal,
+      )
+      testContext.mockRippled!.addResponse('ledger', rippled.ledger.normal)
+      testContext.mockRippled!.addResponse(
+        'server_info',
+        rippled.server_info.normal,
+      )
+      testContext.mockRippled!.addResponse('submit', rippled.submit.success)
+
+      await assertRejects(
+        testContext.client.submit(staleBatch, { wallet }),
+        ValidationError,
+        'Autofill changed a field the BatchSigners signed over (outer Sequence/TicketSequence or an inner transaction), so the co-signatures would no longer verify. Autofill the Batch before co-signing it with signMultiBatch and submit it with autofill: false.',
+      )
+
+      // With the Batch left as it was co-signed, submitting works.
+      const response = await testContext.client.submit(batch, {
+        wallet,
+        autofill: false,
+      })
+      assert.strictEqual(response.result.engine_result, 'tesSUCCESS')
     })
 
     it('should throw a ValidationError when submitting an unsigned transaction without a wallet', async function () {
