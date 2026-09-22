@@ -667,7 +667,7 @@ export enum SponsorFlags {
 /**
  * Every transaction has the same set of common fields.
  */
-export interface BaseTransaction extends Record<string, unknown> {
+export interface BaseTransaction {
   /** The unique address of the transaction sender. */
   Account: Account
   /**

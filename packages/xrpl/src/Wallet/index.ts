@@ -23,6 +23,22 @@ import { computeSignature, validateEntropy } from './utils'
 const DEFAULT_ALGORITHM: ECDSA = ECDSA.ed25519
 const DEFAULT_DERIVATION_PATH = "m/44'/144'/0'/0/0"
 
+/**
+ * A signed transaction blob that remembers which transaction type produced it.
+ *
+ * At runtime this is exactly the hex string `Wallet.sign` returns — `__xrplTx` is an optional
+ * phantom property that is never populated — so a `SignedBlob<T>` can be used anywhere a `string`
+ * is expected. The brand lets {@link Client.submitAndWait} infer `T`
+ * from a blob instead of falling back to the whole `SubmittableTransaction` union, which in turn
+ * narrows `result.meta` and `result.tx_json`.
+ * This optional brand is an inference hint, not runtime proof of a blob's contents.
+ *
+ * @category Signing
+ */
+export type SignedBlob<T extends Transaction = Transaction> = string & {
+  readonly __xrplTx?: T
+}
+
 type ValidHDKey = HDKey & {
   privateKey: Uint8Array
   publicKey: Uint8Array
@@ -44,35 +60,22 @@ function validateKey(node: HDKey): asserts node is ValidHDKey {
  * It provides functionality to sign/verify transactions offline.
  *
  * @example
- * ```typescript
+ * ```ts
+ * import { Wallet } from 'xrpl'
  *
- * // Derive a wallet from a base58 encoded seed.
- * const seedWallet = Wallet.fromSeed('ssZkdwURFMBXenJPbrpE14b6noJSu')
- * console.log(seedWallet)
- * // Wallet {
- * // publicKey: '02FE9932A9C4AA2AC9F0ED0F2B89302DE7C2C95F91D782DA3CF06E64E1C1216449',
- * // privateKey: '00445D0A16DD05EFAF6D5AF45E6B8A6DE4170D93C0627021A0B8E705786CBCCFF7',
- * // classicAddress: 'rG88FVLjvYiQaGftSa1cKuE2qNx7aK5ivo',
- * // seed: 'ssZkdwURFMBXenJPbrpE14b6noJSu'
- * // }.
- *
- * // Sign a JSON Transaction
- *  const signed = seedWallet.signTransaction({
- *      TransactionType: 'Payment',
- *      Account: 'rG88FVLjvYiQaGftSa1cKuE2qNx7aK5ivo'
- *      ...........
- * }).
- *
- * console.log(signed)
- * // '1200007321......B01BE1DFF3'.
- * console.log(decode(signed))
- * // {
- * //   TransactionType: 'Payment',
- * //   SigningPubKey: '02FE9932A9C4AA2AC9F0ED0F2B89302DE7C2C95F91D782DA3CF06E64E1C1216449',
- * //   TxnSignature: '3045022100AAD......5B631ABD21171B61B07D304',
- * //   Account: 'rG88FVLjvYiQaGftSa1cKuE2qNx7aK5ivo'
- * //   ...........
- * // }
+ * // Offline signing example. Obtain current fee/sequence/expiry with autofill
+ * // before submitting a transaction. Keep the wallet's credentials private.
+ * const wallet = Wallet.generate()
+ * const signed = wallet.sign({
+ *   TransactionType: 'Payment',
+ *   Account: wallet.address,
+ *   Destination: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',
+ *   Amount: '1000000',
+ *   Fee: '12',
+ *   Sequence: 1,
+ *   LastLedgerSequence: 100,
+ * })
+ * console.log(signed.hash)
  * ```
  *
  * @category Signing
@@ -372,12 +375,12 @@ export class Wallet {
    * @throws XrplError if the issued currency being signed is XRP ignoring case.
    */
   // eslint-disable-next-line max-lines-per-function -- introduced more checks to support both string and boolean inputs.
-  public sign(
+  public sign<T extends Transaction>(
     this: Wallet,
-    transaction: Transaction,
+    transaction: T,
     multisign?: boolean | string,
   ): {
-    tx_blob: string
+    tx_blob: SignedBlob<T>
     hash: string
   } {
     let multisignAddress: boolean | string = false
@@ -405,8 +408,7 @@ export class Wallet {
     /*
      * This will throw a more clear error for JS users if the supplied transaction has incorrect formatting
      */
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- validate does not accept Transaction type
-    validate(tx as unknown as Record<string, unknown>)
+    validate(tx)
     if (hasFlag(tx, GlobalFlags.tfInnerBatchTxn, 'tfInnerBatchTxn')) {
       throw new ValidationError('Cannot sign a Batch inner transaction.')
     }
@@ -435,7 +437,12 @@ export class Wallet {
 
     const serialized = encode(txToSignAndEncode)
     return {
-      tx_blob: serialized,
+      /*
+       * `encode` returns a plain string; the brand is an optional phantom property that is never
+       * populated at runtime, so this only records which transaction type produced the blob.
+       */
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- see above
+      tx_blob: serialized as SignedBlob<T>,
       hash: hashSignedTx(serialized),
     }
   }

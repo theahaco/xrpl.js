@@ -4,6 +4,8 @@ import {
   AccountRootFlagsInterface,
   AccountRootFlags,
 } from '../ledger/AccountRoot'
+import { CredentialFlags, CredentialFlagsInterface } from '../ledger/Credential'
+import { MPTokenFlags, MPTokenFlagsInterface } from '../ledger/MPToken'
 import {
   MPTokenIssuanceFlags,
   MPTokenIssuanceFlagsInterface,
@@ -53,6 +55,49 @@ export function parseAccountRootFlags(
       typeof flag === 'string' &&
       isFlagEnabled(flags, AccountRootFlags[flag])
     ) {
+      flagsInterface[flag] = true
+    }
+  })
+
+  return flagsInterface
+}
+
+/**
+ * Convert the `Flags` field of a `Credential` ledger object into a typed
+ * boolean view of its `lsf*` flags.
+ *
+ * @param flags - The numeric value of `Credential.Flags`.
+ * @returns An interface with each set flag as `true` (`lsfAccepted` once the
+ * subject has run CredentialAccept).
+ */
+export function parseCredentialFlags(flags: number): CredentialFlagsInterface {
+  const flagsInterface: CredentialFlagsInterface = {}
+
+  Object.values(CredentialFlags).forEach((flag) => {
+    if (
+      typeof flag === 'string' &&
+      isFlagEnabled(flags, CredentialFlags[flag])
+    ) {
+      flagsInterface[flag] = true
+    }
+  })
+
+  return flagsInterface
+}
+
+/**
+ * Convert the `Flags` field of a holder-side `MPToken` ledger object into a
+ * typed boolean view of the `lsfMPT*` flags (`lsfMPTLocked`,
+ * `lsfMPTAuthorized`).
+ *
+ * @param flags - The numeric value of `MPToken.Flags`.
+ * @returns An interface with each set `lsfMPT*` flag as `true`.
+ */
+export function parseMPTokenFlags(flags: number): MPTokenFlagsInterface {
+  const flagsInterface: MPTokenFlagsInterface = {}
+
+  Object.values(MPTokenFlags).forEach((flag) => {
+    if (typeof flag === 'string' && isFlagEnabled(flags, MPTokenFlags[flag])) {
       flagsInterface[flag] = true
     }
   })

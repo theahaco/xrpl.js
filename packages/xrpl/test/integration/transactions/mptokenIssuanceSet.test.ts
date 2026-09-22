@@ -2,9 +2,11 @@ import { stringToHex } from '@xrplf/isomorphic/utils'
 import { assert } from 'chai'
 
 import {
+  MPTokenIssuance,
   MPTokenIssuanceCreate,
   MPTokenIssuanceSet,
   MPTokenIssuanceCreateFlags,
+  MPTokenIssuanceFlagsInterface,
   MPTokenIssuanceSetFlags,
   PermissionedDomainSet,
   TransactionMetadata,
@@ -12,11 +14,6 @@ import {
   parseMPTokenIssuanceFlags,
   parseMPTokenIssuanceImmutableFlags,
 } from '../../../src'
-import type {
-  MPTokenIssuance,
-  MPTokenIssuanceFlagsInterface,
-} from '../../../src/models/ledger/MPTokenIssuance'
-import type PermissionedDomain from '../../../src/models/ledger/PermissionedDomain'
 import serverUrl from '../serverUrl'
 import {
   setupClient,
@@ -472,11 +469,10 @@ async function readMPTokenIssuance(
     type: 'mpt_issuance',
   })
   const issuanceNode = accountObjectsResponse.result.account_objects.find(
-    (node) =>
-      (node as { mpt_issuance_id?: string }).mpt_issuance_id === issuanceId,
-  ) as MPTokenIssuance | undefined
-  assert.exists(
-    issuanceNode,
+    (node) => node.mpt_issuance_id === issuanceId,
+  )
+  assert(
+    issuanceNode != null,
     `MPTokenIssuance with id ${issuanceId} not found in account_objects`,
   )
   return issuanceNode
@@ -525,8 +521,9 @@ async function createPermissionedDomain(
     account: testContext.wallet.classicAddress,
     type: 'permissioned_domain',
   })
-  const newestDomain = accountObjects.result.account_objects[
-    accountObjects.result.account_objects.length - 1
-  ] as PermissionedDomain
+  const newestDomain =
+    accountObjects.result.account_objects[
+      accountObjects.result.account_objects.length - 1
+    ]
   return newestDomain.index
 }

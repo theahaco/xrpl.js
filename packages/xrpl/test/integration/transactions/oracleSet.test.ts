@@ -2,7 +2,6 @@ import { stringToHex } from '@xrplf/isomorphic/utils'
 import { assert } from 'chai'
 
 import { OracleSet } from '../../../src'
-import { Oracle } from '../../../src/models/ledger'
 import serverUrl from '../serverUrl'
 import {
   setupClient,
@@ -75,7 +74,7 @@ describe('OracleSet', function () {
       assert.equal(result.result.account_objects.length, 1)
 
       // confirm details of Oracle ledger entry object
-      const oracle = result.result.account_objects[0] as Oracle
+      const oracle = result.result.account_objects[0]
       assert.equal(oracle.LastUpdateTime, tx.LastUpdateTime)
       assert.equal(oracle.Owner, testContext.wallet.classicAddress)
       assert.equal(oracle.AssetClass, tx.AssetClass)

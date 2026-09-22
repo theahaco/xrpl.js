@@ -135,8 +135,10 @@ describe('Client subscription', function () {
 
   it('Emits manifestReceived', async function () {
     await new Promise<void>((resolve) => {
-      // @es-expect-error Seems like a valid method
       testContext.client.on('manifestReceived', (path) => {
+        // @ts-expect-error -- `manifestReceived` listeners are declared as
+        // `(manifest: ManifestRequest) => void`, but rippled sends the manifest
+        // stream message, which has a `type` field. Tracked as a follow-up.
         assert(path.type === 'manifestReceived')
         resolve()
       })

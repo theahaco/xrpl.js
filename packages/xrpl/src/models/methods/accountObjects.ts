@@ -1,5 +1,36 @@
-import { Amendments, FeeSettings, LedgerHashes } from '../ledger'
+import {
+  AccountRoot,
+  Amendments,
+  AMM,
+  Bridge,
+  Check,
+  Credential,
+  Delegate,
+  DepositPreauth,
+  DID,
+  DirectoryNode,
+  Escrow,
+  FeeSettings,
+  LedgerHashes,
+  Loan,
+  LoanBroker,
+  MPToken,
+  MPTokenIssuance,
+  NFTokenOffer,
+  NFTokenPage,
+  Offer,
+  Oracle,
+  PayChannel,
+  RippleState,
+  SignerList,
+  Sponsorship,
+  Ticket,
+  Vault,
+  XChainOwnedClaimID,
+  XChainOwnedCreateAccountClaimID,
+} from '../ledger'
 import { LedgerEntry, LedgerEntryFilter } from '../ledger/LedgerEntry'
+import PermissionedDomain from '../ledger/PermissionedDomain'
 
 import { BaseRequest, BaseResponse, LookupByLedgerRequest } from './baseMethod'
 
@@ -57,11 +88,50 @@ export type AccountObject = Exclude<
 >
 
 /**
- * Response expected from an {@link AccountObjectsRequest}.
+ * Maps each `account_objects` `type` filter to the ledger entry type the
+ * filtered response contains.
+ */
+export interface AccountObjectByFilter {
+  account: AccountRoot
+  amm: AMM
+  bridge: Bridge
+  check: Check
+  credential: Credential
+  delegate: Delegate
+  deposit_preauth: DepositPreauth
+  did: DID
+  directory: DirectoryNode
+  escrow: Escrow
+  loan: Loan
+  loan_broker: LoanBroker
+  mpt_issuance: MPTokenIssuance
+  mptoken: MPToken
+  nft_offer: NFTokenOffer
+  nft_page: NFTokenPage
+  offer: Offer
+  oracle: Oracle
+  payment_channel: PayChannel
+  permissioned_domain: PermissionedDomain
+  signer_list: SignerList
+  sponsorship: Sponsorship
+  state: RippleState
+  ticket: Ticket
+  vault: Vault
+  xchain_owned_create_account_claim_id: XChainOwnedCreateAccountClaimID
+  xchain_owned_claim_id: XChainOwnedClaimID
+}
+
+/**
+ * Response expected from an {@link AccountObjectsRequest}. `T` is the entry
+ * type of the returned objects: the full {@link AccountObject} union by
+ * default, or the entry type a `type` filter selects (see
+ * {@link AccountObjectsResponseMap}).
  *
  * @category Responses
  */
-export interface AccountObjectsResponse extends BaseResponse {
+export interface AccountObjectsResponse<
+  T extends AccountObject = AccountObject,
+> extends BaseResponse {
   result: {
     /** Unique Address of the account this request corresponds to. */
     account: string
@@ -69,7 +139,7 @@ export interface AccountObjectsResponse extends BaseResponse {
      * Array of objects owned by this account. Each object is in its raw
      * ledger format.
      */
-    account_objects: AccountObject[]
+    account_objects: T[]
     /**
      * The identifying hash of the ledger that was used to generate this
      * response.
@@ -101,3 +171,16 @@ export interface AccountObjectsResponse extends BaseResponse {
     validated?: boolean
   }
 }
+
+/**
+ * Type to map an `account_objects` request to its response: when the request
+ * sets a `type` filter, `account_objects` is narrowed to that entry type;
+ * otherwise it stays the full {@link AccountObject} union.
+ *
+ * @category Responses
+ */
+export type AccountObjectsResponseMap<T> = T extends {
+  type: infer K extends AccountObjectType
+}
+  ? AccountObjectsResponse<AccountObjectByFilter[K]>
+  : AccountObjectsResponse

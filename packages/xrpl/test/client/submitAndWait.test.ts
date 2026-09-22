@@ -1,3 +1,5 @@
+import { assert } from 'chai'
+
 import { XrplError } from '../../src'
 import { Transaction } from '../../src/models/transactions'
 import rippled from '../fixtures/rippled'
@@ -39,6 +41,132 @@ describe('client.submitAndWait', function () {
       testContext.client.submitAndWait(signedTx),
       XrplError,
       'Transaction failed, temMALFORMED: Malformed transaction.',
+    )
+  })
+
+  const validatedTx = rippled.tx.Payment
+
+  function addSubmission(engineResult = 'tesSUCCESS'): void {
+    testContext.mockRippled!.addResponse('submit', {
+      ...rippled.submit.success,
+      result: {
+        ...rippled.submit.success.result,
+        engine_result: engineResult,
+      },
+    })
+    testContext.mockRippled!.addResponse('ledger', {
+      ...rippled.ledger.normal,
+      result: { ...rippled.ledger.normal.result, ledger_index: 12300 },
+    })
+  }
+
+  ;['tefPAST_SEQ', 'telINSUF_FEE_P'].forEach((engineResult) => {
+    it(`keeps polling after preliminary ${engineResult} until validated`, async function () {
+      addSubmission(engineResult)
+      let txLookups = 0
+      testContext.mockRippled!.addResponse('tx', () => {
+        txLookups += 1
+        return txLookups === 1
+          ? {
+              ...validatedTx,
+              result: { ...validatedTx.result, validated: false },
+            }
+          : validatedTx
+      })
+
+      const response = await testContext.client.submitAndWait(signedTransaction)
+
+      assert.strictEqual(response.result.validated, true)
+      assert.strictEqual(response.result.meta.TransactionResult, 'tesSUCCESS')
+      assert.strictEqual(txLookups, 2)
+    })
+  })
+
+  it('keeps polling after txnNotFound', async function () {
+    addSubmission()
+    let txLookups = 0
+    testContext.mockRippled!.addResponse('tx', (request) => {
+      txLookups += 1
+      return txLookups === 1
+        ? {
+            id: request.id,
+            status: 'error',
+            type: 'response',
+            error: 'txnNotFound',
+            error_code: 29,
+            error_message: 'Transaction not found.',
+            request,
+          }
+        : validatedTx
+    })
+
+    const response = await testContext.client.submitAndWait(signedTransaction)
+
+    assert.strictEqual(response.result.validated, true)
+    assert.strictEqual(txLookups, 2)
+  })
+
+  it('requests API v2 for the promised response shape even when client.apiVersion is 1', async function () {
+    addSubmission()
+    testContext.client.apiVersion = 1
+    let lookupVersion: number | undefined
+    testContext.mockRippled!.addResponse('tx', (request) => {
+      lookupVersion = request.api_version
+      return validatedTx
+    })
+
+    const response = await testContext.client.submitAndWait(signedTransaction)
+
+    assert.strictEqual(lookupVersion, 2)
+    assert.strictEqual(response.result.validated, true)
+    assert.strictEqual(response.result.tx_json.TransactionType, 'Payment')
+    assert.strictEqual(response.result.meta.TransactionResult, 'tesSUCCESS')
+  })
+  ;[undefined, null, 'DEADBEEF', []].forEach((meta) => {
+    it(`rejects validated responses without decoded metadata: ${JSON.stringify(meta)}`, async function () {
+      addSubmission()
+      const originalRequest = testContext.client.request.bind(
+        testContext.client,
+      )
+      jest
+        .spyOn(testContext.client, 'request')
+        .mockImplementation(async (request) => {
+          if (request.command === 'tx') {
+            return {
+              ...validatedTx,
+              result: { ...validatedTx.result, meta },
+            }
+          }
+          return originalRequest(request)
+        })
+
+      await assertRejects(
+        testContext.client.submitAndWait(signedTransaction),
+        XrplError,
+        'Validated transaction response must include decoded metadata.',
+      )
+    })
+  })
+
+  it('returns a validated tec result for the caller to inspect', async function () {
+    addSubmission('tecUNFUNDED_PAYMENT')
+    testContext.mockRippled!.addResponse('tx', {
+      ...validatedTx,
+      result: {
+        ...validatedTx.result,
+        meta: {
+          ...validatedTx.result.meta,
+          TransactionResult: 'tecUNFUNDED_PAYMENT',
+        },
+      },
+    })
+
+    const response = await testContext.client.submitAndWait(signedTransaction)
+
+    assert.strictEqual(response.result.validated, true)
+    assert.strictEqual(
+      response.result.meta.TransactionResult,
+      'tecUNFUNDED_PAYMENT',
     )
   })
 })
