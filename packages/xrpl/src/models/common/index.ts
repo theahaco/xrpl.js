@@ -34,10 +34,26 @@ export type Amount = IssuedCurrencyAmount | string
 
 export type ClawbackAmount = IssuedCurrencyAmount | MPTAmount
 
+/**
+ * One balance row as returned by `Client.getBalances` and
+ * `getBalanceChanges`. Three shapes share this interface:
+ *
+ * - XRP: `{ currency: 'XRP', value }`.
+ * - Issued currency (trust line): `{ currency, issuer, value }`.
+ * - Multi-Purpose Token: `{ currency: 'MPT', mpt_issuance_id, value }`. The
+ *   `value` is an integer count of the issuance's fractional units; divide by
+ *   `10 ** AssetScale` of the `MPTokenIssuance` to get the display amount.
+ *
+ * Use `mpt_issuance_id` (not `currency`) to tell an MPT row apart: `'MPT'` is
+ * also a valid three-letter issued-currency code, but an issued-currency row
+ * never carries `mpt_issuance_id`.
+ */
 export interface Balance {
   currency: string
   issuer?: string
   value: string
+  /** The 192-bit MPTokenIssuanceID, present only on MPT rows. */
+  mpt_issuance_id?: string
 }
 
 export interface Signer {

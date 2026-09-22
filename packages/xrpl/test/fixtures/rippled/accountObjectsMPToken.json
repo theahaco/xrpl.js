@@ -1,0 +1,24 @@
+{
+  "id": 1,
+  "status": "success",
+  "type": "response",
+  "result": {
+    "account": "r327rgjyTDWxvoyS7u89Uwk8KnDmqemLxi",
+    "account_objects": [
+      {
+        "Account": "r327rgjyTDWxvoyS7u89Uwk8KnDmqemLxi",
+        "Flags": 2,
+        "LedgerEntryType": "MPToken",
+        "MPTAmount": "75",
+        "MPTokenIssuanceID": "00000003F31B3639EF0D2EB4647C7722C5E92519042CC9B2",
+        "OwnerNode": "0",
+        "PreviousTxnID": "C4A67DFBA994A69A09372E37C26F7BBE4368CC16C736922E69BCF2A0AD58FA98",
+        "PreviousTxnLgrSeq": 18,
+        "index": "F5BB1522AAA887620D186C6F203AE92355AB80303F0B856F7B47322AB9D632D5"
+      }
+    ],
+    "ledger_hash": "79D492537E84BB649C47D730153C56320A83B5C082B91C854B52E4C71EC137B8",
+    "ledger_index": 20,
+    "validated": true
+  }
+}

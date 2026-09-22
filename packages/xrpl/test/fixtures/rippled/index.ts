@@ -1,5 +1,6 @@
 import normalAccountInfo from './accountInfo.json'
 import emptyAccountObjects from './accountObjectsEmpty.json'
+import mptokenAccountObjects from './accountObjectsMPToken.json'
 import normalAccountObjects from './accountObjectsNormal.json'
 import normalAccountTx from './accountTx.json'
 import fabric from './bookOffers'
@@ -68,6 +69,7 @@ const partial_payments = {
 const account_objects = {
   normal: normalAccountObjects,
   empty: emptyAccountObjects,
+  mptoken: mptokenAccountObjects,
 }
 
 const account_info = {

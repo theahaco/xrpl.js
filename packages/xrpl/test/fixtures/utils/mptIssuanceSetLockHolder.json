@@ -1,0 +1,63 @@
+{
+  "hash": "EDF842A42079C59D849D1314EB0C12E826AF3522596DB553ED15BAC1D07C13C0",
+  "ledger_index": 13,
+  "validated": true,
+  "tx_json": {
+    "Account": "rPwRoK1JBVdHuJcfuch8u7kkysS9GHNS4B",
+    "Fee": "240",
+    "Flags": 1,
+    "Holder": "r327rgjyTDWxvoyS7u89Uwk8KnDmqemLxi",
+    "LastLedgerSequence": 32,
+    "MPTokenIssuanceID": "00000003F31B3639EF0D2EB4647C7722C5E92519042CC9B2",
+    "Sequence": 7,
+    "SigningPubKey": "EDDC49FFD03CF2970F44D1C572221D4365F666A51756FC38A16E66188E37A18722",
+    "TransactionType": "MPTokenIssuanceSet",
+    "TxnSignature": "9F35840BB67D0B3EE571DF6427F1286EE28C424F14A34D4DC1C4C21836D797E510FD2173CB14FB4C8DA243D53A54A3BFCCF0FDEB3A5E3603DD4CBE27E24D8709",
+    "ctid": "C000000D00000000",
+    "date": 843404900,
+    "ledger_index": 13
+  },
+  "metadata": {
+    "AffectedNodes": [
+      {
+        "ModifiedNode": {
+          "FinalFields": {
+            "Account": "r327rgjyTDWxvoyS7u89Uwk8KnDmqemLxi",
+            "Flags": 3,
+            "MPTAmount": "90",
+            "MPTokenIssuanceID": "00000003F31B3639EF0D2EB4647C7722C5E92519042CC9B2",
+            "OwnerNode": "0"
+          },
+          "LedgerEntryType": "MPToken",
+          "LedgerIndex": "F5BB1522AAA887620D186C6F203AE92355AB80303F0B856F7B47322AB9D632D5",
+          "PreviousFields": {
+            "Flags": 2
+          },
+          "PreviousTxnID": "30A541FDF8754357E7D90931CBD46BD9CB150EAC70F43A55B308675B896CDE7B",
+          "PreviousTxnLgrSeq": 12
+        }
+      },
+      {
+        "ModifiedNode": {
+          "FinalFields": {
+            "Account": "rPwRoK1JBVdHuJcfuch8u7kkysS9GHNS4B",
+            "Balance": "399998800",
+            "Flags": 0,
+            "OwnerCount": 1,
+            "Sequence": 8
+          },
+          "LedgerEntryType": "AccountRoot",
+          "LedgerIndex": "F69F366FF8DE96C76F25AE56685031E7544D3958B847A41B604CE0B600E4B17A",
+          "PreviousFields": {
+            "Balance": "399999040",
+            "Sequence": 7
+          },
+          "PreviousTxnID": "05A63E09278C8FA041089F2C683464DBD662738BB39A8082FDEC7898ECF2E5C3",
+          "PreviousTxnLgrSeq": 11
+        }
+      }
+    ],
+    "TransactionIndex": 0,
+    "TransactionResult": "tesSUCCESS"
+  }
+}

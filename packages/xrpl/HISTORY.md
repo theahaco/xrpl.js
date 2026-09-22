@@ -10,6 +10,7 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 
 ### Fixed
 * Fix the `MPToken` ledger type to match rippled: add the required `Account` field, make `MPTAmount` optional (rippled omits it when the balance is zero) and `OwnerNode` required. Add the synthetic `mpt_issuance_id` rippled returns on every `MPTokenIssuance` JSON view. Type `Credential.Flags` as a `number` (the ledger never returns a flags object).
+* Fix `Client.getBalances` and `getBalanceChanges` silently dropping Multi-Purpose Tokens: `getBalances` now also reads the account's `MPToken` objects, and `getBalanceChanges` now reports the `MPToken` and `MPTokenIssuance` nodes of a transaction's metadata (an MPT payment or clawback used to report only the XRP fee). Both return the MPT as a `Balance` with `currency: 'MPT'` and the new optional `mpt_issuance_id` field, whose `value` is an integer count of the issuance's fractional units.
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES

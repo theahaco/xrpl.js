@@ -1,0 +1,72 @@
+{
+  "hash": "E071BFBA09F345BE9BF2D642E69DFD934FC9B8B29DF7CE15598CCFC93DC0D155",
+  "ledger_index": 20,
+  "validated": true,
+  "tx_json": {
+    "Account": "rNB82s1SDgtEFfP1R4VdJQwhtehQp2C3Sm",
+    "Fee": "240",
+    "Flags": 1,
+    "LastLedgerSequence": 39,
+    "MPTokenIssuanceID": "00000003F31B3639EF0D2EB4647C7722C5E92519042CC9B2",
+    "Sequence": 6,
+    "SigningPubKey": "ED99E27C1C17A2F969FD199525792102E3D19BD5D92925786A5DB13D910D854DC1",
+    "TransactionType": "MPTokenAuthorize",
+    "TxnSignature": "DA031EF79BE7ABC7DC4D567E1755A93A460F87175686EC5CA842C83F95AF4BC3E09DF7AACFA88BCC01F1C86944AA75D82CDA37B8A775C58D811616BFBFCC9903",
+    "ctid": "C000001400000000",
+    "date": 843404907,
+    "ledger_index": 20
+  },
+  "metadata": {
+    "AffectedNodes": [
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "Owner": "rNB82s1SDgtEFfP1R4VdJQwhtehQp2C3Sm",
+            "PreviousTxnID": "1AA6AD747660DD609745097352CC91C454430077FEC9E4E89DD514CB2E2F08C9",
+            "PreviousTxnLgrSeq": 10,
+            "RootIndex": "13F73295F9205FF47C48A89E426C5F186E3DB2E8DF62E4479724BA81942CBC9B"
+          },
+          "LedgerEntryType": "DirectoryNode",
+          "LedgerIndex": "13F73295F9205FF47C48A89E426C5F186E3DB2E8DF62E4479724BA81942CBC9B"
+        }
+      },
+      {
+        "ModifiedNode": {
+          "FinalFields": {
+            "Account": "rNB82s1SDgtEFfP1R4VdJQwhtehQp2C3Sm",
+            "Balance": "399999520",
+            "Flags": 0,
+            "OwnerCount": 0,
+            "Sequence": 7
+          },
+          "LedgerEntryType": "AccountRoot",
+          "LedgerIndex": "C65798503C6CAC7562F5F8A57ACBF375D94C4C7AF121BF5068697AF156EA0779",
+          "PreviousFields": {
+            "Balance": "399999760",
+            "OwnerCount": 1,
+            "Sequence": 6
+          },
+          "PreviousTxnID": "1AA6AD747660DD609745097352CC91C454430077FEC9E4E89DD514CB2E2F08C9",
+          "PreviousTxnLgrSeq": 10
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Account": "rNB82s1SDgtEFfP1R4VdJQwhtehQp2C3Sm",
+            "Flags": 2,
+            "MPTokenIssuanceID": "00000003F31B3639EF0D2EB4647C7722C5E92519042CC9B2",
+            "OwnerNode": "0",
+            "PreviousTxnID": "3EC0C2570794594068AECCA24EFCEE0843F041311FC131FB7EA1B653450C9056",
+            "PreviousTxnLgrSeq": 19
+          },
+          "LedgerEntryType": "MPToken",
+          "LedgerIndex": "D859AF2778791375ABE74FE1C06288A622BA56E9F606D0531377F1C18FD888B8"
+        }
+      }
+    ],
+    "TransactionIndex": 0,
+    "TransactionResult": "tesSUCCESS"
+  }
+}

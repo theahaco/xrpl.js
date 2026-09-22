@@ -70,7 +70,7 @@ import {
   handleDeliverMax,
   getTransactionFee,
 } from '../sugar/autofill'
-import { formatBalances } from '../sugar/balances'
+import { formatBalances, formatMPTokenBalances } from '../sugar/balances'
 import {
   validateOrderbookOptions,
   createBookOffersRequest,
@@ -956,7 +956,14 @@ class Client extends EventEmitter<EventTypes> {
   }
 
   /**
-   * Get XRP/non-XRP balances for an account.
+   * Get XRP/non-XRP balances for an account: the XRP balance, one row per
+   * trust line (`account_lines`) and one row per Multi-Purpose Token holding
+   * (`account_objects` of type `mptoken`).
+   *
+   * An MPT row has `currency: 'MPT'` and carries the `mpt_issuance_id`; its
+   * `value` is the raw integer count of the issuance's fractional units, not
+   * scaled by the issuance's `AssetScale`. A holder that has authorized an
+   * issuance but holds none of it appears with `value: '0'`.
    *
    * @category Abstraction
    *
@@ -999,7 +1006,8 @@ class Client extends EventEmitter<EventTypes> {
    * ledger_index.
    * @param options.ledger_hash - Retrieve the account balances at the ledger with
    * a given ledger_hash.
-   * @param options.peer - Filter balances by peer.
+   * @param options.peer - Filter balances by peer: only trust lines with this
+   * counterparty and MPTs issued by this account are returned (and no XRP row).
    * @param options.limit - Limit number of balances to return.
    * @returns An array of XRP/non-XRP balances for the given account.
    */
@@ -1012,9 +1020,7 @@ class Client extends EventEmitter<EventTypes> {
       peer?: string
       limit?: number
     } = {},
-  ): Promise<
-    Array<{ value: string; currency: string; issuer?: string | undefined }>
-  > {
+  ): Promise<Balance[]> {
     const balances: Balance[] = []
 
     // get XRP balance
@@ -1037,16 +1043,30 @@ class Client extends EventEmitter<EventTypes> {
     }
     const linesPromise = this.requestAll(linesRequest)
 
+    // get MPT balances
+    const mptokensRequest: AccountObjectsRequest = {
+      command: 'account_objects',
+      account: address,
+      type: 'mptoken',
+      ledger_index: options.ledger_index ?? 'validated',
+      ledger_hash: options.ledger_hash,
+      limit: options.limit,
+    }
+    const mptokensPromise = this.requestAll(mptokensRequest)
+
     // combine results
-    await Promise.all([xrpPromise, linesPromise]).then(
-      ([xrpBalance, linesResponses]) => {
+    await Promise.all([xrpPromise, linesPromise, mptokensPromise]).then(
+      ([xrpBalance, linesResponses, mptokensResponses]) => {
         const accountLinesBalance = linesResponses.flatMap((response) =>
           formatBalances(response.result.lines),
+        )
+        const mptokenBalances = mptokensResponses.flatMap((response) =>
+          formatMPTokenBalances(response.result.account_objects, options.peer),
         )
         if (xrpBalance !== 0) {
           balances.push({ currency: 'XRP', value: xrpBalance.toString() })
         }
-        balances.push(...accountLinesBalance)
+        balances.push(...accountLinesBalance, ...mptokenBalances)
       },
     )
     return balances.slice(0, options.limit)
