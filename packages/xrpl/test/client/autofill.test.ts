@@ -4,6 +4,7 @@ import {
   XrplError,
   AccountDelete,
   EscrowFinish,
+  MPTokenIssuanceSetFlags,
   Payment,
   SponsorshipSet,
   Transaction,
@@ -734,6 +735,58 @@ describe('client.autofill', function () {
     const txResult = await testContext.client.autofill(tx)
     assert.strictEqual(txResult.RawTransactions[0].RawTransaction.Sequence, 24)
     assert.strictEqual(txResult.RawTransactions[1].RawTransaction.Sequence, 23)
+  })
+
+  it('should normalise inner Batch transaction Flags and DeliverMax', async function () {
+    const sender = 'rGWrZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf'
+    const tx: Batch = {
+      TransactionType: 'Batch',
+      Account: sender,
+      RawTransactions: [
+        {
+          RawTransaction: {
+            TransactionType: 'MPTokenIssuanceSet',
+            Flags: { tfInnerBatchTxn: true, tfMPTUnlock: true },
+            Account: sender,
+            MPTokenIssuanceID:
+              '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+          },
+        },
+        {
+          RawTransaction: {
+            TransactionType: 'Payment',
+            Flags: { tfInnerBatchTxn: true },
+            Account: sender,
+            Destination: 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn',
+            DeliverMax: AMOUNT,
+          } as Payment,
+        },
+      ],
+      Fee,
+      Sequence,
+      LastLedgerSequence,
+    }
+    testContext.mockRippled!.addResponse('account_info', {
+      status: 'success',
+      type: 'response',
+      result: {
+        account_data: {
+          Sequence: 23,
+        },
+      },
+    })
+    const txResult = await testContext.client.autofill(tx)
+    const [issuanceSet, payment] = txResult.RawTransactions.map(
+      (rawTx) => rawTx.RawTransaction,
+    )
+    assert.strictEqual(
+      issuanceSet.Flags,
+      // eslint-disable-next-line no-bitwise -- flag composition
+      0x40000000 | MPTokenIssuanceSetFlags.tfMPTUnlock,
+    )
+    assert.strictEqual(payment.Flags, 0x40000000)
+    assert.strictEqual((payment as Payment).Amount, AMOUNT)
+    assert.isUndefined((payment as Payment).DeliverMax)
   })
 
   it('should autofill LoanSet transaction', async function () {

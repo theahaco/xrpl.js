@@ -13,6 +13,7 @@ import {
 } from '../models/methods'
 import { Batch, Payment, Transaction } from '../models/transactions'
 import { Account, areAddressesEqual } from '../models/transactions/common'
+import { convertTxFlagsToNumber } from '../models/utils/flags'
 import { xrpToDrops } from '../utils'
 
 import getFeeXrp from './getFeeXrp'
@@ -607,7 +608,7 @@ export function handleDeliverMax(tx: Payment): void {
  * @param tx - The transaction object.
  * @returns A promise that resolves with void if there are no blockers, or rejects with an XrplError if there are blockers.
  */
-// eslint-disable-next-line complexity, max-lines-per-function -- needed here, lots to check
+// eslint-disable-next-line complexity, max-lines-per-function, max-statements -- needed here, lots to check
 export async function autofillBatchTxn(
   client: Client,
   tx: Batch,
@@ -661,6 +662,15 @@ export async function autofillBatchTxn(
 
     if (txn.NetworkID == null && txNeedsNetworkID(client)) {
       txn.NetworkID = client.networkID
+    }
+
+    // Mirror the outer-transaction normalisation in `Client.autofill`: the codec
+    // needs numeric Flags, and `DeliverMax` is an RPC-level alias for `Amount`.
+    if (txn.Flags != null) {
+      txn.Flags = convertTxFlagsToNumber(txn)
+    }
+    if (txn.TransactionType === 'Payment' && txn.DeliverMax != null) {
+      handleDeliverMax(txn)
     }
   }
 }

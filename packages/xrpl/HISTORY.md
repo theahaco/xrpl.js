@@ -6,6 +6,12 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 
 ### Added
 * Add `LendingProtocolV1_1` support.
+
+### Fixed
+* `validate` (and therefore `Wallet.sign`, `multisign` and the Batch/sponsor/counterparty signers) now rejects any top-level field the binary codec does not know with `ValidationError: <TransactionType>: unknown field "<name>"`. Previously an unknown field starting with a lowercase letter (e.g. `holder` instead of `Holder`) was silently dropped by the codec, so an `MPTokenIssuanceSet` meant to lock one holder was signed and submitted as a lock of every holder. `DeliverMax` is still accepted on `Payment`.
+* `Wallet.sign` now runs `validate` before rewriting issued-currency amounts, so a missing or malformed `Payment.Amount` surfaces as the existing `ValidationError` instead of a `TypeError`; MPT amounts are no longer canonicalised (`"10.0"` is rejected the same way on `Payment` as on `Clawback`); and interface-form `Flags` (`{ tfMPTLock: true }`) are converted to a number before encoding instead of failing in the codec.
+* `Wallet.sign` re-decodes its own `tx_blob` and throws if any field was dropped during serialization.
+* `Client.autofill` now converts interface-form `Flags` and folds `DeliverMax` into `Amount` on Batch inner transactions, as it already did for the outer transaction.
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES

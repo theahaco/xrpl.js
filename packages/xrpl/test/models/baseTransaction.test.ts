@@ -1,3 +1,4 @@
+/* eslint-disable max-statements -- many validation cases in one describe block */
 import { assert } from 'chai'
 
 import { ValidationError } from '../../src'
@@ -54,7 +55,7 @@ describe('BaseTransaction', function () {
         },
       ],
       SourceTag: 31,
-      SigningPublicKey:
+      SigningPubKey:
         '03680DD274EE55594F7244F489CD38CF3A5A1A4657122FB8143E185B2BA043DF36',
       TicketSequence: 10,
       TxnSignature:
@@ -62,6 +63,45 @@ describe('BaseTransaction', function () {
     }
 
     assertValid(txJson)
+  })
+
+  it(`Rejects an unknown lowercase field and suggests the codec spelling`, function () {
+    const txJson: any = {
+      Account: 'r97KeayHuEsDwyU1yPBVtMLLoQr79QcRFe',
+      TransactionType: 'MPTokenIssuanceSet',
+      holder: 'rajgkBmMxmz161r8bWYH7CQAFZP5bA9oSG',
+    }
+
+    assertInvalid(
+      txJson,
+      'MPTokenIssuanceSet: unknown field "holder" (did you mean "Holder"?)',
+    )
+  })
+
+  it(`Rejects an unknown capitalised field`, function () {
+    const txJson: any = {
+      Account: 'r97KeayHuEsDwyU1yPBVtMLLoQr79QcRFe',
+      TransactionType: 'MPTokenIssuanceSet',
+      MPTokenHolder: 'rajgkBmMxmz161r8bWYH7CQAFZP5bA9oSG',
+    }
+
+    assertInvalid(txJson, 'MPTokenIssuanceSet: unknown field "MPTokenHolder"')
+  })
+
+  it(`Allows DeliverMax on a Payment only`, function () {
+    const payment: any = {
+      Account: 'r97KeayHuEsDwyU1yPBVtMLLoQr79QcRFe',
+      TransactionType: 'Payment',
+      DeliverMax: '1000',
+    }
+    assertValid(payment)
+
+    const accountSet: any = {
+      Account: 'r97KeayHuEsDwyU1yPBVtMLLoQr79QcRFe',
+      TransactionType: 'AccountSet',
+      DeliverMax: '1000',
+    }
+    assertInvalid(accountSet, 'AccountSet: unknown field "DeliverMax"')
   })
 
   it(`Verifies only required BaseTransaction`, function () {

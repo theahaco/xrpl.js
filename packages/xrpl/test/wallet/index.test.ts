@@ -2,6 +2,8 @@ import { assert } from 'chai'
 import { decode } from 'ripple-binary-codec'
 
 import {
+  MPTokenIssuanceSet,
+  MPTokenIssuanceSetFlags,
   NFTokenMint,
   Payment,
   Transaction,
@@ -1383,6 +1385,167 @@ describe('Wallet', function () {
       assert.throws(() => {
         wallet.sign(tx)
       }, /URI must be in hex format/u)
+    })
+
+    describe('unknown fields', function () {
+      const TOKEN_ID = '000004C463C52827307480341125DA0577DEFC38405B0E3E'
+      const HOLDER = 'rajgkBmMxmz161r8bWYH7CQAFZP5bA9oSG'
+      let issuanceSet: MPTokenIssuanceSet
+
+      beforeEach(function () {
+        issuanceSet = {
+          TransactionType: 'MPTokenIssuanceSet',
+          Account: wallet.classicAddress,
+          MPTokenIssuanceID: TOKEN_ID,
+          Flags: MPTokenIssuanceSetFlags.tfMPTLock,
+          Sequence: 1,
+          Fee: '12',
+        }
+      })
+
+      it('signs a per-holder lock when Holder is spelled correctly', function () {
+        const result = wallet.sign({ ...issuanceSet, Holder: HOLDER })
+        assert.strictEqual(decode(result.tx_blob).Holder, HOLDER)
+      })
+
+      it('rejects a lowercase field instead of signing it away as a global lock', function () {
+        // Before this check the codec silently dropped `holder` and the
+        // signed transaction locked every holder of the issuance.
+        assert.throws(
+          () => wallet.sign({ ...issuanceSet, holder: HOLDER }),
+          ValidationError,
+          'MPTokenIssuanceSet: unknown field "holder" (did you mean "Holder"?)',
+        )
+      })
+
+      it('rejects an unknown capitalised field with a ValidationError', function () {
+        assert.throws(
+          () => wallet.sign({ ...issuanceSet, MPTokenHolder: HOLDER }),
+          ValidationError,
+          'MPTokenIssuanceSet: unknown field "MPTokenHolder"',
+        )
+      })
+
+      it('rejects a lowercase field on MPTokenIssuanceCreate', function () {
+        assert.throws(
+          () =>
+            wallet.sign({
+              TransactionType: 'MPTokenIssuanceCreate',
+              Account: wallet.classicAddress,
+              assetScale: 2,
+              Sequence: 1,
+              Fee: '12',
+            }),
+          ValidationError,
+          'MPTokenIssuanceCreate: unknown field "assetScale" (did you mean "AssetScale"?)',
+        )
+      })
+    })
+
+    describe('validates before rewriting amounts', function () {
+      const MPT_ID = '000004C463C52827307480341125DA0577DEFC38405B0E3E'
+      const DESTINATION = 'rQ3PTWGLCbPz8ZCicV5tCX3xuymojTng5r'
+
+      it('reports a missing Payment.Amount as a ValidationError', function () {
+        assert.throws(
+          () =>
+            wallet.sign({
+              TransactionType: 'Payment',
+              Account: wallet.classicAddress,
+              Destination: DESTINATION,
+              Sequence: 1,
+              Fee: '12',
+            } as unknown as Payment),
+          ValidationError,
+          'PaymentTransaction: missing field Amount',
+        )
+      })
+
+      it('reports a non-object Payment.Amount as a ValidationError', function () {
+        assert.throws(
+          () =>
+            wallet.sign({
+              TransactionType: 'Payment',
+              Account: wallet.classicAddress,
+              Destination: DESTINATION,
+              Amount: { mpt_issuance_id: MPT_ID, value: 5 },
+              Sequence: 1,
+              Fee: '12',
+            } as unknown as Payment),
+          ValidationError,
+          'PaymentTransaction: invalid Amount',
+        )
+      })
+
+      it('does not rewrite a non-canonical MPT value for Payment', function () {
+        // "10.0" used to be canonicalised to "10" for Payment only, while the
+        // same string was rejected on Clawback. Both now fail the same way.
+        const payment: Payment = {
+          TransactionType: 'Payment',
+          Account: wallet.classicAddress,
+          Destination: DESTINATION,
+          Amount: { mpt_issuance_id: MPT_ID, value: '10.0' },
+          Sequence: 1,
+          Fee: '12',
+        }
+        const clawback: Transaction = {
+          TransactionType: 'Clawback',
+          Account: wallet.classicAddress,
+          Holder: DESTINATION,
+          Amount: { mpt_issuance_id: MPT_ID, value: '10.0' },
+          Sequence: 1,
+          Fee: '12',
+        }
+        const errorMessage = (fn: () => unknown): string => {
+          try {
+            fn()
+          } catch (error) {
+            return (error as Error).message
+          }
+          return 'did not throw'
+        }
+        const paymentError = errorMessage(() => wallet.sign(payment))
+        assert.include(paymentError, '10.0')
+        assert.strictEqual(
+          paymentError,
+          errorMessage(() => wallet.sign(clawback)),
+        )
+      })
+    })
+
+    describe('interface-form Flags', function () {
+      it('converts object Flags to a number before encoding', function () {
+        const tx: MPTokenIssuanceSet = {
+          TransactionType: 'MPTokenIssuanceSet',
+          Account: wallet.classicAddress,
+          MPTokenIssuanceID: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+          Flags: { tfMPTLock: true },
+          Sequence: 1,
+          Fee: '12',
+        }
+        const result = wallet.sign(tx)
+        assert.strictEqual(
+          decode(result.tx_blob).Flags,
+          MPTokenIssuanceSetFlags.tfMPTLock,
+        )
+        // The caller's object is not mutated.
+        assert.deepEqual(tx.Flags, { tfMPTLock: true })
+      })
+
+      it('still rejects an inner Batch transaction given object Flags', function () {
+        assert.throws(
+          () =>
+            wallet.sign({
+              TransactionType: 'AccountSet',
+              Account: wallet.classicAddress,
+              Flags: { tfInnerBatchTxn: true },
+              Sequence: 1,
+              Fee: '0',
+            }),
+          ValidationError,
+          'Cannot sign a Batch inner transaction.',
+        )
+      })
     })
   })
 
