@@ -1,4 +1,5 @@
 import { stringToHex } from '@xrplf/isomorphic/utils'
+import { assert } from 'chai'
 
 import { MPTokenMetadata } from '../../src'
 import {
@@ -8,7 +9,7 @@ import {
   VaultWithdrawalPolicy,
 } from '../../src/models/transactions'
 import { validateVaultCreate } from '../../src/models/transactions/vaultCreate'
-import { MPT_META_WARNING_HEADER } from '../../src/models/utils/mptokenMetadata'
+import { validateMPTokenMetadata } from '../../src/models/utils/mptokenMetadata'
 import { assertTxIsValid, assertTxValidationError } from '../testUtils'
 
 const assertValid = (tx: any): void => assertTxIsValid(tx, validateVaultCreate)
@@ -336,19 +337,22 @@ describe('VaultCreate', function () {
 })
 
 /**
- * Test console warning is logged while validating VaultCreate for MPTokenMetadata field.
+ * Non-XLS-89 metadata is advisory: `validate()` must not write to the console.
+ * The messages are available through `validateMPTokenMetadata`.
  */
-/* eslint-disable no-console -- Require to test console warnings  */
+/* eslint-disable no-console -- asserting that nothing is written to the console */
 describe('MPTokenMetadata warnings', function () {
   beforeEach(() => {
-    jest.spyOn(console, 'warn')
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+    jest.spyOn(console, 'error').mockImplementation(() => undefined)
+    jest.spyOn(console, 'log').mockImplementation(() => undefined)
   })
 
   afterEach(() => {
     jest.restoreAllMocks()
   })
 
-  it(`logs console warning`, function () {
+  it(`does not write to the console for non-XLS-89 metadata`, function () {
     const mptMetaData: MPTokenMetadata = {
       ticker: 'TBILL',
       name: 'T-Bill Token',
@@ -356,23 +360,25 @@ describe('MPTokenMetadata warnings', function () {
       asset_subclass: 'treasury',
       issuer_name: 'Issuer',
     } as MPTokenMetadata
+    const metadataHex = stringToHex(JSON.stringify(mptMetaData))
     const tx = {
       TransactionType: 'VaultCreate',
       Account: 'rfmDuhDyLGgx94qiwf3YF8BUV5j6KSvE8',
       Asset: { currency: 'XRP' },
       WithdrawalPolicy: VaultWithdrawalPolicy.vaultStrategyFirstComeFirstServe,
-      MPTokenMetadata: stringToHex(JSON.stringify(mptMetaData)),
+      MPTokenMetadata: metadataHex,
     }
 
     assertValid(tx)
 
-    const expectedMessage = [
-      MPT_META_WARNING_HEADER,
-      '- icon/i: should be a non-empty string.',
-    ].join('\n')
+    expect(console.warn).not.toHaveBeenCalled()
+    expect(console.error).not.toHaveBeenCalled()
+    expect(console.log).not.toHaveBeenCalled()
 
-    expect(console.warn).toHaveBeenCalledWith(
-      expect.stringContaining(expectedMessage),
+    // The advisory check is still available to callers who want it.
+    assert.include(
+      validateMPTokenMetadata(metadataHex),
+      'icon/i: should be a non-empty string.',
     )
   })
 })

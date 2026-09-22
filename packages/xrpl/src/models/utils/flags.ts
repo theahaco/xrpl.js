@@ -180,28 +180,34 @@ export function convertTxFlagsToNumber(tx: Transaction): number {
     return txFlags
   }
 
-  if (isTxToFlagKey(tx.TransactionType)) {
-    const flagEnum = txToFlag[tx.TransactionType]
-    return Object.keys(txFlags).reduce((resultFlags, flag) => {
-      if (flagEnum[flag] == null && GlobalFlags[flag] == null) {
-        throw new ValidationError(`Invalid flag ${flag}.`)
-      }
-
-      return txFlags[flag]
-        ? resultFlags | (flagEnum[flag] ?? GlobalFlags[flag])
-        : resultFlags
-    }, 0)
-  }
-
+  const flagEnum = isTxToFlagKey(tx.TransactionType)
+    ? txToFlag[tx.TransactionType]
+    : {}
   return Object.keys(txFlags).reduce((resultFlags, flag) => {
-    if (GlobalFlags[flag] == null) {
+    if (flagEnum[flag] == null && GlobalFlags[flag] == null) {
       throw new ValidationError(
-        `Invalid flag ${flag}. Valid flags are ${JSON.stringify(GlobalFlags)}`,
+        `${tx.TransactionType}: invalid flag "${flag}". Valid flags: ${[
+          ...flagNames(flagEnum),
+          ...flagNames(GlobalFlags),
+        ].join(', ')}`,
       )
     }
 
-    return txFlags[flag] ? resultFlags | GlobalFlags[flag] : resultFlags
+    return txFlags[flag]
+      ? resultFlags | (flagEnum[flag] ?? GlobalFlags[flag])
+      : resultFlags
   }, 0)
+}
+
+/**
+ * Lists the flag names of a numeric enum, skipping the reverse (number -> name)
+ * entries TypeScript adds to it.
+ *
+ * @param flagEnum - A transaction flag enum.
+ * @returns The flag names.
+ */
+function flagNames(flagEnum: Record<string, unknown>): string[] {
+  return Object.keys(flagEnum).filter((key) => Number.isNaN(Number(key)))
 }
 
 /**

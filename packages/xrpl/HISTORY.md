@@ -6,6 +6,17 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 
 ### Added
 * Add `LendingProtocolV1_1` support.
+
+### Fixed
+* `validate()`/`Wallet.sign()` no longer write to the console when `MPTokenMetadata` (on `MPTokenIssuanceCreate`, `MPTokenIssuanceSet` and `VaultCreate`) does not follow XLS-89. The advisory check is available as `validateMPTokenMetadata`.
+* `Client.getServerInfo()` now rejects when `server_info` fails instead of printing to the console; `Client.connect()` still resolves but emits an `error` event (code `'server_info'`) in that case.
+* The `AccountDelete` autofill error now names the ledger entry types that actually block deletion (for example `MPTokenIssuance`, `MPToken`) instead of a fixed list, and a missing owner reserve is reported as an `XrplError` rather than a plain `Error`.
+* Flag-conversion errors name the transaction type and list only valid flag names (no more reversed enum dump).
+* `Client.fundWallet()` throws `NotConnectedError` (a `ConnectionError`) instead of `RippledError` when the client is not connected.
+* Batch inner-transaction rule violations found during `autofill` are `ValidationError`s that name the offending `RawTransactions[i].RawTransaction` field, matching `validate()`.
+
+### Deprecated
+* `UnexpectedError` and `RippledNotInitializedError` are never thrown by xrpl.js; they will be removed in the next major version.
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES

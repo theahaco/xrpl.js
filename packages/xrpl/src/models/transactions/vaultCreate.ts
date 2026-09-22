@@ -1,11 +1,7 @@
 import { ValidationError } from '../../errors'
 import { Currency } from '../common'
 import { hasFlag, isHex } from '../utils'
-import {
-  MAX_MPT_META_BYTE_LENGTH,
-  MPT_META_WARNING_HEADER,
-  validateMPTokenMetadata,
-} from '../utils/mptokenMetadata'
+import { MAX_MPT_META_BYTE_LENGTH } from '../utils/mptokenMetadata'
 
 import {
   BaseTransaction,
@@ -290,20 +286,6 @@ export function validateVaultCreate(tx: Record<string, unknown>): void {
     throw new ValidationError(
       'VaultCreate: SubscriptionDate and RedemptionDate can only be set on a close-ended vault (VaultKind=1)',
     )
-  }
-
-  if (tx.MPTokenMetadata != null) {
-    const validationMessages = validateMPTokenMetadata(tx.MPTokenMetadata)
-
-    if (validationMessages.length > 0) {
-      const message = [
-        MPT_META_WARNING_HEADER,
-        ...validationMessages.map((msg) => `- ${msg}`),
-      ].join('\n')
-
-      // eslint-disable-next-line no-console -- Required here.
-      console.warn(message)
-    }
   }
 }
 /* eslint-enable max-lines-per-function */

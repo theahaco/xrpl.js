@@ -266,14 +266,16 @@ export async function setNextValidSequenceNumber(
  *
  * @param client - The client object used to make the request.
  * @returns A Promise that resolves to the owner reserve fee as a BigNumber.
- * @throws {Error} Throws an error if the owner reserve fee cannot be fetched.
+ * @throws {XrplError} Throws an error if the owner reserve fee cannot be fetched.
  */
 async function fetchOwnerReserveFee(client: Client): Promise<BigNumber> {
   const response = await client.request({ command: 'server_state' })
   const fee = response.result.state.validated_ledger?.reserve_inc
 
   if (fee == null) {
-    return Promise.reject(new Error('Could not fetch Owner Reserve.'))
+    throw new XrplError(
+      'Could not fetch Owner Reserve: server_state.validated_ledger.reserve_inc is missing.',
+    )
   }
 
   return new BigNumber(fee)
@@ -539,10 +541,24 @@ export async function checkAccountDeleteBlockers(
     client.request(infoRequest),
   ])
 
-  if (objectsResponse.result.account_objects.length > 0) {
+  const blockers = objectsResponse.result.account_objects
+  if (blockers.length > 0) {
+    // Name the ledger entry types actually blocking deletion (Escrow, PayChannel,
+    // RippleState, Check, MPTokenIssuance, MPToken, ...) rather than a fixed list.
+    const countsByType = new Map<string, number>()
+    for (const blocker of blockers) {
+      countsByType.set(
+        blocker.LedgerEntryType,
+        (countsByType.get(blocker.LedgerEntryType) ?? 0) + 1,
+      )
+    }
+    const summary = Array.from(
+      countsByType,
+      ([type, count]) => `${type} (${count})`,
+    ).join(', ')
     throw new XrplError(
-      `Account ${tx.Account} cannot be deleted; there are Escrows, PayChannels, RippleStates, Checks, or Sponsorships associated with the account.`,
-      objectsResponse.result.account_objects,
+      `Account ${tx.Account} cannot be deleted; it still owns deletion-blocking ledger entries: ${summary}.`,
+      blockers,
     )
   }
 
@@ -614,8 +630,9 @@ export async function autofillBatchTxn(
 ): Promise<void> {
   const accountSequences: Record<string, number> = {}
 
-  for (const rawTxn of tx.RawTransactions) {
+  for (const [index, rawTxn] of tx.RawTransactions.entries()) {
     const txn = rawTxn.RawTransaction
+    const path = `RawTransactions[${index}].RawTransaction`
 
     // Sequence processing
     if (txn.Sequence == null && txn.TicketSequence == null) {
@@ -638,25 +655,29 @@ export async function autofillBatchTxn(
     if (txn.Fee == null) {
       txn.Fee = '0'
     } else if (txn.Fee !== '0') {
-      throw new XrplError('Must have `Fee of "0" in inner Batch transaction.')
+      throw new ValidationError(
+        `Batch: ${path}.Fee must be "0" in an inner Batch transaction`,
+      )
     }
 
     if (txn.SigningPubKey == null) {
       txn.SigningPubKey = ''
     } else if (txn.SigningPubKey !== '') {
-      throw new XrplError(
-        'Must have `SigningPubKey` of "" in inner Batch transaction.',
+      throw new ValidationError(
+        `Batch: ${path}.SigningPubKey must be "" in an inner Batch transaction`,
       )
     }
 
     if (txn.TxnSignature != null) {
-      throw new XrplError(
-        'Must not have `TxnSignature` in inner Batch transaction.',
+      throw new ValidationError(
+        `Batch: ${path}.TxnSignature must not be set in an inner Batch transaction`,
       )
     }
 
     if (txn.Signers != null) {
-      throw new XrplError('Must not have `Signers` in inner Batch transaction.')
+      throw new ValidationError(
+        `Batch: ${path}.Signers must not be set in an inner Batch transaction`,
+      )
     }
 
     if (txn.NetworkID == null && txNeedsNetworkID(client)) {

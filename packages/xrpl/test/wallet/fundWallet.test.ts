@@ -1,5 +1,6 @@
 import { assert } from 'chai'
 
+import { Client, NotConnectedError } from '../../src'
 import {
   FaucetNetwork,
   faucetNetworkPaths,
@@ -11,6 +12,7 @@ import {
   teardownClient,
   type XrplTestContext,
 } from '../setupClient'
+import { assertRejects } from '../testUtils'
 
 describe('Get Faucet host ', function () {
   let testContext: XrplTestContext
@@ -58,5 +60,16 @@ describe('Get Faucet host ', function () {
   it('throws if not connected to a known faucet host', function () {
     testContext.client.networkID = 300
     assert.throws(() => getFaucetHost(testContext.client))
+  })
+})
+
+describe('fundWallet', function () {
+  it('throws NotConnectedError when the client is not connected', async function () {
+    const client = new Client('wss://s:1')
+    await assertRejects(
+      client.fundWallet(),
+      NotConnectedError,
+      'Client not connected, cannot call faucet',
+    )
   })
 })

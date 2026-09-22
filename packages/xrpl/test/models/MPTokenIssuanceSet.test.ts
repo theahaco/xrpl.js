@@ -8,7 +8,10 @@ import {
   tifMPTokenIssuanceImmutableMask,
 } from '../../src/models/transactions/MPTokenIssuanceCreate'
 import { validateMPTokenIssuanceSet } from '../../src/models/transactions/MPTokenIssuanceSet'
-import { MAX_MPT_META_BYTE_LENGTH } from '../../src/models/utils/mptokenMetadata'
+import {
+  MAX_MPT_META_BYTE_LENGTH,
+  validateMPTokenMetadata,
+} from '../../src/models/utils/mptokenMetadata'
 import { assertTxIsValid, assertTxValidationError } from '../testUtils'
 
 const assertValid = (tx: any): void =>
@@ -481,3 +484,40 @@ describe('MPTokenIssuanceSet', function () {
     )
   })
 })
+
+/**
+ * Non-XLS-89 metadata is advisory: `validate()` must not write to the console.
+ * The messages are available through `validateMPTokenMetadata`.
+ */
+/* eslint-disable no-console -- asserting that nothing is written to the console */
+describe('MPTokenIssuanceSet MPTokenMetadata warnings', function () {
+  beforeEach(() => {
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+    jest.spyOn(console, 'error').mockImplementation(() => undefined)
+    jest.spyOn(console, 'log').mockImplementation(() => undefined)
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  it(`does not write to the console for non-XLS-89 metadata`, function () {
+    const metadataHex = stringToHex('{"n":"x"}')
+    const tx = {
+      TransactionType: 'MPTokenIssuanceSet',
+      Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+      MPTokenIssuanceID: TOKEN_ID,
+      MPTokenMetadata: metadataHex,
+    }
+
+    assertValid(tx)
+
+    expect(console.warn).not.toHaveBeenCalled()
+    expect(console.error).not.toHaveBeenCalled()
+    expect(console.log).not.toHaveBeenCalled()
+
+    // The advisory check is still available to callers who want it.
+    expect(validateMPTokenMetadata(metadataHex).length).toBeGreaterThan(0)
+  })
+})
+/* eslint-enable no-console  */

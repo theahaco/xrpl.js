@@ -2,11 +2,7 @@ import { ValidationError } from '../../errors'
 import { isFlagEnabled, isHex } from '../utils'
 // eslint-disable-next-line import/no-cycle -- this method is needed to convert txn flags to number
 import { convertTxFlagsToNumber } from '../utils/flags'
-import {
-  MAX_MPT_META_BYTE_LENGTH,
-  MPT_META_WARNING_HEADER,
-  validateMPTokenMetadata,
-} from '../utils/mptokenMetadata'
+import { MAX_MPT_META_BYTE_LENGTH } from '../utils/mptokenMetadata'
 
 import {
   BaseTransaction,
@@ -321,18 +317,6 @@ export function validateMPTokenIssuanceSet(tx: Record<string, unknown>): void {
       throw new ValidationError(
         `MPTokenIssuanceSet: MPTokenMetadata must be a valid hex string no more than ${MAX_MPT_META_BYTE_LENGTH} bytes (an empty string clears the field).`,
       )
-    }
-
-    const validationMessages = validateMPTokenMetadata(tx.MPTokenMetadata)
-
-    if (validationMessages.length > 0) {
-      const message = [
-        MPT_META_WARNING_HEADER,
-        ...validationMessages.map((msg) => `- ${msg}`),
-      ].join('\n')
-
-      // eslint-disable-next-line no-console -- Required here.
-      console.warn(message)
     }
   }
 }

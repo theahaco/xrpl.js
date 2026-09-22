@@ -471,8 +471,17 @@ export function decodeMPTokenMetadata(input: string): MPTokenMetadata {
 /**
  * Validates {@link MPTokenMetadata} adheres to XLS-89 standard.
  *
+ * XLS-89 conformance is advisory: rippled accepts any metadata blob, but
+ * non-conforming tokens might not be discoverable by explorers and indexers.
+ * Transaction validation (`validate()`, `Wallet.sign()`, `Client.submit()`)
+ * therefore does not run this check and never writes to the console. Call it
+ * yourself before building an `MPTokenIssuanceCreate`, `MPTokenIssuanceSet` or
+ * `VaultCreate` transaction to surface the messages in whatever channel suits
+ * your application. See {@link MPT_META_WARNING_HEADER} for a ready-made
+ * explanation to show alongside them.
+ *
  * @param input - Hex encoded {@link MPTokenMetadata}.
- * @returns Validation messages if {@link MPTokenMetadata} does not adheres to XLS-89 standard.
+ * @returns Validation messages if {@link MPTokenMetadata} does not adhere to the XLS-89 standard; an empty array when it does.
  * @category Utilities
  */
 export function validateMPTokenMetadata(input: string): string[] {

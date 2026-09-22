@@ -368,8 +368,9 @@ export class Wallet {
    * @param multisign - Specify true/false to use multisign or actual address (classic/x-address) to make multisign tx request.
    *                    The actual address is only needed in the case of regular key usage.
    * @returns A signed transaction.
-   * @throws ValidationError if the transaction is already signed or does not encode/decode to same result.
-   * @throws XrplError if the issued currency being signed is XRP ignoring case.
+   * @throws ValidationError if the transaction already carries `TxnSignature` or `Signers`, fails
+   * {@link validate} (for example an issued currency whose code is "XRP" ignoring case), or is a
+   * Batch inner transaction (`tfInnerBatchTxn`), which is never signed on its own.
    */
   // eslint-disable-next-line max-lines-per-function -- introduced more checks to support both string and boolean inputs.
   public sign(
