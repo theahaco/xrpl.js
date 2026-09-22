@@ -74,6 +74,7 @@ import {
 import {
   FeatureAllRequest,
   FeatureAllResponse,
+  FeatureInfo,
   FeatureOneRequest,
   FeatureOneResponse,
   FeatureRequest,
@@ -658,6 +659,7 @@ export {
   ServerState,
   StateAccountingFinal,
   StateAccounting,
+  FeatureInfo,
   FeatureRequest,
   FeatureResponse,
   // utility methods

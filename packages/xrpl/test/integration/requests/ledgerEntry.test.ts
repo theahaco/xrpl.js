@@ -1,13 +1,19 @@
+import { stringToHex } from '@xrplf/isomorphic/utils'
 import { assert } from 'chai'
 
-import type { LedgerEntryRequest } from '../../../src'
+import type {
+  CredentialAccept,
+  CredentialCreate,
+  LedgerEntry,
+  LedgerEntryRequest,
+} from '../../../src'
 import serverUrl from '../serverUrl'
 import {
   setupClient,
   teardownClient,
   type XrplIntegrationTestContext,
 } from '../setup'
-import { generateFundedWallet } from '../utils'
+import { generateFundedWallet, testTransaction } from '../utils'
 
 // how long before each test case times out
 const TIMEOUT = 20000
@@ -106,6 +112,83 @@ describe('ledger_entry', function () {
       // @ts-expect-error - node is not present in the response
       assert.isUndefined(ledgerEntryResponse.result.node)
       assert.isDefined(ledgerEntryResponse.result.node_binary)
+    },
+    TIMEOUT,
+  )
+
+  it(
+    'validated lookup returns ledger_index and ledger_hash',
+    async () => {
+      const wallet = await generateFundedWallet(testContext.client)
+
+      const ledgerEntryResponse = await testContext.client.request({
+        command: 'ledger_entry',
+        account_root: wallet.address,
+        ledger_index: 'validated',
+      })
+
+      assert.equal(ledgerEntryResponse.type, 'response')
+      assert.isTrue(ledgerEntryResponse.result.validated)
+      assert.typeOf(ledgerEntryResponse.result.ledger_index, 'number')
+      assert.typeOf(ledgerEntryResponse.result.ledger_hash, 'string')
+      assert.isUndefined(ledgerEntryResponse.result.ledger_current_index)
+      assert.equal(
+        ledgerEntryResponse.result.node.LedgerEntryType,
+        'AccountRoot',
+      )
+    },
+    TIMEOUT,
+  )
+
+  it(
+    'credential lookup by subject, issuer and credential_type',
+    async () => {
+      const issuerWallet = await generateFundedWallet(testContext.client)
+      const subjectWallet = await generateFundedWallet(testContext.client)
+      const credentialType = stringToHex('kyc')
+
+      const credentialCreateTx: CredentialCreate = {
+        TransactionType: 'CredentialCreate',
+        Account: issuerWallet.classicAddress,
+        Subject: subjectWallet.classicAddress,
+        CredentialType: credentialType,
+      }
+      await testTransaction(
+        testContext.client,
+        credentialCreateTx,
+        issuerWallet,
+      )
+
+      const credentialAcceptTx: CredentialAccept = {
+        TransactionType: 'CredentialAccept',
+        Account: subjectWallet.classicAddress,
+        Issuer: issuerWallet.classicAddress,
+        CredentialType: credentialType,
+      }
+      await testTransaction(
+        testContext.client,
+        credentialAcceptTx,
+        subjectWallet,
+      )
+
+      const ledgerEntryResponse = await testContext.client.request({
+        command: 'ledger_entry',
+        credential: {
+          subject: subjectWallet.classicAddress,
+          issuer: issuerWallet.classicAddress,
+          credential_type: credentialType,
+        },
+        ledger_index: 'validated',
+      })
+
+      assert.equal(ledgerEntryResponse.type, 'response')
+      const credential = ledgerEntryResponse.result
+        .node as LedgerEntry.Credential
+      assert.equal(credential.LedgerEntryType, 'Credential')
+      assert.equal(credential.Subject, subjectWallet.classicAddress)
+      assert.equal(credential.Issuer, issuerWallet.classicAddress)
+      assert.equal(credential.CredentialType, credentialType)
+      assert.typeOf(ledgerEntryResponse.result.ledger_index, 'number')
     },
     TIMEOUT,
   )

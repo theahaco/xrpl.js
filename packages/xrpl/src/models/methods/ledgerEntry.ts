@@ -95,8 +95,8 @@ export interface LedgerEntryRequest extends BaseRequest, LookupByLedgerRequest {
         /** The account that issued the credential. */
         issuer: string
 
-        /** The type of the credential, as issued. */
-        credentialType: string
+        /** The type of the credential, as issued, as hexadecimal. */
+        credential_type: string
       }
     | string
 
@@ -200,6 +200,9 @@ export interface LedgerEntryRequest extends BaseRequest, LookupByLedgerRequest {
    */
   nft_page?: string
 
+  /** The object ID of an NFTokenOffer object to retrieve, as hexadecimal. */
+  nft_offer?: string
+
   bridge_account?: string
 
   bridge?: XChainBridge
@@ -242,6 +245,81 @@ export interface LedgerEntryRequest extends BaseRequest, LookupByLedgerRequest {
         sponsee: string
       }
     | string
+
+  /**
+   * The Oracle object to retrieve. If a string, must be the object ID of the
+   * Oracle, as hexadecimal. If an object, requires account and
+   * oracle_document_id sub-fields.
+   */
+  oracle?:
+    | {
+        /** The account that controls the Oracle object. */
+        account: string
+        /** The document ID of the Oracle object. */
+        oracle_document_id: number
+      }
+    | string
+
+  /**
+   * The PermissionedDomain object to retrieve. If a string, must be the
+   * object ID of the PermissionedDomain, as hexadecimal. If an object,
+   * requires account and seq sub-fields.
+   */
+  permissioned_domain?:
+    | {
+        /** The account that owns the PermissionedDomain object. */
+        account: string
+        /**
+         * Sequence Number of the transaction that created the
+         * PermissionedDomain object.
+         */
+        seq: number
+      }
+    | string
+
+  /**
+   * The Vault object to retrieve. If a string, must be the object ID of the
+   * Vault, as hexadecimal. If an object, requires owner and seq sub-fields.
+   */
+  vault?:
+    | {
+        /** The account that owns the Vault object. */
+        owner: string
+        /** Sequence Number of the transaction that created the Vault object. */
+        seq: number
+      }
+    | string
+
+  /**
+   * The LoanBroker object to retrieve. If a string, must be the object ID of
+   * the LoanBroker, as hexadecimal. If an object, requires owner and seq
+   * sub-fields.
+   */
+  loan_broker?:
+    | {
+        /** The account that controls the LoanBroker object. */
+        owner: string
+        /**
+         * Sequence Number of the transaction that created the LoanBroker
+         * object.
+         */
+        seq: number
+      }
+    | string
+
+  /**
+   * The Loan object to retrieve. If a string, must be the object ID of the
+   * Loan, as hexadecimal. If an object, requires loan_broker_id and loan_seq
+   * sub-fields.
+   */
+  loan?:
+    | {
+        /** The object ID of the LoanBroker that created the loan, as hexadecimal. */
+        loan_broker_id: string
+        /** The sequence number of the loan. */
+        loan_seq: number
+      }
+    | string
 }
 
 export type LedgerEntryBinaryRequest = LedgerEntryRequest & {
@@ -255,8 +333,26 @@ export type LedgerEntryJsonRequest = LedgerEntryRequest & {
 interface LedgerEntryResponseResultBase {
   /** The unique ID of this ledger object. */
   index: string
-  /** The ledger index of the ledger that was used when retrieving this data. */
-  ledger_current_index: number
+  /**
+   * The ledger index of the current in-progress ledger version that was used
+   * when retrieving this data. Present when the request did not specify a
+   * closed or validated ledger.
+   */
+  ledger_current_index?: number
+  /**
+   * The ledger index of the ledger version that was used when retrieving this
+   * data. Present when the request specified a closed or validated ledger.
+   */
+  ledger_index?: number
+  /**
+   * The identifying hash of the ledger version that was used when retrieving
+   * this data. Present when the request specified a closed or validated ledger.
+   */
+  ledger_hash?: string
+  /**
+   * If true, this data comes from a validated ledger version; if omitted or
+   * set to false, this data is not final.
+   */
   validated?: boolean
   /**
    * (Optional) Indicates the ledger index at which the object was deleted.
