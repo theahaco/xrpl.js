@@ -3,6 +3,7 @@ import { assert } from 'chai'
 import {
   AccountTxRequest,
   Payment,
+  PaymentV2,
   type TransactionMetadata,
 } from '../../../src'
 import serverUrl from '../serverUrl'
@@ -93,7 +94,7 @@ describe('account_tx', function () {
         'number',
       )
 
-      const responseTx = response.result.transactions[0].tx_json as Payment
+      const responseTx = response.result.transactions[0].tx_json as PaymentV2
       const expectedTx = expected.result.transactions[0].tx_json
       assert.deepEqual(
         [

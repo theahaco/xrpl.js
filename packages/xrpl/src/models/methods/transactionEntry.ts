@@ -1,5 +1,5 @@
 import { ResponseOnlyTxInfo } from '../common'
-import { Transaction, TransactionMetadata } from '../transactions'
+import { TransactionMetadata, TransactionV2 } from '../transactions'
 
 import { BaseRequest, BaseResponse, LookupByLedgerRequest } from './baseMethod'
 
@@ -40,7 +40,7 @@ export interface TransactionEntryResponse extends BaseResponse {
      * transaction in detail.
      */
     metadata: TransactionMetadata
-    /** JSON representation of the Transaction object. */
-    tx_json: Transaction & ResponseOnlyTxInfo
+    /** JSON representation of the transaction, in its API v2 read shape. */
+    tx_json: TransactionV2 & ResponseOnlyTxInfo
   }
 }

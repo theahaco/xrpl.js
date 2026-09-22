@@ -105,7 +105,7 @@ import { OfferCancel, validateOfferCancel } from './offerCancel'
 import { OfferCreate, validateOfferCreate } from './offerCreate'
 import { OracleDelete, validateOracleDelete } from './oracleDelete'
 import { OracleSet, validateOracleSet } from './oracleSet'
-import { Payment, validatePayment } from './payment'
+import { Payment, PaymentV2, validatePayment } from './payment'
 import {
   PaymentChannelClaim,
   validatePaymentChannelClaim,
@@ -268,6 +268,19 @@ export type PseudoTransaction = EnableAmendment | SetFee | UNLModify
  * @category Transaction Models
  */
 export type Transaction = SubmittableTransaction | PseudoTransaction
+
+/**
+ * A transaction as rippled API v2 reports it on read paths (`tx`,
+ * `account_tx`, `transaction_entry`, transaction streams): identical to the
+ * submitted shape except that a {@link Payment} is reported as a
+ * {@link PaymentV2} (`Amount` under the name `DeliverMax`). Distributes over
+ * unions, so `TransactionV2` alone is every {@link Transaction} in its read
+ * shape.
+ *
+ * @category Transaction Models
+ */
+export type TransactionV2<T extends BaseTransaction = Transaction> =
+  T extends Payment ? PaymentV2 : T
 
 /**
  * @category Transaction Models

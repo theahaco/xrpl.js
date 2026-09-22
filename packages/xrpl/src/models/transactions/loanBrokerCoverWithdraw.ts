@@ -1,5 +1,5 @@
 import { ValidationError } from '../../errors'
-import { Amount, MPTAmount } from '../common'
+import { Amount } from '../common'
 
 import {
   BaseTransaction,
@@ -32,7 +32,7 @@ export interface LoanBrokerCoverWithdraw extends BaseTransaction {
   /**
    * The First-Loss Capital amount to withdraw.
    */
-  Amount: Amount | MPTAmount
+  Amount: Amount
 
   /**
    * An account to receive the assets. It must be able to receive the asset.

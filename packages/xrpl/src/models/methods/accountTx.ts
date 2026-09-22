@@ -5,7 +5,11 @@ import {
   RIPPLED_API_V2,
   ResponseOnlyTxInfo,
 } from '../common'
-import { Transaction, TransactionMetadata } from '../transactions'
+import {
+  Transaction,
+  TransactionMetadata,
+  TransactionV2,
+} from '../transactions'
 
 import { BaseRequest, BaseResponse, LookupByLedgerRequest } from './baseMethod'
 
@@ -65,9 +69,9 @@ export interface AccountTxTransaction<
    * Otherwise, the transaction metadata is included in JSON format.
    */
   meta: string | TransactionMetadata
-  /** JSON object defining the transaction. */
+  /** JSON object defining the transaction, in its API v2 read shape. */
   tx_json?: Version extends typeof RIPPLED_API_V2
-    ? Transaction & ResponseOnlyTxInfo
+    ? TransactionV2 & ResponseOnlyTxInfo
     : never
   /** JSON object defining the transaction in rippled API v1. */
   tx?: Version extends typeof RIPPLED_API_V1

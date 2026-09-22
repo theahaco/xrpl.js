@@ -1,5 +1,5 @@
 import { ValidationError } from '../../errors'
-import { Amount, Path, MPTAmount } from '../common'
+import { Amount, Path } from '../common'
 import { isFlagEnabled } from '../utils'
 
 import {
@@ -118,22 +118,15 @@ export interface PaymentFlagsInterface extends GlobalFlagsInterface {
 }
 
 /**
- * A Payment transaction represents a transfer of value from one account to
- * another.
+ * Fields shared by every shape of a Payment: {@link Payment} as submitted and
+ * {@link PaymentV2} as rippled API v2 reports it. They differ only in the name
+ * of the requested amount (`Amount` on submission, `DeliverMax` when read
+ * back).
  *
  * @category Transaction Models
  */
-export interface Payment extends BaseTransaction {
+export interface BasePayment extends BaseTransaction {
   TransactionType: 'Payment'
-  /**
-   * The amount of currency to deliver. For non-XRP amounts, the nested field
-   * names MUST be lower-case. If the tfPartialPayment flag is set, deliver up
-   * to this amount instead.
-   */
-  Amount: Amount | MPTAmount
-
-  DeliverMax?: Amount | MPTAmount
-
   /** The unique address of the account receiving the payment. */
   Destination: Account
   /**
@@ -159,13 +152,13 @@ export interface Payment extends BaseTransaction {
    * cross-currency/cross-issue payments. Must be omitted for XRP-to-XRP
    * Payments.
    */
-  SendMax?: Amount | MPTAmount
+  SendMax?: Amount
   /**
    * Minimum amount of destination currency this transaction should deliver.
    * Only valid if this is a partial payment. For non-XRP amounts, the nested
    * field names are lower-case.
    */
-  DeliverMin?: Amount | MPTAmount
+  DeliverMin?: Amount
   /**
    * Credentials associated with the sender of this transaction.
    * The credentials included must not be expired.
@@ -186,9 +179,48 @@ export interface Payment extends BaseTransaction {
   Flags?: number | PaymentFlagsInterface
 }
 
+/**
+ * A Payment transaction represents a transfer of value from one account to
+ * another.
+ *
+ * @category Transaction Models
+ */
+export interface Payment extends BasePayment {
+  /**
+   * The amount of currency to deliver. For non-XRP amounts, the nested field
+   * names MUST be lower-case. If the tfPartialPayment flag is set, deliver up
+   * to this amount instead.
+   */
+  Amount: Amount
+  /**
+   * API v2 name for `Amount`, accepted on submission as an alias:
+   * `Client.autofill` copies it into `Amount` (both must match when both are
+   * given) and removes it before signing. On API v2 read paths rippled
+   * reports the requested amount under this name and omits `Amount`; see
+   * {@link PaymentV2}.
+   */
+  DeliverMax?: Amount
+}
+
+/**
+ * A {@link Payment} as rippled API v2 reports it on read paths (`tx`,
+ * `account_tx`, `transaction_entry`, transaction streams, and therefore
+ * `Client.submitAndWait`): the requested amount is reported as `DeliverMax`
+ * and `Amount` is absent. To resubmit one, move `DeliverMax` back into
+ * `Amount`.
+ *
+ * @category Transaction Models
+ */
+export interface PaymentV2 extends BasePayment {
+  /** The amount the payment asked to deliver; `Amount` when it was submitted. */
+  DeliverMax: Amount
+  /** Not reported on API v2 read paths; the value is under `DeliverMax`. */
+  Amount?: never
+}
+
 export interface PaymentMetadata extends TransactionMetadataBase {
-  DeliveredAmount?: Amount | MPTAmount
-  delivered_amount?: Amount | MPTAmount | 'unavailable'
+  DeliveredAmount?: Amount
+  delivered_amount?: Amount | 'unavailable'
 }
 
 /**

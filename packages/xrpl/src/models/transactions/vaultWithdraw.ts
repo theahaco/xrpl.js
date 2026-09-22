@@ -1,4 +1,4 @@
-import { Amount, MPTAmount } from '../common'
+import { Amount } from '../common'
 
 import {
   BaseTransaction,
@@ -30,8 +30,7 @@ export interface VaultWithdraw extends BaseTransaction {
   /**
    * The exact amount of Vault asset to withdraw.
    */
-  // TODO: remove MPTAmount when MPTv2 is released
-  Amount: Amount | MPTAmount
+  Amount: Amount
 
   /**
    * An account to receive the assets. It must be able to receive the asset.

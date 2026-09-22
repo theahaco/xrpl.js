@@ -1,5 +1,5 @@
 import { ValidationError } from '../../errors'
-import { Amount, MPTAmount } from '../common'
+import { Amount } from '../common'
 
 import {
   BaseTransaction,
@@ -26,7 +26,7 @@ export interface LoanBrokerCoverDeposit extends BaseTransaction {
   /**
    * The First-Loss Capital amount to deposit.
    */
-  Amount: Amount | MPTAmount
+  Amount: Amount
 }
 
 /**

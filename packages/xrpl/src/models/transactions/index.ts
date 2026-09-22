@@ -11,6 +11,7 @@ export {
   SubmittableTransaction,
   TransactionAndMetadata,
   Transaction,
+  TransactionV2,
 } from './transaction'
 export * from './metadata'
 export {
@@ -113,7 +114,12 @@ export {
 } from './offerCreate'
 export { OracleDelete } from './oracleDelete'
 export { OracleSet } from './oracleSet'
-export { PaymentFlags, PaymentFlagsInterface, Payment } from './payment'
+export {
+  PaymentFlags,
+  PaymentFlagsInterface,
+  Payment,
+  PaymentV2,
+} from './payment'
 export {
   PaymentChannelClaimFlags,
   PaymentChannelClaimFlagsInterface,
