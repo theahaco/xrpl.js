@@ -1,0 +1,33 @@
+{
+  "date": "2026-09-22T18:50:45.868Z",
+  "node": "v26.7.0",
+  "endpoint": "ws://127.0.0.1:16006",
+  "scope": "Actual proposed Getting Started run() on an isolated standalone ledger. No public faucet or production account. Both success and validated-failure paths.",
+  "results": [
+    {
+      "name": "First payment succeeds",
+      "passed": true,
+      "receiverXrp": 1001
+    },
+    {
+      "name": "trySignAndSubmit returns a validated failure without throwing",
+      "passed": true,
+      "phase": "validated"
+    },
+    {
+      "name": "trySignAndSubmit returns a successful response",
+      "passed": true
+    },
+    {
+      "name": "Client submission uses the bound wallet by default",
+      "passed": true
+    },
+    {
+      "name": "Validated failure is reported",
+      "passed": true,
+      "message": "Transaction failed: tecUNFUNDED_PAYMENT",
+      "finalReceiverXrp": 1001.000002
+    }
+  ],
+  "server": "3.4.0-rc1"
+}

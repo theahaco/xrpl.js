@@ -4,7 +4,7 @@ This package combines the audit findings, a before/after developer walkthrough, 
 
 Start with the [report](output/report.pdf) ([editable source](output/report.md)), then the [walkthrough deck](output/xrpl-devx-walkthrough.pptx). The [validation summary](evidence/validation-summary.md) explains what was checked and the remaining limits. The [finding register](evidence/finding-register.md), [public API coverage](evidence/api-coverage.md) and [portal review](evidence/portal-review.md) provide the supporting detail.
 
-The inventory contains **447 root exports in 18 families**, and seven existing portal TypeScript families were reviewed. In the deliberately selected compiler demonstration, the published baseline meets **3/16 criteria** and the prototype meets **16/16**. This is a demonstration set, not a quality score for the whole library. The final xrpl unit run passed **140 suites and 1,396 tests**; lint passed for **59 changed/new SDK TypeScript files**. Four revised example journeys ran successfully on each SDK target, plus one checked validated failure outcome on each. See the [evidence summary](evidence/validation-summary.md) for exact scope and links.
+The inventory contains **447 root exports in 18 families**, and seven existing portal TypeScript families were reviewed. In the deliberately selected compiler demonstration, the published baseline meets **3/16 criteria** and the prototype meets **16/16**. This is a demonstration set, not a quality score for the whole library. The latest xrpl unit run passed **141 suites and 1,404 tests**. The wallet-builder follow-up passes **25/25 editor checks** covering **78 transaction factories and 45 commands**; changed-file lint has zero errors and 16 style warnings. Four revised example journeys ran on each SDK target; the four current prototype journeys and matched validated-failure paths were rerun after the API change. See the [evidence summary](evidence/validation-summary.md) for exact scope and links.
 
 ## Package layout
 
@@ -47,6 +47,7 @@ node inventory-runtime-probes.cjs
 node probe-journeys.mjs baseline
 node probe-journeys.mjs prototype ../../packages/xrpl/dist/npm/index.d.ts
 node inventory-surface-probes.cjs ../../packages/xrpl/dist/npm/index.d.ts prototype
+node probe-builders.cjs
 ```
 
 The inventory targets the installed published package. Surface probes record both accepted and rejected examples; their diagnostic counts are observations, not a pass/fail total. The journey harness checks the declared expectation for each selected case. None of these commands sends transactions to a public network.
@@ -64,8 +65,8 @@ node --input-type=module <<'NODE'
 import fs from 'node:fs'
 import { spawnSync } from 'node:child_process'
 const recorded = JSON.parse(fs.readFileSync('devx-audit/evidence/prototype-lint.json', 'utf8'))
-const files = recorded.map(({ filePath }) => `packages/xrpl/${filePath.split('/packages/xrpl/')[1]}`)
-const result = spawnSync(process.execPath, ['node_modules/eslint/bin/eslint.js', ...files], { stdio: 'inherit' })
+const files = recorded.map(({ filePath }) => filePath.split('/packages/xrpl/')[1])
+const result = spawnSync(process.execPath, ['../../node_modules/eslint/bin/eslint.js', ...files], { cwd: 'packages/xrpl', stdio: 'inherit' })
 process.exit(result.status ?? 1)
 NODE
 ```
@@ -129,8 +130,8 @@ node probe-journeys.mjs packed /absolute/path/to/extracted/package/dist/npm/inde
 node inventory-surface-probes.cjs /absolute/path/to/extracted/package/dist/npm/index.d.ts packed
 ```
 
-Before release, review the prototype's explicit API v2 confirmation lookup, TypeScript minimum version, optional signed-blob type hint and remaining inference gaps. The [validation summary](evidence/validation-summary.md) explains these limits, the unchanged `simulate` behavior and the remaining legacy example work.
+Before release, review the changed `submitAndWait` failure contract, wallet-bound builders, explicit API v2 confirmation lookup, TypeScript minimum version, optional signed-blob type hint and remaining inference gaps. The [validation summary](evidence/validation-summary.md) explains these limits, the unchanged `simulate` behavior and the remaining legacy example work.
 
-## Getting Started follow-up
+## Wallet-bound workflow follow-up
 
-The main Node/browser walkthrough now relies on inline discriminants and the SDK metadata guarantee. See [follow-up verification](evidence/getting-started-follow-up.md) for editor, runtime and browser-build checks. No SDK source change was needed. The original packed verification remains a Node/declaration check; a browser bundle was built separately during this follow-up.
+The main Node/browser walkthrough now uses `WalletClient`, `client.tx.payment(...).signAndSubmit()` and `client.command.accountInfo(...)`. Normal submission throws on failure; the `try` methods return an explicit success/error result. See [current verification and migration notes](evidence/builders-follow-up.md). Earlier Getting Started and packed-package records remain historical snapshots.

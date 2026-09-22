@@ -1,0 +1,275 @@
+(node:60586) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+  console.warn
+    For LoanSet transaction the auto calculated Fee accounts for total number of signers the counterparty has to avoid transaction failure.
+
+      439 |     )
+      440 |     // eslint-disable-next-line no-console -- necessary to inform users about autofill behavior
+    > 441 |     console.warn(
+          |             ^
+      442 |       `For LoanSet transaction the auto calculated Fee accounts for total number of signers the counterparty has to avoid transaction failure.`,
+      443 |     )
+      444 |   }
+
+      at calculateFeePerTransactionType (src/sugar/autofill.ts:441:13)
+      at getTransactionFee (src/sugar/autofill.ts:480:15)
+          at async Promise.all (index 1)
+      at Object.<anonymous> (test/client/autofill.test.ts:806:22)
+
+  console.warn
+    For sponsored transaction the auto calculated Fee accounts for sponsor signers to avoid transaction failure.
+
+      351 |
+      352 |   // eslint-disable-next-line no-console -- necessary to inform users about autofill behavior
+    > 353 |   console.warn(
+          |           ^
+      354 |     `For sponsored transaction the auto calculated Fee accounts for sponsor signers to avoid transaction failure.`,
+      355 |   )
+      356 |   return new BigNumber(scaleValue(netFeeDrops, sponsorSignersCount))
+
+      at calculateSponsorFee (src/sugar/autofill.ts:353:11)
+      at calculateFeePerTransactionType (src/sugar/autofill.ts:447:22)
+      at getTransactionFee (src/sugar/autofill.ts:480:15)
+          at async Promise.all (index 1)
+      at Object.<anonymous> (test/client/autofill.test.ts:897:24)
+
+  console.warn
+    For sponsored transaction the auto calculated Fee accounts for sponsor signers to avoid transaction failure.
+
+      351 |
+      352 |   // eslint-disable-next-line no-console -- necessary to inform users about autofill behavior
+    > 353 |   console.warn(
+          |           ^
+      354 |     `For sponsored transaction the auto calculated Fee accounts for sponsor signers to avoid transaction failure.`,
+      355 |   )
+      356 |   return new BigNumber(scaleValue(netFeeDrops, sponsorSignersCount))
+
+      at calculateSponsorFee (src/sugar/autofill.ts:353:11)
+      at calculateFeePerTransactionType (src/sugar/autofill.ts:447:22)
+      at getTransactionFee (src/sugar/autofill.ts:480:15)
+          at async Promise.all (index 1)
+      at Object.<anonymous> (test/client/autofill.test.ts:945:24)
+
+  console.warn
+    This function is deprecated. Use convertTxFlagsToNumber() instead and use the returned value to modify the Transaction.Flags from the caller.
+
+      201 | export function setTransactionFlagsToNumber(tx: Transaction): void {
+      202 |   // eslint-disable-next-line no-console -- intended deprecation warning
+    > 203 |   console.warn(
+          |           ^
+      204 |     'This function is deprecated. Use convertTxFlagsToNumber() instead and use the returned value to modify the Transaction.Flags from the caller.',
+      205 |   )
+      206 |
+
+      at setTransactionFlagsToNumber (src/models/utils/flags.ts:203:11)
+      at Object.<anonymous> (test/models/utils.test.ts:185:34)
+
+  console.warn
+    This function is deprecated. Use convertTxFlagsToNumber() instead and use the returned value to modify the Transaction.Flags from the caller.
+
+      201 | export function setTransactionFlagsToNumber(tx: Transaction): void {
+      202 |   // eslint-disable-next-line no-console -- intended deprecation warning
+    > 203 |   console.warn(
+          |           ^
+      204 |     'This function is deprecated. Use convertTxFlagsToNumber() instead and use the returned value to modify the Transaction.Flags from the caller.',
+      205 |   )
+      206 |
+
+      at setTransactionFlagsToNumber (src/models/utils/flags.ts:203:11)
+      at Object.<anonymous> (test/models/utils.test.ts:204:34)
+
+  console.warn
+    This function is deprecated. Use convertTxFlagsToNumber() instead and use the returned value to modify the Transaction.Flags from the caller.
+
+      201 | export function setTransactionFlagsToNumber(tx: Transaction): void {
+      202 |   // eslint-disable-next-line no-console -- intended deprecation warning
+    > 203 |   console.warn(
+          |           ^
+      204 |     'This function is deprecated. Use convertTxFlagsToNumber() instead and use the returned value to modify the Transaction.Flags from the caller.',
+      205 |   )
+      206 |
+
+      at setTransactionFlagsToNumber (src/models/utils/flags.ts:203:11)
+      at Object.<anonymous> (test/models/utils.test.ts:224:34)
+
+  console.warn
+    This function is deprecated. Use convertTxFlagsToNumber() instead and use the returned value to modify the Transaction.Flags from the caller.
+
+      201 | export function setTransactionFlagsToNumber(tx: Transaction): void {
+      202 |   // eslint-disable-next-line no-console -- intended deprecation warning
+    > 203 |   console.warn(
+          |           ^
+      204 |     'This function is deprecated. Use convertTxFlagsToNumber() instead and use the returned value to modify the Transaction.Flags from the caller.',
+      205 |   )
+      206 |
+
+      at setTransactionFlagsToNumber (src/models/utils/flags.ts:203:11)
+      at Object.<anonymous> (test/models/utils.test.ts:251:34)
+
+  console.warn
+    This function is deprecated. Use convertTxFlagsToNumber() instead and use the returned value to modify the Transaction.Flags from the caller.
+
+      201 | export function setTransactionFlagsToNumber(tx: Transaction): void {
+      202 |   // eslint-disable-next-line no-console -- intended deprecation warning
+    > 203 |   console.warn(
+          |           ^
+      204 |     'This function is deprecated. Use convertTxFlagsToNumber() instead and use the returned value to modify the Transaction.Flags from the caller.',
+      205 |   )
+      206 |
+
+      at setTransactionFlagsToNumber (src/models/utils/flags.ts:203:11)
+      at Object.<anonymous> (test/models/utils.test.ts:262:34)
+
+  console.warn
+    This function is deprecated. Use convertTxFlagsToNumber() instead and use the returned value to modify the Transaction.Flags from the caller.
+
+      201 | export function setTransactionFlagsToNumber(tx: Transaction): void {
+      202 |   // eslint-disable-next-line no-console -- intended deprecation warning
+    > 203 |   console.warn(
+          |           ^
+      204 |     'This function is deprecated. Use convertTxFlagsToNumber() instead and use the returned value to modify the Transaction.Flags from the caller.',
+      205 |   )
+      206 |
+
+      at setTransactionFlagsToNumber (src/models/utils/flags.ts:203:11)
+      at Object.<anonymous> (test/models/utils.test.ts:295:34)
+
+  console.warn
+    MPTokenMetadata is not properly formatted as JSON as per the XLS-89 standard. While adherence to this standard is not mandatory, such non-compliant MPToken's might not be discoverable by Explorers and Indexers in the XRPL ecosystem.
+    - MPTokenMetadata is not properly formatted as JSON - SyntaxError: Unexpected token 'u', "updated metadata" is not valid JSON
+
+      333 |
+      334 |       // eslint-disable-next-line no-console -- Required here.
+    > 335 |       console.warn(message)
+          |               ^
+      336 |     }
+      337 |   }
+      338 | }
+
+      at validateMPTokenIssuanceSet (src/models/transactions/MPTokenIssuanceSet.ts:335:15)
+      at test/testUtils.ts:67:29
+      at Proxy.assertThrows (../../node_modules/chai/index.js:2798:5)
+      at Proxy.methodWrapper (../../node_modules/chai/index.js:1700:25)
+      at assert.doesNotThrow (../../node_modules/chai/index.js:3773:69)
+      at assertTxIsValid (test/testUtils.ts:67:10)
+      at assertValid (test/models/MPTokenIssuanceSet.test.ts:15:18)
+      at Object.<anonymous> (test/models/MPTokenIssuanceSet.test.ts:84:7)
+
+  console.warn
+    MPTokenMetadata is not properly formatted as JSON as per the XLS-89 standard. While adherence to this standard is not mandatory, such non-compliant MPToken's might not be discoverable by Explorers and Indexers in the XRPL ecosystem.
+    - MPTokenMetadata is not properly formatted as JSON - SyntaxError: Unexpected token 'u', "updated metadata" is not valid JSON
+
+      333 |
+      334 |       // eslint-disable-next-line no-console -- Required here.
+    > 335 |       console.warn(message)
+          |               ^
+      336 |     }
+      337 |   }
+      338 | }
+
+      at validateMPTokenIssuanceSet (src/models/transactions/MPTokenIssuanceSet.ts:335:15)
+      at validate (src/models/transactions/transaction.ts:541:33)
+      at test/testUtils.ts:68:37
+      at Proxy.assertThrows (../../node_modules/chai/index.js:2798:5)
+      at Proxy.methodWrapper (../../node_modules/chai/index.js:1700:25)
+      at assert.doesNotThrow (../../node_modules/chai/index.js:3773:69)
+      at assertTxIsValid (test/testUtils.ts:68:10)
+      at assertValid (test/models/MPTokenIssuanceSet.test.ts:15:18)
+      at Object.<anonymous> (test/models/MPTokenIssuanceSet.test.ts:84:7)
+
+  console.warn
+    MPTokenMetadata is not properly formatted as JSON as per the XLS-89 standard. While adherence to this standard is not mandatory, such non-compliant MPToken's might not be discoverable by Explorers and Indexers in the XRPL ecosystem.
+    - icon/i: should be a non-empty string.
+
+      303 |
+      304 |       // eslint-disable-next-line no-console -- Required here.
+    > 305 |       console.warn(message)
+          |               ^
+      306 |     }
+      307 |   }
+      308 | }
+
+      at console.<anonymous> (../../node_modules/jest-mock/build/index.js:631:25)
+      at validateVaultCreate (src/models/transactions/vaultCreate.ts:305:15)
+      at test/testUtils.ts:67:29
+      at Proxy.assertThrows (../../node_modules/chai/index.js:2798:5)
+      at Proxy.methodWrapper (../../node_modules/chai/index.js:1700:25)
+      at assert.doesNotThrow (../../node_modules/chai/index.js:3773:69)
+      at assertTxIsValid (test/testUtils.ts:67:10)
+      at assertValid (test/models/vaultCreate.test.ts:14:55)
+      at Object.<anonymous> (test/models/vaultCreate.test.ts:367:5)
+
+  console.warn
+    MPTokenMetadata is not properly formatted as JSON as per the XLS-89 standard. While adherence to this standard is not mandatory, such non-compliant MPToken's might not be discoverable by Explorers and Indexers in the XRPL ecosystem.
+    - icon/i: should be a non-empty string.
+
+      303 |
+      304 |       // eslint-disable-next-line no-console -- Required here.
+    > 305 |       console.warn(message)
+          |               ^
+      306 |     }
+      307 |   }
+      308 | }
+
+      at console.<anonymous> (../../node_modules/jest-mock/build/index.js:631:25)
+      at validateVaultCreate (src/models/transactions/vaultCreate.ts:305:15)
+      at validate (src/models/transactions/transaction.ts:637:26)
+      at test/testUtils.ts:68:37
+      at Proxy.assertThrows (../../node_modules/chai/index.js:2798:5)
+      at Proxy.methodWrapper (../../node_modules/chai/index.js:1700:25)
+      at assert.doesNotThrow (../../node_modules/chai/index.js:3773:69)
+      at assertTxIsValid (test/testUtils.ts:68:10)
+      at assertValid (test/models/vaultCreate.test.ts:14:55)
+      at Object.<anonymous> (test/models/vaultCreate.test.ts:367:5)
+
+  console.warn
+    MPTokenMetadata is not properly formatted as JSON as per the XLS-89 standard. While adherence to this standard is not mandatory, such non-compliant MPToken's might not be discoverable by Explorers and Indexers in the XRPL ecosystem.
+    - uris/us: should be an array of objects each with uri/u, category/c, and title/t properties.
+
+      386 |
+      387 |       // eslint-disable-next-line no-console -- Required here.
+    > 388 |       console.warn(message)
+          |               ^
+      389 |     }
+      390 |   }
+      391 | }
+
+      at console.<anonymous> (../../node_modules/jest-mock/build/index.js:631:25)
+      at validateMPTokenIssuanceCreate (src/models/transactions/MPTokenIssuanceCreate.ts:388:15)
+      at test/testUtils.ts:67:29
+      at Proxy.assertThrows (../../node_modules/chai/index.js:2798:5)
+      at Proxy.methodWrapper (../../node_modules/chai/index.js:1700:25)
+      at assert.doesNotThrow (../../node_modules/chai/index.js:3773:69)
+      at assertTxIsValid (test/testUtils.ts:67:10)
+      at assertValid (test/models/MPTokenIssuanceCreate.test.ts:16:18)
+      at Object.<anonymous> (test/models/MPTokenIssuanceCreate.test.ts:295:5)
+
+  console.warn
+    MPTokenMetadata is not properly formatted as JSON as per the XLS-89 standard. While adherence to this standard is not mandatory, such non-compliant MPToken's might not be discoverable by Explorers and Indexers in the XRPL ecosystem.
+    - uris/us: should be an array of objects each with uri/u, category/c, and title/t properties.
+
+      386 |
+      387 |       // eslint-disable-next-line no-console -- Required here.
+    > 388 |       console.warn(message)
+          |               ^
+      389 |     }
+      390 |   }
+      391 | }
+
+      at console.<anonymous> (../../node_modules/jest-mock/build/index.js:631:25)
+      at validateMPTokenIssuanceCreate (src/models/transactions/MPTokenIssuanceCreate.ts:388:15)
+      at validate (src/models/transactions/transaction.ts:533:36)
+      at test/testUtils.ts:68:37
+      at Proxy.assertThrows (../../node_modules/chai/index.js:2798:5)
+      at Proxy.methodWrapper (../../node_modules/chai/index.js:1700:25)
+      at assert.doesNotThrow (../../node_modules/chai/index.js:3773:69)
+      at assertTxIsValid (test/testUtils.ts:68:10)
+      at assertValid (test/models/MPTokenIssuanceCreate.test.ts:16:18)
+      at Object.<anonymous> (test/models/MPTokenIssuanceCreate.test.ts:295:5)
+
+Test Suites: 141 passed, 141 total
+Tests:       1404 passed, 1404 total
+Snapshots:   0 total
+Time:        108.995 s, estimated 113 s
+Ran all test suites.
+Test results written to: ../../../../evidence/builders-unit-tests.json

@@ -1,153 +1,42 @@
-# Portal before/after excerpts for the walkthrough deck
+# Current before/after examples
 
-The **before** is the audit's corrected, current-release example using published xrpl 5.3.0. The **after** is the matching workflow using the **unreleased aha SDK prototype**. This is not a claim that npm already supplies the proposed APIs. Source paths below are relative to the portal fork. All imports remain ordinary `from 'xrpl'` imports; dependency selection lives in each package. Getting Started presents the prototype in its main directory and retains the released SDK comparison under `devx-before/get-started`.
+The comparison target is published xrpl 5.3.0. The candidate is the unreleased aha fork. Earlier patch and runtime records remain historical evidence; the wallet-builder follow-up supersedes their caller-owned success checks.
 
-## 1. Prepare, sign, submit: types follow the workflow
+## Discover, construct and submit a payment
 
-Before — `_code-samples/send-xrp/ts/send-xrp.ts`:
-
-```ts
-// Current SDK workaround: name Payment to expose optional autofilled fields.
-const prepared = await client.autofill<Payment>(payment)
-console.log('Prepared fee:', prepared.Fee)
-const signed = sender.sign(prepared)
-const confirmed = await client.submitAndWait(signed.tx_blob)
-```
-
-After — `_code-samples/devx-after/send-xrp.ts`:
+The published comparison under `devx-before/get-started` names request/transaction models and guards the metadata before checking its protocol result code. The current primary Node/browser walkthrough uses:
 
 ```ts
-const prepared = await client.autofill(payment)
-console.log('Prepared fee:', prepared.Fee)
-const signed = sender.sign(prepared)
-const confirmed = await client.submitAndWait(signed.tx_blob)
-// after the transaction-success check:
-console.log(`Confirmed destination: ${confirmed.result.tx_json.Destination}`)
-```
-
-Editor story: choose a Payment; prepare it; see Fee as a populated string; sign it; still discover Payment fields on the validated response. The extra `<Payment>` workaround disappears. The unchanged runtime success check remains between response retrieval and the final destination log.
-
-## 2. Validation guarantees parsed metadata, not business success
-
-Before — `_code-samples/devx-before/get-started/get-acct-info.ts`:
-
-```ts
-const metadata = submitted.result.meta
-if (metadata == null || typeof metadata === 'string') {
-  throw new Error('Expected parsed transaction metadata')
-}
-if (metadata.TransactionResult !== 'tesSUCCESS') {
-  throw new Error(`Payment failed: ${metadata.TransactionResult}`)
-}
-```
-
-After — `_code-samples/get-started/ts/get-acct-info.ts` (also mirrored in `devx-after`):
-
-```ts
-const result = submitted.result.meta.TransactionResult
-if (result !== 'tesSUCCESS') {
-  throw new Error(`Payment failed: ${result}`)
-}
-```
-
-Editor story: `submitAndWait` already knows it requested parsed JSON and waited for validation, so its return type should reflect those guarantees. The developer still checks the actual result code.
-
-## 3. MPT intent carries through creation and lookup
-
-Before — `_code-samples/issue-mpt-with-metadata/ts/issue-mpt-with-metadata.ts`:
-
-```ts
-if (creationMetadata.mpt_issuance_id == null) {
-  throw new Error('Successful issuance did not return an MPT issuance ID')
-}
-const issuanceId = creationMetadata.mpt_issuance_id
-// after the ledger_entry request with mpt_issuance: issuanceId:
-const node = entry.result.node
-if (node.LedgerEntryType !== 'MPTokenIssuance' || node.MPTokenMetadata == null) {
-  throw new Error('Expected an MPT issuance with metadata')
-}
-console.log('Metadata:', decodeMPTokenMetadata(node.MPTokenMetadata))
-```
-
-After — `_code-samples/devx-after/issue-mpt-with-metadata.ts`:
-
-```ts
-if (creationMetadata.mpt_issuance_id == null) {
-  throw new Error('Successful issuance did not return an MPT issuance ID')
-}
-const issuanceId = creationMetadata.mpt_issuance_id
-// after the same ledger_entry request:
-const node = entry.result.node
-if (node.MPTokenMetadata == null) {
-  throw new Error('Expected an MPT issuance with metadata')
-}
-console.log('Metadata:', decodeMPTokenMetadata(node.MPTokenMetadata))
-```
-
-Editor story: a typed creation object already exposes issuance-specific metadata in 5.3.0 once parsed metadata is checked. The demonstrated new capability is that the MPT selector returns an MPT issuance. Optional ID and optional metadata remain explicit because these are genuine domain absences, not information already known from the request. Creation and update success checks remain in both complete files.
-
-## 4. AMM: one honest result check per transaction
-
-Before helper — `_code-samples/create-amm/ts/create-amm-guided.ts`:
-
-```ts
-function requireSuccess(response: TxResponse): void {
-  const metadata = response.result.meta
-  if (metadata == null || typeof metadata === 'string') {
-    throw new Error('Expected parsed transaction metadata')
-  }
-  if (metadata.TransactionResult !== 'tesSUCCESS') {
-    throw new Error(`Transaction ${response.result.hash} failed: ${metadata.TransactionResult}`)
-  }
-}
-```
-
-After helper — `_code-samples/devx-after/create-amm.ts`:
-
-```ts
-function requireSuccess(response: ValidatedTxResponse): void {
-  const metadata = response.result.meta
-  if (metadata.TransactionResult !== 'tesSUCCESS') {
-    throw new Error(`Transaction ${response.result.hash} failed: ${metadata.TransactionResult}`)
-  }
-}
-```
-
-## Precisely scoped scaffolding changes
-
-Across the four matched workflows (not across the whole SDK):
-
-- **5** parsed-metadata type/absence guards removed, because these responses are now typed as validated and parsed.
-- **2** MPT ledger-kind comparisons removed, one for the initial lookup and one for confirmation; optional metadata checks remain.
-- **1** generic autofill argument removed; populated fields are inferred.
-- The MPT-ID absence check is **unchanged**. Direct typed object submission already infers issuance metadata on 5.3.0; type loss after signing is demonstrated separately in Send XRP.
-- **0** unsafe assertions or `any` introduced. The corrected current-release variants already have zero unsafe assertions or `any`.
-- **All transaction-success checks remain.** These source changes do not establish a measured time saving or onboarding improvement.
-
-`portal-prototype-examples.patch` holds the complete pairwise diff. Prototype compilation and isolated-ledger execution are recorded separately, after the SDK integration is final.
-
-## Getting Started: let the discriminants guide the whole step
-
-The main walkthrough now uses the unreleased SDK directly:
-
-```ts
-const response = await client.request({
-  command: 'account_info',
-  account: testWallet.address,
-  ledger_index: 'validated'
-})
-
-const submitted = await client.submitAndWait({
-  TransactionType: 'Payment',
-  Account: testWallet.address,
+const client = new WalletClient(server, { wallet })
+await client.connect()
+const account = await client.command.accountInfo({ account: client.wallet.address })
+const submitted = await client.tx.payment({
   Amount: xrpToDrops('1'),
   Destination: destination.address
-}, { wallet: testWallet })
+}).signAndSubmit()
+console.log(`Payment confirmed: ${submitted.result.hash}`)
+```
 
-const result = submitted.result.meta.TransactionResult
-if (result !== 'tesSUCCESS') {
-  throw new Error(`Payment failed: ${result}`)
+The wallet supplies Account; the factory supplies TransactionType. No annotation, `satisfies`, cast, metadata guard or protocol-code comparison is needed. The factory creates a draft; only the terminal method sends it. `.toJSON()` returns an independent copy for inspection.
+
+## Explicit outcome handling
+
+```ts
+const outcome = await client.tx.payment({
+  Amount: xrpToDrops('1'),
+  Destination: destination.address
+}).trySignAndSubmit()
+if (outcome.ok) {
+  console.log(outcome.response.result.hash)
+} else {
+  console.error(outcome.error.message)
 }
 ```
 
-No `Payment`/`AccountInfoRequest` imports, annotations, `satisfies`, casts, or metadata-format guard are needed. The SDK validates during signing; a standalone `validate()` call adds no value to this first-payment journey. The editor actually offers `Amount`, `Destination`, and `DestinationTag` after the Payment discriminator. Five focused editor checks and the actual main example's success/failure runs are recorded in `getting-started-editor.json` and `getting-started-runtime.json`.
+The lower-level `submitAndWait` throws on failed validated transactions and `trySubmitAndWait` returns the same success/error union. `TransactionFailedError.response` retains the validated failed transaction. Transport or expiry errors can leave the outcome unknown, so applications must resolve that uncertainty before retrying.
+
+## Other paired workflows
+
+Send XRP still demonstrates inferred autofill fields and transaction identity preserved through signing. MPT selectors infer the requested ledger object. AMM setup awaits each successful transaction. All prototype workflows now rely on SDK success classification; published 5.3.0 examples retain their required checks. MPT ID/metadata absence checks and the unavailable validated-ledger check remain.
+
+See [builder follow-up](builders-follow-up.md), [editor evidence](builders-editor.json), [runtime evidence](builders-runtime.json), [four prototype journeys](runtime-builders-prototype.json), and [matched failure evidence](runtime-negative-outcomes-builders.json). The earlier scaffolding counts describe the prior revision, not this final design.

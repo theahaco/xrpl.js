@@ -2,6 +2,14 @@
 
 Audit date: 22 September 2026. Published baseline: **xrpl 5.3.0**. Unreleased aha prototype: **5.3.0-aha.devx.0**. Consumer compiler: **TypeScript 5.9.3**. The prototype is evidence for a proposed improvement programme; it is not a production release.
 
+## Current wallet-builder revision
+
+The latest SDK adds wallet-bound builders, command discovery and SDK-owned transaction-success handling. The complete suite passes **141 suites / 1,404 tests**. **25/25** editor/compiler checks pass, including all **78 transaction factories / 45 commands**, and the four prototype ledger journeys pass. Builds pass; changed-file lint has zero errors and 16 style warnings. See the [current follow-up](builders-follow-up.md) for evidence, migration and limits.
+
+The table below records the earlier audit revision. Its packed artifact and caller-owned result checks are historical evidence, not validation of the current failure contract.
+
+## Earlier audit revision
+
 | Check | Recorded result | Evidence and scope |
 |---|---|---|
 | Public API inventory | 447 named root exports across 18 families | [Inventory](api-inventory.json), [coverage](api-coverage.md). Includes public Client/Wallet members and 69 additional qualified namespace/object members. Inventory does not establish behavioral correctness. |
@@ -31,7 +39,7 @@ The negative-outcome run adds one real validated `tec` branch. It is not exhaust
 ## Compatibility and remaining work
 
 - The prototype's declaration syntax uses const type parameters, requiring **TypeScript 5.0 or later**. Validation used 5.9.3; a supported compiler-version matrix remains release work.
-- `submitAndWait` confirms transactions through an explicit **API v2 lookup**, including on a client configured for another API version. This makes the refined result shape consistent but is a compatibility decision that needs release review and server support checks. The prototype retains published 5.3 polling and error-classification behavior.
+- `submitAndWait` confirms transactions through an explicit **API v2 lookup**, including on a client configured for another API version. This makes the refined result shape consistent but is a compatibility decision that needs release review and server support checks. The prototype retains published 5.3 finality polling. The current follow-up adds SDK classification of the final validated outcome and documents the breaking success contract.
 - `SignedBlob<T>` carries an optional type hint; it does not decode or validate a blob and is not proof that its contents match `T`. Direct `Wallet.sign` typo rejection remains a known gap.
 - The proposed generic `simulate` redesign was removed after review. The method retains published behavior; the prototype makes no improved inference claim for it.
 - Five reviewed legacy portal families remain unchanged: claim-payment-channel, get-tx, partial-payment, paths and reliable-tx-submission. The broad original AMM example also remains alongside the new guided journey. The report identifies that remaining work.

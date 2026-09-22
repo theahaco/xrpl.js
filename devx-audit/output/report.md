@@ -64,13 +64,15 @@ The walkthrough uses three clearly labeled states: **existing tracked examples**
 
 ### Get Started: learn from inputs and inferred responses
 
-The proposed main walkthrough passes request and transaction literals directly to the client. `command: 'account_info'` and `TransactionType: 'Payment'` guide completion and inference, without importing the corresponding types, adding `satisfies`, or casting. Actual editor checks confirm Payment fields are offered and missing required fields or misspelled optional fields are rejected.
+The proposed main walkthrough binds a signing wallet once with `new WalletClient(server, { wallet })`. Typing `client.tx.` reveals 78 modeled transaction factories; typing `client.command.` reveals 45 request methods. Both lists carry inline descriptions. `client.tx.payment({ Amount, Destination }).signAndSubmit()` supplies the transaction type and defaults the account to the wallet. Required fields, optional-field typos and returned transaction fields remain checked without annotations or casts.
 
-`submitAndWait` prepares and validates during signing, so the first-payment example needs no separate `validate()` call. The prototype guarantees parsed metadata; the application reads `TransactionResult` directly. The `tesSUCCESS` check stays, subscription errors are observed, and `finally` closes the connection. The published 5.3.0 workaround version is retained separately for comparison. **Validated means included in a validated ledger; it does not mean the requested business operation succeeded.**
+Creating a builder sends nothing. `.signAndSubmit()` prepares, signs, submits and waits for validated success. The SDK owns both the metadata-format check and final success-code check. An unsuccessful validated transaction throws `TransactionFailedError`, preserving its response. `.trySignAndSubmit()` and the lower-level `trySubmitAndWait()` return a discriminated success/error result for applications that prefer explicit handling. The first-payment example simply prints the confirmed hash.
+
+The published 5.3.0 comparison is retained separately. Ledger inclusion and operation success remain distinct protocol outcomes; the proposed high-level API makes successful completion its default contract. Twenty-five compiler/editor checks and real successful and unsuccessful payments support this design. Builders cover modeled transactions, including amendment-dependent types; this does not establish that all are available or executed on a particular network.
 
 ### MPT issuance: the selected object should guide its answer
 
-Both versions create an issuance, check success, require the returned issuance ID, query metadata, update it and confirm the result. With the prototype, `mpt_issuance` selects `MPTokenIssuance`, so an extra ledger-kind check disappears. Optional metadata and issuance-ID checks remain because they describe real domain possibilities.
+Both versions create an issuance, require the returned issuance ID, query metadata, update it and confirm the result. The published version checks success in the example; the prototype SDK performs that check. With the prototype, `mpt_issuance` selects `MPTokenIssuance`, so an extra ledger-kind check disappears. Optional metadata and issuance-ID checks remain because they describe real domain possibilities.
 
 The mutable-MPT walkthrough requires DynamicMPT support. The audit's isolated ledger explicitly enables the required amendments. Network availability is a runtime condition, not something stronger TypeScript can establish.
 
@@ -78,17 +80,19 @@ The mutable-MPT walkthrough requires DynamicMPT support. The audit's isolated le
 
 The Send XRP pair demonstrates `autofill`, signing and confirmation. The current-release example needs an explicit transaction generic to expose prepared fields. The prototype infers populated fields and keeps the transaction type through its signed blob.
 
-Create AMM adds a focused, fully typed setup/create/query walkthrough beside the original broad example. Each setup transaction is checked independently. The original advanced sample remains available and is not represented as remediated; it still needs work on `any`, repeated result handling and failure propagation.
+Create AMM adds a focused, fully typed setup/create/query walkthrough beside the original broad example. The SDK requires successful completion of each setup transaction before the next step. The original advanced sample remains available and is not represented as remediated; it still needs work on `any`, repeated result handling and failure propagation.
 
-Across the four paired workflows, the prototype removes five parsed-metadata guards, two MPT ledger-kind comparisons and one autofill generic argument. Getting Started additionally removes two redundant `satisfies` clauses and a separate validation call. All transaction-success checks remain. These are scoped source changes, not a usability score or measured time saving.
+The prototype removes metadata representation guards, extra ledger-kind checks and result-code comparisons from the teaching path. Optional MPT metadata, an absent issuance ID and an unavailable validated ledger still need domain-specific handling. These are scoped source changes, not a usability score or measured time saving.
 
 ## Prototype and compatibility
 
 The prototype reuses selected work from existing aha proposals for ledger models, stricter inputs, query narrowing and transaction lifecycle types. Integration added regression checks for broad and union inputs, corrected normalized flag types, retained declaration comments, and tightened direct submission calls. It is an evaluation branch, not a release recommendation.
 
-Independent review identified two changes that should not be accepted merely because their tests passed: a proposed simulation return type described pre-normalized flags, and proposed submission handling treated potentially nonfinal results as terminal. The demonstration keeps existing simulation/finality behavior and limits its new guarantees to behavior backed by checks. The review record identifies the source and decisions.
+Independent review identified two changes that should not be accepted merely because their tests passed: a proposed simulation return type described pre-normalized flags, and proposed submission handling treated potentially nonfinal results as terminal. The demonstration keeps existing simulation and finality polling behavior. The new success contract classifies the final validated response, preserving the waiting behavior for preliminary nonfinal results. The review record identifies the source and decisions.
 
-The stricter input types, richer return types and const type parameters require compatibility review. Plan migration guidance, an explicit path for forward-compatible requests, and a declared minimum TypeScript version. Restoring comments also requires maintaining their correctness. Do not ship the combined prototype wholesale without the integration and release work described below.
+`submitAndWait` now throws for an unsuccessful validated transaction instead of resolving with that response. This is a proposed breaking change. Existing callers can handle `trySubmitAndWait` results or catch `TransactionFailedError` and inspect its `response`. Transport errors can leave the ledger outcome unknown; a returned error is not a guarantee that retrying is safe.
+
+The wallet-bound client, stricter input types, richer return types and const type parameters require compatibility review. Plan migration guidance, an explicit path for forward-compatible requests, and a declared minimum TypeScript version. Restoring comments also requires maintaining their correctness. Do not ship the combined prototype wholesale without the integration and release work described below.
 
 Scope remains important even when selected probes pass: direct `Wallet.sign` calls can still accept extra fields, and a signed-blob type brand carries information without validating arbitrary external bytes. The prototype's reliable-confirmation lookup explicitly uses API v2 to match its documented response shape. These contracts need to be included in compatibility review.
 

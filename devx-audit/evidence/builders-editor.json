@@ -1,0 +1,395 @@
+{
+  "typescript": "5.9.3",
+  "scope": "Actual TypeScript language service and compiler against built declarations.",
+  "results": [
+    {
+      "name": "Payment needs only its fields",
+      "passed": true,
+      "diagnostics": []
+    },
+    {
+      "name": "Payment requires Amount",
+      "passed": true,
+      "diagnostics": [
+        "Argument of type '{ Destination: string; }' is not assignable to parameter of type 'Omit<Payment, \"Account\" | \"TransactionType\"> & { Account?: string | undefined; } & {}'.\n  Property 'Amount' is missing in type '{ Destination: string; }' but required in type 'Omit<Payment, \"Account\" | \"TransactionType\">'."
+      ]
+    },
+    {
+      "name": "Payment rejects field typo",
+      "passed": true,
+      "diagnostics": [
+        "Type '\"1\"' is not assignable to type 'never'.",
+        "Type 'string' is not assignable to type 'never'.",
+        "Type 'number' is not assignable to type 'never'."
+      ]
+    },
+    {
+      "name": "Stored Payment rejects field typo",
+      "passed": true,
+      "diagnostics": [
+        "Argument of type '{ Amount: string; Destination: string; DestinationTagg: number; }' is not assignable to parameter of type 'never'.\n  The intersection '{ Amount: string; Destination: string; DestinationTagg: number; } & { DestinationTagg?: undefined; }' was reduced to 'never' because property 'DestinationTagg' has conflicting types in some constituents."
+      ]
+    },
+    {
+      "name": "Payment rejects another transaction discriminator",
+      "passed": true,
+      "diagnostics": [
+        "Type '\"1\"' is not assignable to type 'never'.",
+        "Type 'string' is not assignable to type 'never'.",
+        "Type 'string' is not assignable to type 'never'."
+      ]
+    },
+    {
+      "name": "Explicit Account is supported",
+      "passed": true,
+      "diagnostics": []
+    },
+    {
+      "name": "MPT metadata follows its builder",
+      "passed": true,
+      "diagnostics": []
+    },
+    {
+      "name": "Try result narrows using ok",
+      "passed": true,
+      "diagnostics": []
+    },
+    {
+      "name": "Try result requires narrowing",
+      "passed": true,
+      "diagnostics": [
+        "Property 'response' does not exist on type 'SubmitResult<{ readonly TransactionType: \"Payment\"; readonly Account: string; readonly Amount: \"1\"; readonly Destination: string; }>'.\n  Property 'response' does not exist on type '{ ok: false; error: Error; }'."
+      ]
+    },
+    {
+      "name": "accountInfo infers response",
+      "passed": true,
+      "diagnostics": []
+    },
+    {
+      "name": "accountInfo requires account",
+      "passed": true,
+      "diagnostics": [
+        "Expected 1 arguments, but got 0."
+      ]
+    },
+    {
+      "name": "Command field typo rejected",
+      "passed": true,
+      "diagnostics": [
+        "Type 'string' is not assignable to type 'never'.",
+        "Type 'string' is not assignable to type 'never'."
+      ]
+    },
+    {
+      "name": "Empty command allows omission",
+      "passed": true,
+      "diagnostics": []
+    },
+    {
+      "name": "Ledger selector infers node",
+      "passed": true,
+      "diagnostics": []
+    },
+    {
+      "name": "Binary node not exposed as JSON",
+      "passed": true,
+      "diagnostics": [
+        "Property 'node' does not exist on type 'LedgerEntryResponseResultBase & { node_binary: string; }'."
+      ]
+    },
+    {
+      "name": "Broad binary option stays safe",
+      "passed": true,
+      "diagnostics": [
+        "'r.result.node' is possibly 'undefined'."
+      ]
+    },
+    {
+      "name": "API v1 selects v1 response",
+      "passed": true,
+      "diagnostics": []
+    },
+    {
+      "name": "API version union stays safe",
+      "passed": true,
+      "diagnostics": [
+        "Property 'Account' does not exist on type '(BaseTxResult<1, Transaction, boolean> & Transaction) | (BaseTxResult<2, Transaction, boolean> & { ...; })'.\n  Property 'Account' does not exist on type 'BaseTxResult<2, Transaction, boolean> & { tx_json: Transaction; }'."
+      ]
+    },
+    {
+      "name": "Read-only clients have commands",
+      "passed": true,
+      "diagnostics": []
+    },
+    {
+      "name": "Wallet client requires wallet",
+      "passed": true,
+      "diagnostics": [
+        "Argument of type '{}' is not assignable to parameter of type 'WalletClientOptions'.\n  Property 'wallet' is missing in type '{}' but required in type 'WalletClientOptions'."
+      ]
+    },
+    {
+      "name": "All transaction factories",
+      "passed": true,
+      "count": 78,
+      "completions": [
+        "accountDelete",
+        "accountSet",
+        "ammBid",
+        "ammClawback",
+        "ammCreate",
+        "ammDelete",
+        "ammDeposit",
+        "ammVote",
+        "ammWithdraw",
+        "batch",
+        "checkCancel",
+        "checkCash",
+        "checkCreate",
+        "clawback",
+        "confidentialMPTClawback",
+        "confidentialMPTConvert",
+        "confidentialMPTConvertBack",
+        "confidentialMPTMergeInbox",
+        "confidentialMPTSend",
+        "credentialAccept",
+        "credentialCreate",
+        "credentialDelete",
+        "delegateSet",
+        "depositPreauth",
+        "didDelete",
+        "didSet",
+        "escrowCancel",
+        "escrowCreate",
+        "escrowFinish",
+        "loanBrokerCoverClawback",
+        "loanBrokerCoverDeposit",
+        "loanBrokerCoverWithdraw",
+        "loanBrokerDelete",
+        "loanBrokerSet",
+        "loanDelete",
+        "loanManage",
+        "loanPay",
+        "loanSet",
+        "mpTokenAuthorize",
+        "mpTokenIssuanceCreate",
+        "mpTokenIssuanceDestroy",
+        "mpTokenIssuanceSet",
+        "nfTokenAcceptOffer",
+        "nfTokenBurn",
+        "nfTokenCancelOffer",
+        "nfTokenCreateOffer",
+        "nfTokenMint",
+        "nfTokenModify",
+        "offerCancel",
+        "offerCreate",
+        "oracleDelete",
+        "oracleSet",
+        "payment",
+        "paymentChannelClaim",
+        "paymentChannelCreate",
+        "paymentChannelFund",
+        "permissionedDomainDelete",
+        "permissionedDomainSet",
+        "setRegularKey",
+        "signerListSet",
+        "sponsorshipSet",
+        "sponsorshipTransfer",
+        "ticketCreate",
+        "trustSet",
+        "vaultClawback",
+        "vaultCreate",
+        "vaultDelete",
+        "vaultDeposit",
+        "vaultSet",
+        "vaultWithdraw",
+        "xChainAccountCreateCommit",
+        "xChainAddAccountCreateAttestation",
+        "xChainAddClaimAttestation",
+        "xChainClaim",
+        "xChainCommit",
+        "xChainCreateBridge",
+        "xChainCreateClaimID",
+        "xChainModifyBridge"
+      ],
+      "documentation": [
+        {
+          "name": "payment",
+          "text": "A Payment transaction represents a transfer of value from one account\nto another. Account defaults to the client wallet. Call signAndSubmit\nto send and await success."
+        },
+        {
+          "name": "mpTokenIssuanceCreate",
+          "text": "The MPTokenIssuanceCreate transaction creates a MPTokenIssuance object\nand adds it to the relevant directory node of the creator account. This\ntransaction is the only opportunity an issuer has to specify any token\nfields that are defined as immutable (e.g., MPT Flags). If the\ntransaction is successful, the newly created token will be owned by the\naccount (the creator account) which executed the transaction. Account\ndefaults to the client wallet. Call signAndSubmit to send and await\nsuccess."
+        },
+        {
+          "name": "ammCreate",
+          "text": "Create a new Automated Market Maker (AMM) instance for trading a pair\nof assets (fungible tokens or XRP). Account defaults to the client\nwallet. Call signAndSubmit to send and await success."
+        }
+      ]
+    },
+    {
+      "name": "All command methods",
+      "passed": true,
+      "count": 45,
+      "completions": [
+        "accountChannels",
+        "accountCurrencies",
+        "accountInfo",
+        "accountLines",
+        "accountNfts",
+        "accountObjects",
+        "accountOffers",
+        "accountSponsoring",
+        "accountTx",
+        "ammInfo",
+        "bookOffers",
+        "channelVerify",
+        "depositAuthorized",
+        "feature",
+        "fee",
+        "gatewayBalances",
+        "getAggregatePrice",
+        "ledger",
+        "ledgerAccept",
+        "ledgerClosed",
+        "ledgerCurrent",
+        "ledgerData",
+        "ledgerEntry",
+        "manifest",
+        "nftBuyOffers",
+        "nftHistory",
+        "nftInfo",
+        "nftsByIssuer",
+        "nftSellOffers",
+        "norippleCheck",
+        "pathFind",
+        "ping",
+        "random",
+        "ripplePathFind",
+        "serverDefinitions",
+        "serverInfo",
+        "serverState",
+        "simulate",
+        "submit",
+        "submitMultisigned",
+        "subscribe",
+        "transactionEntry",
+        "tx",
+        "unsubscribe",
+        "vaultInfo"
+      ],
+      "documentation": [
+        {
+          "name": "accountInfo",
+          "text": "The `account_info` command retrieves information about an account, its\nactivity, and its XRP balance. All information retrieved is relative to\na particular version of the ledger. Returns an {@link * AccountInfoResponse}."
+        },
+        {
+          "name": "ledgerEntry",
+          "text": "The `ledger_entry` method returns a single ledger object from the XRP\nLedger in its raw format. Expects a response in the form of a {@link *}     * LedgerEntryResponse}."
+        },
+        {
+          "name": "tx",
+          "text": "The tx method retrieves information on a single transaction, by its\nidentifying hash. Expects a response in the form of a {@link * TxResponse}."
+        }
+      ]
+    },
+    {
+      "name": "Payment fields",
+      "passed": true,
+      "count": 27,
+      "completions": [
+        "Amount",
+        "Destination",
+        "Account",
+        "AccountTxnID",
+        "CredentialIDs",
+        "Delegate",
+        "DeliverMax",
+        "DeliverMin",
+        "DestinationTag",
+        "DomainID",
+        "Fee",
+        "Flags",
+        "InvoiceID",
+        "LastLedgerSequence",
+        "Memos",
+        "NetworkID",
+        "Paths",
+        "SendMax",
+        "Sequence",
+        "Signers",
+        "SigningPubKey",
+        "SourceTag",
+        "Sponsor",
+        "SponsorFlags",
+        "SponsorSignature",
+        "TicketSequence",
+        "TxnSignature"
+      ],
+      "documentation": [
+        {
+          "name": "Amount",
+          "text": "The amount of currency to deliver. For non-XRP amounts, the nested field\nnames MUST be lower-case. If the tfPartialPayment flag is set, deliver up\nto this amount instead."
+        },
+        {
+          "name": "Destination",
+          "text": "The unique address of the account receiving the payment."
+        },
+        {
+          "name": "DestinationTag",
+          "text": "Arbitrary tag that identifies the reason for the payment to the\ndestination, or a hosted recipient to pay."
+        }
+      ]
+    },
+    {
+      "name": "Account info fields",
+      "passed": true,
+      "count": 8,
+      "completions": [
+        "account",
+        "api_version",
+        "id",
+        "ledger_hash",
+        "ledger_index",
+        "queue",
+        "signer_lists",
+        "strict"
+      ],
+      "documentation": [
+        {
+          "name": "account",
+          "text": "A unique identifier for the account, most commonly the account's address."
+        },
+        {
+          "name": "ledger_index",
+          "text": "The ledger index of the ledger to use, or a shortcut string."
+        }
+      ]
+    },
+    {
+      "name": "Payment builder actions",
+      "passed": true,
+      "count": 3,
+      "completions": [
+        "signAndSubmit",
+        "toJSON",
+        "trySignAndSubmit"
+      ],
+      "documentation": [
+        {
+          "name": "signAndSubmit",
+          "text": "Prepare, sign and submit the draft, then wait for validated success."
+        },
+        {
+          "name": "trySignAndSubmit",
+          "text": "Prepare, sign and submit, returning an explicit success/error result."
+        },
+        {
+          "name": "toJSON",
+          "text": "Inspect a copy of the draft without signing or sending it."
+        }
+      ]
+    }
+  ]
+}

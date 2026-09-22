@@ -93,8 +93,8 @@ try {
         return response
       }
       client.submitAndWait = async (...args) => {
-        confirmed = await originalSubmitAndWait(...args)
-        return confirmed
+        try { confirmed = await originalSubmitAndWait(...args); return confirmed }
+        catch(error) { confirmed = error.response; throw error }
       }
       const samplePath = path.join(portalRoot, '_code-samples', sampleRelative)
       result.sampleSha256 = sha256(samplePath)
@@ -108,11 +108,12 @@ try {
         client.request = originalRequest
         client.submitAndWait = originalSubmitAndWait
       }
-      assert.ok(confirmed, 'submitAndWait must resolve so the example can inspect the final result')
+      assert.ok(confirmed, 'The validated failure must remain available in the response or error')
       assert.equal(confirmed.result.validated, true)
       assert.ok(confirmed.result.meta !== null && typeof confirmed.result.meta === 'object')
       assert.equal(confirmed.result.meta.TransactionResult, 'tecUNFUNDED_PAYMENT')
-      assert.equal(sampleError?.message, 'Payment failed: tecUNFUNDED_PAYMENT')
+      assert.equal(sampleError?.message, label === 'baseline' ? 'Payment failed: tecUNFUNDED_PAYMENT' : 'Transaction failed: tecUNFUNDED_PAYMENT')
+      if(label === 'prototype') assert(sampleError instanceof sdk.TransactionFailedError)
       const after = { sender: await balance(client, sender.address), receiver: await balance(client, genesis.address) }
       const fee = confirmed.result.tx_json.Fee
       assert.equal(BigInt(before.sender) - BigInt(after.sender), BigInt(fee), 'sender must lose only the transaction fee')
@@ -120,7 +121,7 @@ try {
       Object.assign(result, {
         passed: true,
         preliminaryResult,
-        sdkResolved: true,
+        sdkResolved: label === 'baseline',
         validated: confirmed.result.validated,
         metadataKind: 'decoded object',
         finalResult: confirmed.result.meta.TransactionResult,
@@ -134,7 +135,7 @@ try {
         exampleRejected: true,
         exampleError: sampleError.message,
       })
-      console.log(`${label}: validated tecUNFUNDED_PAYMENT; SDK resolved; actual Send XRP success check rejected; sender charged only ${fee} drops`)
+      console.log(`${label}: validated tecUNFUNDED_PAYMENT; failure surfaced to the actual Send XRP entrypoint; sender charged only ${fee} drops`)
     } catch (error) {
       Object.assign(result, { passed: false, error: error.stack ?? String(error) })
       console.log(`${label}: FAILED ${error.message}`)
@@ -154,7 +155,7 @@ try {
   console.log = originalLog
   evidence.scriptSha256 = sha256(fileURLToPath(import.meta.url))
   evidence.passed = evidence.results.length === 2 && evidence.results.every(result => result.passed) && evidence.advanceErrors.length === 0
-  fs.writeFileSync(path.join(auditRoot, 'evidence/runtime-negative-outcomes.json'), JSON.stringify(evidence, null, 2) + '\n')
-  fs.writeFileSync(path.join(auditRoot, 'evidence/runtime-negative-outcomes.log'), output.join('\n') + '\n')
+  fs.writeFileSync(path.join(auditRoot, 'evidence/runtime-negative-outcomes-builders.json'), JSON.stringify(evidence, null, 2) + '\n')
+  fs.writeFileSync(path.join(auditRoot, 'evidence/runtime-negative-outcomes-builders.log'), output.join('\n') + '\n')
 }
 if (!evidence.passed) process.exitCode = 1

@@ -1,0 +1,85 @@
+
+> build
+> lerna run build --stream
+
+lerna notice cli v9.0.7
+lerna info versioning independent
+
+ Lerna (powered by Nx)   Running target build for 7 projects:
+
+- @xrplf/isomorphic
+- @xrplf/mpt-crypto
+- ripple-address-codec
+- ripple-binary-codec
+- ripple-keypairs
+- @xrplf/secret-numbers
+- xrpl
+
+
+
+> @xrplf/isomorphic:build
+
+
+> @xrplf/mpt-crypto:build
+
+@xrplf/isomorphic: (node:59910) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+@xrplf/isomorphic: (Use `node --trace-warnings ...` to show where the warning was created)
+@xrplf/mpt-crypto: (node:59911) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+@xrplf/mpt-crypto: (Use `node --trace-warnings ...` to show where the warning was created)
+@xrplf/isomorphic: > @xrplf/isomorphic@1.0.2 build
+@xrplf/isomorphic: > tsc --build ./tsconfig.build.json
+@xrplf/mpt-crypto: > @xrplf/mpt-crypto@0.1.1 build
+@xrplf/mpt-crypto: > tsc --build tsconfig.build.json && tsc -p tsconfig.esm.json && node scripts/finalize-esm.js
+
+> ripple-address-codec:build
+
+ripple-address-codec: (node:59968) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+ripple-address-codec: (Use `node --trace-warnings ...` to show where the warning was created)
+ripple-address-codec: > ripple-address-codec@5.0.1 build
+ripple-address-codec: > tsc --build tsconfig.build.json
+
+> ripple-keypairs:build
+
+
+> ripple-binary-codec:build
+
+ripple-binary-codec: (node:59997) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+ripple-binary-codec: (Use `node --trace-warnings ...` to show where the warning was created)
+ripple-keypairs: (node:59996) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+ripple-keypairs: (Use `node --trace-warnings ...` to show where the warning was created)
+ripple-keypairs: > ripple-keypairs@3.1.0 build
+ripple-keypairs: > tsc --build tsconfig.build.json
+ripple-binary-codec: > ripple-binary-codec@2.11.0 build
+ripple-binary-codec: > tsc --build tsconfig.build.json && copyfiles ./src/enums/definitions.json ./dist/enums/
+
+> @xrplf/secret-numbers:build
+
+@xrplf/secret-numbers: (node:60054) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+@xrplf/secret-numbers: (Use `node --trace-warnings ...` to show where the warning was created)
+ripple-binary-codec: (node:60055) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+ripple-binary-codec: (Use `node --trace-warnings ...` to show where the warning was created)
+@xrplf/secret-numbers: > @xrplf/secret-numbers@3.0.0 build
+@xrplf/secret-numbers: > run-s build:lib build:web
+@xrplf/secret-numbers: > @xrplf/secret-numbers@3.0.0 build:lib
+@xrplf/secret-numbers: > tsc --build tsconfig.build.json
+@xrplf/secret-numbers: > @xrplf/secret-numbers@3.0.0 build:web
+@xrplf/secret-numbers: > webpack
+@xrplf/secret-numbers: (node:60161) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+@xrplf/secret-numbers: (Use `node --trace-warnings ...` to show where the warning was created)
+
+> xrpl:build
+
+xrpl: (node:60163) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+xrpl: (Use `node --trace-warnings ...` to show where the warning was created)
+xrpl: > xrpl@5.3.0-aha.devx.0 build
+xrpl: > run-s build:lib build:web
+xrpl: > xrpl@5.3.0-aha.devx.0 build:lib
+xrpl: > tsc --build tsconfig.build.json
+xrpl: > xrpl@5.3.0-aha.devx.0 build:web
+xrpl: > webpack
+xrpl: (node:60270) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+xrpl: (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+
+ Lerna (powered by Nx)   Successfully ran target build for 7 projects
