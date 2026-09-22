@@ -289,6 +289,44 @@ describe('UInt decimal validation', () => {
       expect(() => UInt32.from(100000)).not.toThrow()
       expect(() => UInt32.from(4294967295)).not.toThrow()
     })
+
+    it('should accept canonical base 10 strings', () => {
+      expect(UInt32.from('0').valueOf()).toBe(0)
+      expect(UInt32.from('100000').valueOf()).toBe(100000)
+      expect(UInt32.from('4294967295').valueOf()).toBe(4294967295)
+    })
+
+    it('should throw error when passed an out of range string', () => {
+      expect(() => UInt32.from('4294967296')).toThrow(/4294967296 must be/u)
+      expect(() => UInt32.from('99999999999')).toThrow(/99999999999 is not/u)
+    })
+
+    it('should throw error when passed a non-canonical string', () => {
+      for (const val of ['-1', '0x10', '12abc', ' 1', '1e3', '1.5', '+1', '']) {
+        expect(() => UInt32.from(val)).toThrow(
+          new Error(`Invalid UInt32: ${val} is not a base 10 integer string`),
+        )
+      }
+    })
+
+    it('should reject lenient strings through encode instead of wrapping', () => {
+      const base = {
+        TransactionType: 'MPTokenIssuanceCreate',
+        Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
+        Fee: '10',
+        SigningPubKey: '',
+      }
+      expect(() => encode({ ...base, Sequence: '-1' })).toThrow(
+        /Invalid UInt32/u,
+      )
+      expect(() => encode({ ...base, Sequence: '4294967296' })).toThrow(
+        /4294967296 must be/u,
+      )
+      expect(() => encode({ ...base, Sequence: '12abc' })).toThrow(
+        /Invalid UInt32/u,
+      )
+      expect(decode(encode({ ...base, Sequence: '5' })).Sequence).toBe(5)
+    })
   })
 
   describe('UInt64', () => {
@@ -314,6 +352,51 @@ describe('UInt decimal validation', () => {
       expect(() => UInt64.from(0)).not.toThrow()
       expect(() => UInt64.from(1000000)).not.toThrow()
       expect(() => UInt64.from(BigInt('9223372036854775807'))).not.toThrow()
+      expect(UInt64.from(Number.MAX_SAFE_INTEGER).valueOf()).toBe(
+        BigInt(Number.MAX_SAFE_INTEGER),
+      )
+      expect(UInt64.from(BigInt('18446744073709551615')).valueOf()).toBe(
+        BigInt('18446744073709551615'),
+      )
+    })
+
+    it('should throw error when passed a number above MAX_SAFE_INTEGER', () => {
+      // 2^53 + 1 is not representable; 1e20 previously truncated to 64 bits.
+      for (const val of [2 ** 53, 2 ** 53 + 1, 1e20]) {
+        expect(() => UInt64.from(val)).toThrow(
+          /exceeds Number.MAX_SAFE_INTEGER/u,
+        )
+      }
+    })
+
+    it('should throw error when passed an out of range bigint', () => {
+      for (const val of [BigInt(-1), BigInt('18446744073709551616')]) {
+        expect(() => UInt64.from(val)).toThrow(/is out of range for a UInt64/u)
+      }
+      // Previously truncated to the low 64 bits (2^65 + 5 -> 5).
+      expect(() => UInt64.from(BigInt('36893488147419103237'))).toThrow(
+        /is out of range for a UInt64/u,
+      )
+    })
+
+    it('should reject oversized numbers through encode instead of truncating', () => {
+      const base = {
+        TransactionType: 'MPTokenIssuanceCreate',
+        Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
+        Fee: '10',
+        Sequence: 1,
+        SigningPubKey: '',
+      }
+      expect(() => encode({ ...base, MaximumAmount: 1e20 })).toThrow(
+        /exceeds Number.MAX_SAFE_INTEGER/u,
+      )
+      expect(() => encode({ ...base, MaximumAmount: 2 ** 53 + 1 })).toThrow(
+        /exceeds Number.MAX_SAFE_INTEGER/u,
+      )
+      expect(
+        decode(encode({ ...base, MaximumAmount: '9223372036854775807' }))
+          .MaximumAmount,
+      ).toBe('9223372036854775807')
     })
   })
 })

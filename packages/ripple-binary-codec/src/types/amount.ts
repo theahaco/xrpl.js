@@ -17,7 +17,11 @@ const MAX_IOU_PRECISION = 16
 const MAX_DROPS = new BigNumber('1e17')
 const MIN_XRP = new BigNumber('1e-6')
 const mask = BigInt(0x00000000ffffffff)
-const mptMask = BigInt(0x8000000000000000)
+// MPT amounts are 63-bit unsigned integers (XLS-33)
+const MAX_MPT_VALUE = BigInt('9223372036854775807')
+// Canonical decimal form as emitted by rippled: no sign, no leading zeros,
+// no whitespace, no 0x/0o/0b prefix, no exponent.
+const MPT_VALUE_REGEX = /^(?:0|[1-9][0-9]*)$/
 
 /**
  * BigNumber configuration for Amount IOUs
@@ -303,28 +307,21 @@ class Amount extends SerializedType {
   /**
    * Validate MPT.value amount
    *
-   * @param decimal BigNumber object representing MPT.value
+   * Accepts exactly the canonical decimal form (`/^(0|[1-9][0-9]*)$/`) in the
+   * range 0 to 2^63 - 1. Anything else (sign, whitespace, `0x` prefix,
+   * exponent, decimal point, out-of-range magnitude) is rejected before
+   * serialization so that no value can be silently truncated on the wire.
+   *
+   * @param amount String representing MPT.value
    * @returns void, but will throw if invalid amount
    */
   private static assertMptIsValid(amount: string): void {
-    if (amount.indexOf('.') !== -1) {
-      throw new Error(`${amount.toString()} is an illegal amount`)
+    if (typeof amount !== 'string' || !MPT_VALUE_REGEX.test(amount)) {
+      throw new Error(`${String(amount)} is an illegal amount`)
     }
 
-    let decimal: BigNumber
-    try {
-      decimal = new BigNumber(amount)
-    } catch (_err) {
-      throw new Error(`${amount.toString()} is an illegal amount`)
-    }
-    if (!decimal.isZero()) {
-      if (decimal < BigNumber(0)) {
-        throw new Error(`${amount.toString()} is an illegal amount`)
-      }
-
-      if (Number(BigInt(amount) & BigInt(mptMask)) != 0) {
-        throw new Error(`${amount.toString()} is an illegal amount`)
-      }
+    if (BigInt(amount) > MAX_MPT_VALUE) {
+      throw new Error(`${amount} is an illegal amount`)
     }
   }
 

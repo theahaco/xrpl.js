@@ -7,6 +7,7 @@ import { DEFAULT_DEFINITIONS, XrplDefinitionsBase } from '../enums'
 const HEX_REGEX = /^[a-fA-F0-9]{1,16}$/
 const BASE10_REGEX = /^[0-9]{1,20}$/
 const mask = BigInt(0x00000000ffffffff)
+const MAX_UINT64 = BigInt('0xFFFFFFFFFFFFFFFF')
 
 const BASE10_AMOUNT_FIELDS = new Set([
   'MaximumAmount',
@@ -59,6 +60,12 @@ class UInt64 extends UInt {
         throw new Error('value must be an unsigned integer')
       }
 
+      if (!Number.isSafeInteger(val)) {
+        throw new Error(
+          `${val} exceeds Number.MAX_SAFE_INTEGER; pass a string or bigint`,
+        )
+      }
+
       const number = BigInt(val)
 
       const intBuf = [new Uint8Array(4), new Uint8Array(4)]
@@ -86,8 +93,12 @@ class UInt64 extends UInt {
     }
 
     if (typeof val === 'bigint') {
+      if (val < BigInt(0) || val > MAX_UINT64) {
+        throw new Error(`${val} is out of range for a UInt64`)
+      }
+
       const intBuf = [new Uint8Array(4), new Uint8Array(4)]
-      writeUInt32BE(intBuf[0], Number(Number(val >> BigInt(32))), 0)
+      writeUInt32BE(intBuf[0], Number(val >> BigInt(32)), 0)
       writeUInt32BE(intBuf[1], Number(val & BigInt(mask)), 0)
 
       return new UInt64(concat(intBuf))
