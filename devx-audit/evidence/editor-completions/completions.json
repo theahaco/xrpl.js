@@ -1,0 +1,846 @@
+{
+  "source": "Actual TypeScript language-service completions against the built aha SDK. Images are rendered previews, not editor screenshots.",
+  "typescript": "5.9.3",
+  "sdkRevision": "93b40e5463131af2e3746f8a00190934309c429f",
+  "declarationSha256": "2092ec9058c6f79f6c440b4fd4b3f4a63341f7342d278292e90f4b8210258582",
+  "results": [
+    {
+      "id": "transactions",
+      "title": "Discover transactions with client.tx",
+      "subtitle": "Choose a transaction; its builder supplies the kind and signing account.",
+      "code": "client.tx./*HERE*/",
+      "selected": "payment",
+      "count": 78,
+      "source": "import { Wallet, WalletClient, xrpToDrops } from 'xrpl'\n\nconst wallet = Wallet.generate()\nconst recipient = Wallet.generate()\nconst server = 'wss://s.altnet.rippletest.net:51233'\nconst client = new WalletClient(server, { wallet })\n\nclient.tx.",
+      "cursorOffset": 242,
+      "entries": [
+        {
+          "name": "accountDelete",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "accountSet",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "ammBid",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "ammClawback",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "ammCreate",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "ammDelete",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "ammDeposit",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "ammVote",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "ammWithdraw",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "batch",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "checkCancel",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "checkCash",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "checkCreate",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "clawback",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "confidentialMPTClawback",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "confidentialMPTConvert",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "confidentialMPTConvertBack",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "confidentialMPTMergeInbox",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "confidentialMPTSend",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "credentialAccept",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "credentialCreate",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "credentialDelete",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "delegateSet",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "depositPreauth",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "didDelete",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "didSet",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "escrowCancel",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "escrowCreate",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "escrowFinish",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "loanBrokerCoverClawback",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "loanBrokerCoverDeposit",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "loanBrokerCoverWithdraw",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "loanBrokerDelete",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "loanBrokerSet",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "loanDelete",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "loanManage",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "loanPay",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "loanSet",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "mpTokenAuthorize",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "mpTokenIssuanceCreate",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "mpTokenIssuanceDestroy",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "mpTokenIssuanceSet",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "nfTokenAcceptOffer",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "nfTokenBurn",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "nfTokenCancelOffer",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "nfTokenCreateOffer",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "nfTokenMint",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "nfTokenModify",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "offerCancel",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "offerCreate",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "oracleDelete",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "oracleSet",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "payment",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "paymentChannelClaim",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "paymentChannelCreate",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "paymentChannelFund",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "permissionedDomainDelete",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "permissionedDomainSet",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "setRegularKey",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "signerListSet",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "sponsorshipSet",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "sponsorshipTransfer",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "ticketCreate",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "trustSet",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "vaultClawback",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "vaultCreate",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "vaultDelete",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "vaultDeposit",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "vaultSet",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "vaultWithdraw",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "xChainAccountCreateCommit",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "xChainAddAccountCreateAttestation",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "xChainAddClaimAttestation",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "xChainClaim",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "xChainCommit",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "xChainCreateBridge",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "xChainCreateClaimID",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "xChainModifyBridge",
+          "kind": "property",
+          "modifiers": "declare"
+        }
+      ],
+      "selectedDetails": {
+        "signature": "(property) TransactionBuilders.payment: <const F extends Omit<Payment, \"Account\" | \"TransactionType\"> & {\n    Account?: string | undefined;\n}>(fields: F & { [K in Exclude<keyof F, \"Account\" | \"Fee\" | \"Sequence\" | \"AccountTxnID\" | ... 22 more ... | \"Paths\">]?: undefined; }) => TransactionBuilder<...>",
+        "documentation": "A Payment transaction represents a transfer of value from one account\nto another. Account defaults to the client wallet. Call signAndSubmit\nto send and await success."
+      }
+    },
+    {
+      "id": "commands",
+      "title": "Discover requests with client.command",
+      "subtitle": "Choose a named command and follow its documented inputs.",
+      "code": "client.command./*HERE*/",
+      "selected": "accountInfo",
+      "count": 45,
+      "source": "import { Wallet, WalletClient, xrpToDrops } from 'xrpl'\n\nconst wallet = Wallet.generate()\nconst recipient = Wallet.generate()\nconst server = 'wss://s.altnet.rippletest.net:51233'\nconst client = new WalletClient(server, { wallet })\n\nclient.command.",
+      "cursorOffset": 247,
+      "entries": [
+        {
+          "name": "accountChannels",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "accountCurrencies",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "accountInfo",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "accountLines",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "accountNfts",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "accountObjects",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "accountOffers",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "accountSponsoring",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "accountTx",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "ammInfo",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "bookOffers",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "channelVerify",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "depositAuthorized",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "feature",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "fee",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "gatewayBalances",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "getAggregatePrice",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "ledger",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "ledgerAccept",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "ledgerClosed",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "ledgerCurrent",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "ledgerData",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "ledgerEntry",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "manifest",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "nftBuyOffers",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "nftHistory",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "nftInfo",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "nftsByIssuer",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "nftSellOffers",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "norippleCheck",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "pathFind",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "ping",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "random",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "ripplePathFind",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "serverDefinitions",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "serverInfo",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "serverState",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "simulate",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "submit",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "submitMultisigned",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "subscribe",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "transactionEntry",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "tx",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "unsubscribe",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "vaultInfo",
+          "kind": "property",
+          "modifiers": "declare"
+        }
+      ],
+      "selectedDetails": {
+        "signature": "(property) Commands.accountInfo: CommandMethod<\"account_info\">",
+        "documentation": "The `account_info` command retrieves information about an account, its\nactivity, and its XRP balance. All information retrieved is relative to\na particular version of the ledger. Returns an {@link * AccountInfoResponse}."
+      }
+    },
+    {
+      "id": "payment-fields",
+      "title": "Let the payment fields guide you",
+      "subtitle": "Completion exposes the required fields and their inline documentation.",
+      "code": "client.tx.payment({\n  /*HERE*/\n})",
+      "selected": "Amount",
+      "required": [
+        "Amount",
+        "Destination",
+        "DestinationTag"
+      ],
+      "source": "import { Wallet, WalletClient, xrpToDrops } from 'xrpl'\n\nconst wallet = Wallet.generate()\nconst recipient = Wallet.generate()\nconst server = 'wss://s.altnet.rippletest.net:51233'\nconst client = new WalletClient(server, { wallet })\n\nclient.tx.payment({\n  \n})",
+      "cursorOffset": 254,
+      "entries": [
+        {
+          "name": "Amount",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "Destination",
+          "kind": "property",
+          "modifiers": "declare"
+        },
+        {
+          "name": "Account",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "AccountTxnID",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "CredentialIDs",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "Delegate",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "DeliverMax",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "DeliverMin",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "DestinationTag",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "DomainID",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "Fee",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "Flags",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "InvoiceID",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "LastLedgerSequence",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "Memos",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "NetworkID",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "Paths",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "SendMax",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "Sequence",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "Signers",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "SigningPubKey",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "SourceTag",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "Sponsor",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "SponsorFlags",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "SponsorSignature",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "TicketSequence",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        },
+        {
+          "name": "TxnSignature",
+          "kind": "property",
+          "modifiers": "declare,optional"
+        }
+      ],
+      "selectedDetails": {
+        "signature": "(property) Amount: Amount | MPTAmount",
+        "documentation": "The amount of currency to deliver. For non-XRP amounts, the nested field\nnames MUST be lower-case. If the tfPartialPayment flag is set, deliver up\nto this amount instead."
+      }
+    },
+    {
+      "id": "builder-actions",
+      "title": "Discover how to submit the draft",
+      "subtitle": "Sign and await success, handle an explicit outcome, or inspect the draft.",
+      "code": "client.tx.payment({\n  Amount: xrpToDrops('1'),\n  Destination: recipient.address\n})./*HERE*/",
+      "selected": "signAndSubmit",
+      "required": [
+        "signAndSubmit",
+        "trySignAndSubmit",
+        "toJSON"
+      ],
+      "count": 3,
+      "source": "import { Wallet, WalletClient, xrpToDrops } from 'xrpl'\n\nconst wallet = Wallet.generate()\nconst recipient = Wallet.generate()\nconst server = 'wss://s.altnet.rippletest.net:51233'\nconst client = new WalletClient(server, { wallet })\n\nclient.tx.payment({\n  Amount: xrpToDrops('1'),\n  Destination: recipient.address\n}).",
+      "cursorOffset": 315,
+      "entries": [
+        {
+          "name": "signAndSubmit",
+          "kind": "method",
+          "modifiers": "declare"
+        },
+        {
+          "name": "toJSON",
+          "kind": "method",
+          "modifiers": "declare"
+        },
+        {
+          "name": "trySignAndSubmit",
+          "kind": "method",
+          "modifiers": "declare"
+        }
+      ],
+      "selectedDetails": {
+        "signature": "(method) TransactionBuilder<Payment>.signAndSubmit(): Promise<SuccessfulTxResponse<Payment>>",
+        "documentation": "Prepare, sign and submit the draft, then wait for validated success."
+      }
+    }
+  ]
+}
