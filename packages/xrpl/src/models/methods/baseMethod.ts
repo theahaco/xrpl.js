@@ -51,7 +51,7 @@ export interface ErrorResponse {
   status: 'error'
   type: 'response' | string
   error: string
-  error_code?: string
+  error_code?: number
   error_message?: string
   error_exception?: string
   request: Request

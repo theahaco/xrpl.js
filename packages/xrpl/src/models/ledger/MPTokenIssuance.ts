@@ -1,5 +1,16 @@
 import { BaseLedgerEntry, HasPreviousTxnID } from './BaseLedgerEntry'
 
+/**
+ * The MPTokenIssuance ledger entry defines a Multi-Purpose Token: its issuer,
+ * flags, limits and metadata.
+ *
+ * @remarks
+ * rippled cannot enumerate the holders of an issuance. `account_objects`
+ * lists the MPTokens of one holder and `ledger_entry` needs the holder's
+ * address up front. Listing every holder requires the Clio-only
+ * `mpt_holders` method (see {@link MPTHoldersRequest}) or an off-ledger
+ * registry maintained by the issuer.
+ */
 export interface MPTokenIssuance extends BaseLedgerEntry, HasPreviousTxnID {
   LedgerEntryType: 'MPTokenIssuance'
   /**
