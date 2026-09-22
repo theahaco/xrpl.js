@@ -39,6 +39,8 @@ export interface MPTokenAuthorizeFlagsInterface extends GlobalFlagsInterface {
 /**
  * The MPTokenAuthorize transaction is used to globally lock/unlock a MPTokenIssuance,
  * or lock/unlock an individual's MPToken.
+ *
+ * @category Transaction Models
  */
 export interface MPTokenAuthorize extends BaseTransaction {
   TransactionType: 'MPTokenAuthorize'

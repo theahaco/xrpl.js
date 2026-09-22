@@ -42,8 +42,10 @@ export enum MPTokenIssuanceCreateFlags {
    */
   tfMPTCanEscrow = 0x00000008,
   /**
-   * If set, indicates that individual holders can trade their balances
-   *  using the XRP Ledger DEX or AMM.
+   * Reserved. Marks the issuance as tradable on the XRP Ledger DEX and AMM once a
+   * future amendment enables MPT trading. It has no effect on rippled 3.x, which
+   * rejects an MPT `OfferCreate` with `temDISABLED`, and the SDK's `OfferCreate`,
+   * `AMM*` and `book_offers` models do not accept MPT amounts.
    */
   tfMPTCanTrade = 0x00000010,
   /**
@@ -146,8 +148,10 @@ export interface MPTokenIssuanceCreateFlagsInterface extends GlobalFlagsInterfac
    */
   tfMPTCanEscrow?: boolean
   /**
-   * If set, indicates that individual holders can trade their balances
-   *  using the XRP Ledger DEX or AMM.
+   * Reserved. Marks the issuance as tradable on the XRP Ledger DEX and AMM once a
+   * future amendment enables MPT trading. It has no effect on rippled 3.x, which
+   * rejects an MPT `OfferCreate` with `temDISABLED`, and the SDK's `OfferCreate`,
+   * `AMM*` and `book_offers` models do not accept MPT amounts.
    */
   tfMPTCanTrade?: boolean
   /**
@@ -213,19 +217,23 @@ export interface MPTokenIssuanceCreateImmutableFlagsInterface {
  * that are defined as immutable (e.g., MPT Flags). If the transaction is successful,
  * the newly created token will be owned by the account (the creator account) which
  * executed the transaction.
+ *
+ * @category Transaction Models
  */
 export interface MPTokenIssuanceCreate extends BaseTransaction {
   TransactionType: 'MPTokenIssuanceCreate'
   /**
-   * An asset scale is the difference, in orders of magnitude, between a standard unit and
-   * a corresponding fractional unit. More formally, the asset scale is a non-negative integer
-   * (0, 1, 2, …) such that one standard unit equals 10^(-scale) of a corresponding
-   * fractional unit. If the fractional unit equals the standard unit, then the asset scale is 0.
-   * Note that this value is optional, and will default to 0 if not supplied.
+   * Number of decimal places used to display this token. Every on-ledger amount of the
+   * token (`MPTAmount.value` in a `Payment` or `Clawback`, `MaximumAmount`,
+   * `OutstandingAmount`, `MPToken.MPTAmount`) is an integer in fractional units, and one
+   * standard (display) unit equals 10^AssetScale fractional units. With an `AssetScale`
+   * of 2, `value: '1234'` is 12.34 standard units. Defaults to 0 if not supplied and
+   * cannot be changed after the issuance is created.
    */
   AssetScale?: number
   /**
-   * Specifies the maximum asset amount of this token that should ever be issued.
+   * Specifies the maximum asset amount of this token that should ever be issued, as an
+   * integer in fractional units of `AssetScale`.
    * It is a non-negative integer string that can store a range of up to 63 bits. If not set, the max
    * amount will default to the largest unsigned 63-bit integer (0x7FFFFFFFFFFFFFFF or 9223372036854775807)
    *

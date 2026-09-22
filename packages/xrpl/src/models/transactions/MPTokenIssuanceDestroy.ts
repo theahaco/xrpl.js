@@ -11,6 +11,8 @@ import {
  * from the ledger. If this operation succeeds, the corresponding
  * MPTokenIssuance is removed and the owner’s reserve requirement is reduced by one.
  * This operation must fail if there are any holders who have non-zero balances.
+ *
+ * @category Transaction Models
  */
 export interface MPTokenIssuanceDestroy extends BaseTransaction {
   TransactionType: 'MPTokenIssuanceDestroy'

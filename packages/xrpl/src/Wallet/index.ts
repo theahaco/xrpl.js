@@ -319,29 +319,31 @@ export class Wallet {
    * @example
    *
    * ```ts
-   * const { Client, Wallet } = require('xrpl')
+   * import { Client, Payment } from 'xrpl'
    * const client = new Client('wss://s.altnet.rippletest.net:51233')
    *
    * async function signTransaction() {
    *   await client.connect()
-   *   const { balance: balance1, wallet: wallet1 } = client.fundWallet()
-   *   const { balance: balance2, wallet: wallet2 } = client.fundWallet()
+   *   const { wallet: wallet1 } = await client.fundWallet()
+   *   const { wallet: wallet2 } = await client.fundWallet()
    *
-   *   const transaction = {
+   *   const transaction: Payment = {
    *     TransactionType: 'Payment',
    *     Account: wallet1.address,
    *     Destination: wallet2.address,
-   *     Amount: '10'
+   *     Amount: '10000000', // 10 XRP in drops (1/1,000,000th of an XRP)
    *   }
    *
    *   try {
-   *     await client.autofill(transaction)
-   *     const { tx_blob: signed_tx_blob, hash} = await wallet1.sign(transaction)
-   *     console.log(signed_tx_blob)
+   *     // `autofill` returns a filled-in copy; the original object is not modified.
+   *     const prepared = await client.autofill(transaction)
+   *     const { tx_blob: signed_tx_blob, hash } = wallet1.sign(prepared)
+   *     console.log(signed_tx_blob, hash)
+   *     const result = await client.submit(signed_tx_blob)
+   *     console.log(result)
    *   } catch (error) {
-   *     console.error(`Failed to sign transaction: ${error}`)
+   *     console.error(`Failed to sign or submit transaction: ${error}`)
    *   }
-   *   const result = await client.submit(signed_tx_blob)
    *   await client.disconnect()
    * }
    *

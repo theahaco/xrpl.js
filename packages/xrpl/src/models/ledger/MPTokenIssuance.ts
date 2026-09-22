@@ -1,5 +1,12 @@
 import { BaseLedgerEntry, HasPreviousTxnID } from './BaseLedgerEntry'
 
+/**
+ * An MPTokenIssuance object describes a Multi-Purpose Token (MPT) issuance:
+ * its issuer, flags, scale, supply limits and metadata. Individual holders'
+ * balances are held in {@link MPToken} objects.
+ *
+ * @category Ledger Entries
+ */
 export interface MPTokenIssuance extends BaseLedgerEntry, HasPreviousTxnID {
   LedgerEntryType: 'MPTokenIssuance'
   /**
@@ -21,24 +28,30 @@ export interface MPTokenIssuance extends BaseLedgerEntry, HasPreviousTxnID {
    */
   Sequence: number
   /**
-   * An asset scale is a non-negative integer (0, 1, 2, ...)
-   * such that one MPT unit equals 10^(-scale) of a
-   * corresponding standard unit.
+   * Number of decimal places used to display this token. Every
+   * on-ledger amount of the token (`MaximumAmount`,
+   * `OutstandingAmount`, `LockedAmount`, `MPToken.MPTAmount`,
+   * `MPTAmount.value` in transactions) is an integer in
+   * fractional units, and one standard (display) unit equals
+   * 10^AssetScale fractional units. With an `AssetScale` of 2,
+   * `'1234'` is 12.34 standard units. Absent means 0. Immutable
+   * after creation.
    */
   AssetScale?: number
   /**
    * An unsigned 64-bit number that specifies the maximum number
-   * of MPTs that can be distributed to non-issuing accounts
-   * (i.e., minted). The default and maximum value is
-   * 0x7FFFFFFFFFFFFFFF.
+   * of MPTs, in fractional units of `AssetScale`, that can be
+   * distributed to non-issuing accounts (i.e., minted). The
+   * default and maximum value is 0x7FFFFFFFFFFFFFFF.
    */
   MaximumAmount?: string
   /**
    * An unsigned 64-bit number that specifies the sum of all
-   * token amounts that have been minted to all token holders.
-   * This value is increased whenever an issuer pays MPTs to a
-   * non-issuer account, and decreased whenever a non-issuer
-   * pays MPTs into the issuing account.
+   * token amounts, in fractional units of `AssetScale`, that
+   * have been minted to all token holders. This value is
+   * increased whenever an issuer pays MPTs to a non-issuer
+   * account, and decreased whenever a non-issuer pays MPTs into
+   * the issuing account.
    */
   OutstandingAmount: string
   /**
@@ -62,8 +75,10 @@ export interface MPTokenIssuance extends BaseLedgerEntry, HasPreviousTxnID {
    */
   OwnerNode: string
   /**
-   * The total amount of this MPT that is currently locked
-   * across all holders via Escrow or PaymentChannel.
+   * The total amount of this MPT, in fractional units of
+   * `AssetScale`, that is currently held in Escrow (XLS-85 token
+   * escrow) across all holders. Absent when nothing is escrowed.
+   * Payment channels are XRP-only and never contribute to it.
    */
   LockedAmount?: string
   /** The issuer's registered compressed ElGamal encryption key. */
@@ -78,9 +93,11 @@ export interface MPTokenIssuance extends BaseLedgerEntry, HasPreviousTxnID {
    */
   DomainID?: string
   /**
-   * Hash256 pointing to the vault pseudo-account's holding for
-   * the underlying asset. Present for IOU and MPT-backed
-   * vaults. Absent for XRP-backed vaults.
+   * Only present on the share-token issuance that a Single Asset
+   * Vault (XLS-65) creates for its shares: the ledger index of
+   * the vault pseudo-account's holding (RippleState or MPToken)
+   * of the underlying IOU or MPT asset. Absent for XRP-backed
+   * vaults and on every ordinary MPT issuance.
    */
   ReferenceHolding?: string
 

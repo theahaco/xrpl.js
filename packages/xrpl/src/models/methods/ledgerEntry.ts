@@ -23,12 +23,17 @@ export interface LedgerEntryRequest extends BaseRequest, LookupByLedgerRequest {
   command: 'ledger_entry'
 
   /**
-   * Retrieve a MPTokenIssuance object from the ledger.
+   * Retrieve a MPTokenIssuance object from the ledger. Pass the 192-bit
+   * `MPTokenIssuanceID` (48 hex characters), as returned in the
+   * `mpt_issuance_id` of the creating transaction's metadata; this is not
+   * the object's ledger index.
    */
   mpt_issuance?: string
 
   /**
-   * Retrieve a MPToken object from the ledger.
+   * Retrieve a MPToken object from the ledger. Pass either the MPToken's
+   * ledger index (the `index` field of the object, a 64-character hash), or
+   * an object with the holder's `account` and the 48-hex `mpt_issuance_id`.
    */
   mptoken?:
     | {

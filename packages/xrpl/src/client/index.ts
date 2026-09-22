@@ -719,16 +719,20 @@ class Client extends EventEmitter<EventTypes> {
   }
 
   /**
-   * Simulates an unsigned transaction.
-   * Steps performed on a transaction:
-   *    1. Autofill.
-   *    2. Sign & Encode.
-   *    3. Submit.
+   * Dry-runs a transaction through rippled's `simulate` RPC against the current open ledger.
+   * Nothing is written to the ledger and, unlike `submit`, nothing is autofilled, signed, or
+   * submitted by this method: the transaction is sent to the server exactly as given.
+   *
+   * Because the SDK does not autofill here:
+   *    - `Flags` must be a number; a `{ tfSomeFlag: true }` map is not converted.
+   *    - `Sequence` and `Fee` may be omitted; rippled fills them for the simulation.
+   *    - `DeliverMax` must not be present (rippled rejects it as an unknown field).
+   *    - The transaction must be unsigned; rippled rejects a `simulate` request that carries a signature.
    *
    * @category Core
    *
-   * @param transaction - A transaction to autofill, sign & encode, and submit.
-   * @param opts - (Optional) Options used to sign and submit a transaction.
+   * @param transaction - An unsigned transaction to simulate, as a JSON object or a hex-encoded blob.
+   * @param opts - (Optional) Options for the simulation.
    * @param opts.binary - If true, return the metadata in a binary encoding.
    *
    * @returns A promise that contains SimulateResponse.
@@ -812,37 +816,43 @@ class Client extends EventEmitter<EventTypes> {
    * @example
    *
    * ```ts
-   * const { Client, Wallet } = require('xrpl')
+   * import { Client, Payment } from 'xrpl'
    * const client = new Client('wss://s.altnet.rippletest.net:51233')
    *
    * async function submitTransaction() {
-   *   const senderWallet = client.fundWallet()
-   *   const recipientWallet = client.fundWallet()
+   *   await client.connect()
+   *   const { wallet: senderWallet } = await client.fundWallet()
+   *   const { wallet: recipientWallet } = await client.fundWallet()
    *
-   *   const transaction = {
+   *   const transaction: Payment = {
    *     TransactionType: 'Payment',
    *     Account: senderWallet.address,
    *     Destination: recipientWallet.address,
-   *     Amount: '10'
+   *     Amount: '10000000', // 10 XRP in drops (1/1,000,000th of an XRP)
    *   }
    *
    *   try {
-   *     await client.submit(signedTransaction, { wallet: senderWallet })
-   *     console.log(result)
+   *     const response = await client.submitAndWait(transaction, { wallet: senderWallet })
+   *     console.log(response.result.meta)
    *   } catch (error) {
    *     console.error(`Failed to submit transaction: ${error}`)
    *   }
+   *   await client.disconnect()
    * }
    *
    * submitTransaction()
    * ```
    *
-   * In this example we submit a payment transaction between two newly created testnet accounts.
+   * In this example we submit a payment transaction between two newly created testnet accounts and wait for it
+   * to be validated.
    *
-   * Under the hood, `submit` will call `client.autofill` by default, and because we've passed in a `Wallet` it
-   * Will also sign the transaction for us before submitting the signed transaction binary blob to the ledger.
+   * Under the hood, `submitAndWait` will call `client.autofill` by default, and because we've passed in a `Wallet` it
+   * will also sign the transaction for us before submitting the signed transaction binary blob to the ledger.
    *
-   * This is similar to `submit`, which does all of the above, but also waits to see if the transaction has been validated.
+   * This is similar to `submit`, which does all of the above but resolves as soon as the server has accepted the
+   * transaction for processing. `submitAndWait` additionally waits until the transaction is in a validated ledger, and
+   * rejects if the ledger advances past the transaction's `LastLedgerSequence` without including it. A transaction that
+   * is included with a `tec` result resolves normally; check `response.result.meta.TransactionResult`.
    * @param transaction - A transaction to autofill, sign & encode, and submit.
    * @param opts - (Optional) Options used to sign and submit a transaction.
    * @param opts.autofill - If true, autofill a transaction.

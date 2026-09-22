@@ -6,6 +6,9 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 
 ### Added
 * Add `LendingProtocolV1_1` support.
+
+### Fixed
+* Corrected doc comments on the MPT and client surface: `Client.simulate` no longer claims to autofill, sign and submit; the `Client.submitAndWait` and `Wallet.sign` `@example` blocks now compile and run, and the `submitAndWait` prose no longer describes `submit`; `AssetScale` is defined once (one standard unit = 10^AssetScale fractional units) and every on-ledger MPT amount is documented as an integer in fractional units; the MPT transaction models, `Clawback`, `MPToken` and `MPTokenIssuance` carry typedoc `@category` tags; `LockedAmount`, `ReferenceHolding`, `AccountObject` and the `ledger_entry` `mpt_issuance`/`mptoken` parameters say what populates them and what to pass; `tfMPTCanTrade`/`tfMPTSetCanTrade` are marked reserved (MPT DEX/AMM trading is `temDISABLED` on rippled 3.x) and `tfMPTSetCanClawback` no longer mentions `AMMClawback`.
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES
