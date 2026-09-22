@@ -37,6 +37,10 @@ The lower-level `submitAndWait` throws on failed validated transactions and `try
 
 ## Other paired workflows
 
-Send XRP still demonstrates inferred autofill fields and transaction identity preserved through signing. MPT selectors infer the requested ledger object. AMM setup awaits each successful transaction. All prototype workflows now rely on SDK success classification; published 5.3.0 examples retain their required checks. MPT ID/metadata absence checks and the unavailable validated-ledger check remain.
+All four current after examples use wallet-bound transaction builders and named commands. Send XRP creates a payment draft and calls `signAndSubmit()`. MPT uses `mpTokenIssuanceCreate`, `mpTokenIssuanceSet` and `command.ledgerEntry`; its metadata encoder supplies contextual typing without `satisfies`. AMM binds issuer and provider clients once, then uses `accountSet`, `trustSet`, `payment` and `ammCreate`, plus named pool/balance queries. Getting Started uses the same pattern in both Node and browser entrypoints.
+
+No after example requires `satisfies`, transaction-model annotations, repeated `TransactionType`/`Account`, command discriminators, raw result-code comparisons or parsed-transaction-metadata guards. Published 5.3.0 before examples retain the checks that release requires. Genuine domain checks remain: optional MPT issuance IDs/token metadata, optional validated-ledger availability, and the XRP/issued-token amount union.
+
+[Open the live comparison](https://theahaco.github.io/xrpl-dev-portal/pr-1/). [All-example follow-up](guided-examples-follow-up.md) records the current source and runtime checks. Earlier autofill/signed-blob examples and their counts are historical evidence of those lower-level SDK improvements, not the current recommended teaching flow.
 
 See [builder follow-up](builders-follow-up.md), [editor evidence](builders-editor.json), [runtime evidence](builders-runtime.json), [four prototype journeys](runtime-builders-prototype.json), and [matched failure evidence](runtime-negative-outcomes-builders.json). The earlier scaffolding counts describe the prior revision, not this final design.

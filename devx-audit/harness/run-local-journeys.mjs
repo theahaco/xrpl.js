@@ -57,11 +57,17 @@ try {
       const samplePath = useAfter ? `devx-after/dist/${afterFiles[name]}` : relative
       const modulePath = path.join(portalRoot, '_code-samples', samplePath)
       const example = await import(pathToFileURL(modulePath).href)
-      if (name.startsWith('Get Started') && useAfter) {
-        const signingClient = new sdk.WalletClient(endpoint, {wallet:wallets[0]})
-        await signingClient.connect()
-        try { await example.run(signingClient, wallets[1], 0) }
-        finally { await signingClient.disconnect() }
+      if (useAfter) {
+        const signerCount = name === 'Guided Create AMM TypeScript' ? 2 : 1
+        const signingClients = wallets.slice(0, signerCount).map(wallet => new sdk.WalletClient(endpoint, { wallet }))
+        try {
+          for (const signingClient of signingClients) await signingClient.connect()
+          if (name.startsWith('Get Started')) await example.run(signingClients[0], wallets[1], 0)
+          else if (name.startsWith('Send XRP')) await example.run(signingClients[0], wallets[1])
+          else await example.run(...signingClients)
+        } finally {
+          await Promise.all(signingClients.map(signingClient => signingClient.disconnect()))
+        }
       } else if (name.startsWith('Get Started')) await example.run(client, wallets[0], wallets[1], 0)
       else await example.run(client, ...wallets)
       results.push({ name, path: samplePath, passed: true, elapsedMs: Date.now() - start, output: output.slice(logStart) })

@@ -1,0 +1,47 @@
+{
+  "scope": "Four prototype workflows plus primary Node and browser Getting Started entrypoints",
+  "results": [
+    {
+      "file": "_code-samples/devx-after/create-amm.ts",
+      "passed": true,
+      "walletBound": true,
+      "namedBuilders": true,
+      "sha256": "f619edd8f626e5b26045cb361c4daf8f53bd887225cc29d29c863743361509e4"
+    },
+    {
+      "file": "_code-samples/devx-after/get-started.ts",
+      "passed": true,
+      "walletBound": true,
+      "namedBuilders": true,
+      "sha256": "bfd399a9e0489fd8b8d1aaed17029ec5904b01ea50aabed623d0af9fc15fbef7"
+    },
+    {
+      "file": "_code-samples/devx-after/issue-mpt-with-metadata.ts",
+      "passed": true,
+      "walletBound": true,
+      "namedBuilders": true,
+      "sha256": "be640c8a97e5b2f9e4c3d1ce16e7dd4fd0360c197235fe23ce90d019b0e73e9b"
+    },
+    {
+      "file": "_code-samples/devx-after/send-xrp.ts",
+      "passed": true,
+      "walletBound": true,
+      "namedBuilders": true,
+      "sha256": "76c1454012b928eab819796ec09c560e9c8c61166deafbc26c5b067d504b6bd8"
+    },
+    {
+      "file": "_code-samples/get-started/ts/get-acct-info.ts",
+      "passed": true,
+      "walletBound": true,
+      "namedBuilders": true,
+      "sha256": "df3514f406af270767ae397ca0cb72e113164d558d41ae1e3f0a6416796e997f"
+    },
+    {
+      "file": "_code-samples/get-started/ts/browser.ts",
+      "passed": true,
+      "walletBound": true,
+      "namedBuilders": true,
+      "sha256": "49245df53f483e99a7137b8ce9dd06394340c46d2794a3d1758c98f481535ff0"
+    }
+  ]
+}

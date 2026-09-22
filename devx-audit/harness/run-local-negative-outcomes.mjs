@@ -30,7 +30,6 @@ const admin = new baseline.Client(endpoint)
 const evidence = {
   timestamp: new Date().toISOString(),
   endpoint,
-  container: 'aha-devx-audit-20260922',
   image: 'rippleci/xrpld@sha256:898feb090a777fddce725b6e4af776194bbead943a02e8cc80b4b0c4556d2a52',
   node: process.version,
   scope: 'Two actual Send XRP example runs against an isolated standalone ledger. The sender has only the account reserve, so its requested 1 XRP payment cannot succeed. No public networks, production accounts, or real assets are involved. This checks one validated tec outcome, not all finality branches.',
@@ -73,13 +72,15 @@ try {
     ['prototype', prototype, 'devx-after/dist/send-xrp.js', prototypeEntry],
   ]) {
     const result = { label, sdk: label === 'baseline' ? 'published xrpl@5.3.0' : 'built aha DevX prototype', sdkEntry: path.relative(auditRoot, sdkEntry), sdkEntrySha256: sha256(sdkEntry), sample: sampleRelative }
-    const client = new sdk.Client(endpoint)
+    const sender = sdk.Wallet.generate()
+    const client = label === 'prototype'
+      ? new sdk.WalletClient(endpoint, { wallet: sender })
+      : new sdk.Client(endpoint)
     const started = Date.now()
     try {
       await client.connect()
       // Public deterministic genesis credential of a standalone ledger; never logged.
       const genesis = sdk.Wallet.fromSeed('snoPBrXtMeMyMHUVTgbuqAfg1SUTb')
-      const sender = sdk.Wallet.generate()
       const funding = await client.submitAndWait({ TransactionType: 'Payment', Account: genesis.address, Destination: sender.address, Amount: reserveDrops }, { wallet: genesis })
       assert.equal(funding.result.meta.TransactionResult, 'tesSUCCESS')
       const before = { sender: await balance(client, sender.address), receiver: await balance(client, genesis.address) }
@@ -101,7 +102,8 @@ try {
       const sample = await import(pathToFileURL(samplePath).href)
       let sampleError
       try {
-        await sample.run(client, sender, genesis)
+        if (label === 'prototype') await sample.run(client, genesis)
+        else await sample.run(client, sender, genesis)
       } catch (error) {
         sampleError = error
       } finally {
