@@ -21,6 +21,10 @@ import {
   isDomainID,
   isHexWithByteLength,
   CONFIDENTIAL_EC_POINT_BYTES,
+  isMPTokenIssuanceID,
+  isMPTIssuer,
+  tfUniversal,
+  validateFlagsMask,
 } from './common'
 import {
   MAX_TRANSFER_FEE,
@@ -89,6 +93,18 @@ export const tfMPTokenIssuanceSetEnableFlagMask =
   MPTokenIssuanceSetFlags.tfMPTSetCanTransfer |
   MPTokenIssuanceSetFlags.tfMPTSetCanClawback |
   MPTokenIssuanceSetFlags.tfMPTSetCanHoldConfidentialBalance
+
+/**
+ * Bits that are invalid in `Flags` of an MPTokenIssuanceSet transaction
+ * (rippled's `tfMPTokenIssuanceSetMask`): everything except the universal
+ * flags, `tfMPTLock`, `tfMPTUnlock`, and the `tfMPTSet*` capability flags.
+ */
+export const tfMPTokenIssuanceSetMask = ~(
+  tfUniversal |
+  MPTokenIssuanceSetFlags.tfMPTLock |
+  MPTokenIssuanceSetFlags.tfMPTUnlock |
+  tfMPTokenIssuanceSetEnableFlagMask
+)
 /* eslint-enable no-bitwise */
 
 /**
@@ -189,7 +205,8 @@ export interface MPTokenIssuanceSet extends BaseTransaction {
  */
 export function validateMPTokenIssuanceSet(tx: Record<string, unknown>): void {
   validateBaseTransaction(tx)
-  validateRequiredField(tx, 'MPTokenIssuanceID', isString)
+  validateRequiredField(tx, 'MPTokenIssuanceID', isMPTokenIssuanceID)
+  validateFlagsMask(tx, tfMPTokenIssuanceSetMask)
   validateOptionalField(tx, 'Holder', isAccount)
   validateOptionalField(
     tx,
@@ -210,6 +227,13 @@ export function validateMPTokenIssuanceSet(tx: Record<string, unknown>): void {
   validateOptionalField(tx, 'TransferFee', isNumber)
   validateOptionalField(tx, 'ImmutableFlags', isNumber)
   validateOptionalField(tx, 'DomainID', isDomainID)
+
+  // Only the issuer (encoded in the ID) may modify; rippled: tecNO_PERMISSION.
+  if (!isMPTIssuer(tx.Account, tx.MPTokenIssuanceID)) {
+    throw new ValidationError(
+      'MPTokenIssuanceSet: Account must be the issuer of the MPTokenIssuanceID',
+    )
+  }
 
   if (tx.DomainID != null && tx.Holder != null) {
     throw new ValidationError(
@@ -290,9 +314,13 @@ export function validateMPTokenIssuanceSet(tx: Record<string, unknown>): void {
   }
 
   if (typeof tx.TransferFee === 'number') {
-    if (tx.TransferFee < 0 || tx.TransferFee > MAX_TRANSFER_FEE) {
+    if (
+      !Number.isInteger(tx.TransferFee) ||
+      tx.TransferFee < 0 ||
+      tx.TransferFee > MAX_TRANSFER_FEE
+    ) {
       throw new ValidationError(
-        `MPTokenIssuanceSet: TransferFee must be between 0 and ${MAX_TRANSFER_FEE}`,
+        `MPTokenIssuanceSet: TransferFee must be an integer between 0 and ${MAX_TRANSFER_FEE}`,
       )
     }
     // Confidential amounts are encrypted, so a transfer rate cannot apply;

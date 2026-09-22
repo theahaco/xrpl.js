@@ -15,6 +15,9 @@ export const MPT_META_WARNING_HEADER =
   "While adherence to this standard is not mandatory, such non-compliant MPToken's might not be discoverable " +
   'by Explorers and Indexers in the XRPL ecosystem.'
 
+// XLS-89 `uris[].category` values, as documented on `MPTokenMetadataUri`.
+const MPT_META_URI_CATEGORIES = ['website', 'social', 'docs', 'other']
+
 const MPT_META_URI_FIELDS = [
   {
     long: 'uri',
@@ -222,10 +225,8 @@ const MPT_META_ALL_FIELDS = [
 
       const messages: string[] = []
       for (const uriObj of value) {
-        if (
-          !isRecord(uriObj) ||
-          Object.keys(uriObj).length !== MPT_META_URI_FIELDS.length
-        ) {
+        // Extra keys are tolerated, as they are at the top level.
+        if (!isRecord(uriObj)) {
           messages.push(
             `${this.long}/${this.compact}: should be an array of objects each with uri/u, category/c, and title/t properties.`,
           )
@@ -251,6 +252,15 @@ const MPT_META_ALL_FIELDS = [
         if (!isString(uri) || !isString(category) || !isString(title)) {
           messages.push(
             `${this.long}/${this.compact}: should be an array of objects each with uri/u, category/c, and title/t properties.`,
+          )
+          continue
+        }
+
+        if (!MPT_META_URI_CATEGORIES.includes(category)) {
+          messages.push(
+            `${this.long}/${this.compact}: category/c should be one of ${MPT_META_URI_CATEGORIES.join(
+              ', ',
+            )}.`,
           )
         }
       }

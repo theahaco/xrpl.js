@@ -1,4 +1,5 @@
 import { coreTypes } from '../src/types'
+import type { AmountObject } from '../src/types/amount'
 import fixtures from './fixtures/data-driven-tests.json'
 
 import { makeParser } from '../src/binary'
@@ -256,6 +257,40 @@ describe('Amount', function () {
   })
 
   amountErrorTests()
+
+  it('ignores object keys whose value is undefined', function () {
+    const mpt = Amount.from({
+      mpt_issuance_id: MPT_ISSUANCE_ID,
+      value: '10',
+      currency: undefined,
+      issuer: undefined,
+    } as unknown as AmountObject)
+    expect(mpt.toJSON()).toEqual({
+      mpt_issuance_id: MPT_ISSUANCE_ID,
+      value: '10',
+    })
+
+    const iou = Amount.from({
+      currency: 'USD',
+      issuer: 'rrrrrrrrrrrrrrrrrrrrBZbvji',
+      value: '10',
+      mpt_issuance_id: undefined,
+    } as unknown as AmountObject)
+    expect(iou.toJSON()).toEqual({
+      currency: 'USD',
+      issuer: 'rrrrrrrrrrrrrrrrrrrrBZbvji',
+      value: '10',
+    })
+
+    // A defined foreign key is still rejected.
+    expect(() =>
+      Amount.from({
+        mpt_issuance_id: MPT_ISSUANCE_ID,
+        value: '10',
+        currency: 'USD',
+      } as unknown as AmountObject),
+    ).toThrow('Invalid type to construct an Amount')
+  })
 })
 
 describe('SignedAmount', function () {

@@ -5,6 +5,7 @@ import { isFlagEnabled } from '../utils'
 import {
   BaseTransaction,
   isAmount,
+  isMPTAmount,
   GlobalFlagsInterface,
   validateBaseTransaction,
   isAccount,
@@ -206,6 +207,13 @@ export function validatePayment(tx: Record<string, unknown>): void {
 
   if (!isAmount(tx.Amount)) {
     throw new ValidationError('PaymentTransaction: invalid Amount')
+  }
+
+  // rippled: temBAD_AMOUNT for a zero MPT payment.
+  if (isMPTAmount(tx.Amount) && tx.Amount.value === '0') {
+    throw new ValidationError(
+      'PaymentTransaction: Amount value must be greater than zero',
+    )
   }
 
   validateRequiredField(tx, 'Destination', isAccount)

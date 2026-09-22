@@ -113,4 +113,14 @@ describe('credentialCreate', function () {
     const errorMessage = 'CredentialCreate: URI must be encoded in hex'
     assertInvalid(credentialCreate, errorMessage)
   })
+
+  it(`throws w/ Expiration not a non-negative integer`, function () {
+    for (const expiration of [-1, 1.5, Number.NaN, 2 ** 32]) {
+      credentialCreate.Expiration = expiration
+      assertInvalid(
+        credentialCreate,
+        'CredentialCreate: invalid field Expiration',
+      )
+    }
+  })
 })

@@ -4,8 +4,8 @@ import { ValidationError } from '../../errors'
 
 import {
   BaseTransaction,
-  isNumber,
   isString,
+  isUInt32,
   validateBaseTransaction,
   validateCredentialType,
   validateOptionalField,
@@ -53,7 +53,7 @@ export function validateCredentialCreate(tx: Record<string, unknown>): void {
 
   validateCredentialType(tx)
 
-  validateOptionalField(tx, 'Expiration', isNumber)
+  validateOptionalField(tx, 'Expiration', isUInt32)
 
   validateURI(tx.URI)
 }

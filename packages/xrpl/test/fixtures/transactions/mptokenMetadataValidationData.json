@@ -366,9 +366,7 @@
         "cusip": "912796RX0"
       }
     },
-    "validationMessages": [
-      "uris/us: should be an array of objects each with uri/u, category/c, and title/t properties."
-    ]
+    "validationMessages": []
   },
   {
     "testName": "invalid uris structure",
@@ -557,6 +555,41 @@
       "asset_subclass/as: should be one of stablecoin, commodity, real_estate, private_credit, equity, treasury, other.",
       "uris/us: should be a non-empty array.",
       "additional_info/ai: should be a string or JSON object."
+    ]
+  },
+  {
+    "testName": "invalid uri category",
+    "mptMetadata": {
+      "ticker": "TBILL",
+      "name": "T-Bill Yield Token",
+      "desc": "A yield-bearing stablecoin backed by short-term U.S. Treasuries and money market instruments.",
+      "icon": "https://example.org/tbill-icon.png",
+      "asset_class": "rwa",
+      "asset_subclass": "treasury",
+      "issuer_name": "Example Yield Co.",
+      "uris": [
+        {
+          "uri": "https://exampleyield.co/tbill",
+          "category": "bogus",
+          "title": "Product Page"
+        },
+        {
+          "u": "https://exampleyield.co/docs",
+          "c": "Docs",
+          "t": "Yield Token Docs"
+        }
+      ],
+      "additional_info": {
+        "interest_rate": "5.00%",
+        "interest_type": "variable",
+        "yield_source": "U.S. Treasury Bills",
+        "maturity_date": "2045-06-30",
+        "cusip": "912796RX0"
+      }
+    },
+    "validationMessages": [
+      "uris/us: category/c should be one of website, social, docs, other.",
+      "uris/us: category/c should be one of website, social, docs, other."
     ]
   }
 ]

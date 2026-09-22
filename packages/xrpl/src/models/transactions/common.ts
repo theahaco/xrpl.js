@@ -210,6 +210,94 @@ export function isNumber(num: unknown): num is number {
   return typeof num === 'number'
 }
 
+const MAX_UINT8 = 0xff
+const MAX_UINT16 = 0xffff
+const MAX_UINT32 = 0xffffffff
+
+/**
+ * Verify that a value is an integer in the range of a `UInt8` field (0..255).
+ *
+ * @param num - The value to check.
+ * @returns Whether the value is a UInt8.
+ */
+export function isUInt8(num: unknown): num is number {
+  return Number.isInteger(num) && isNumber(num) && num >= 0 && num <= MAX_UINT8
+}
+
+/**
+ * Verify that a value is an integer in the range of a `UInt16` field (0..65535).
+ *
+ * @param num - The value to check.
+ * @returns Whether the value is a UInt16.
+ */
+export function isUInt16(num: unknown): num is number {
+  return Number.isInteger(num) && isNumber(num) && num >= 0 && num <= MAX_UINT16
+}
+
+/**
+ * Verify that a value is an integer in the range of a `UInt32` field
+ * (0..4294967295).
+ *
+ * @param num - The value to check.
+ * @returns Whether the value is a UInt32.
+ */
+export function isUInt32(num: unknown): num is number {
+  return Number.isInteger(num) && isNumber(num) && num >= 0 && num <= MAX_UINT32
+}
+
+/**
+ * The own keys of a record whose value is not `undefined`. An `undefined`
+ * member is dropped by JSON serialisation, so it must not change the shape
+ * a guard sees.
+ *
+ * @param record - The record to inspect.
+ * @returns The keys with a defined value.
+ */
+function definedKeys(record: Record<string, unknown>): string[] {
+  return Object.keys(record).filter((key) => record[key] !== undefined)
+}
+
+// An MPTokenIssuanceID is 192 bits: a 4-byte sequence + 20-byte issuer AccountID.
+const MPT_ISSUANCE_ID_HEX_LENGTH = 48
+
+/**
+ * Verify that a value is a well-formed MPTokenIssuanceID: 48 hex characters
+ * (192 bits). Used for the `MPTokenIssuanceID` transaction field and the
+ * `mpt_issuance_id` member of an {@link MPTAmount}.
+ *
+ * @param value - The value to check.
+ * @returns Whether the value is a 48-character hex string.
+ */
+export function isMPTokenIssuanceID(value: unknown): value is string {
+  return (
+    isString(value) &&
+    value.length === MPT_ISSUANCE_ID_HEX_LENGTH &&
+    isHex(value)
+  )
+}
+
+// Canonical non-negative decimal integer: no sign, no leading zeros, no
+// exponent, no whitespace, no hex prefix.
+const MPT_VALUE_REGEX = /^(?:0|[1-9][0-9]*)$/u
+
+/**
+ * Verify that a value is a canonical MPT amount string: a non-negative
+ * decimal integer from `0` to `2^63 - 1` with no sign, leading zeros,
+ * exponent, decimal point, or whitespace. This is exactly what rippled and
+ * the binary codec accept; `BigInt`-lenient forms such as `"0x10"` or `"+1"`
+ * are rejected.
+ *
+ * @param value - The value to check.
+ * @returns Whether the value is a canonical MPT amount string.
+ */
+export function isMPTValue(value: unknown): value is string {
+  return (
+    isString(value) &&
+    MPT_VALUE_REGEX.test(value) &&
+    BigInt(value) <= MAX_MPT_AMOUNT
+  )
+}
+
 /**
  * Verify the form and type of a null value at runtime.
  *
@@ -301,7 +389,7 @@ export function isIssuedCurrencyAmount(
 ): input is IssuedCurrencyAmount {
   return (
     isRecord(input) &&
-    Object.keys(input).length === ISSUED_CURRENCY_AMOUNT_SIZE &&
+    definedKeys(input).length === ISSUED_CURRENCY_AMOUNT_SIZE &&
     isString(input.value) &&
     isString(input.issuer) &&
     isString(input.currency)
@@ -327,7 +415,10 @@ export function isAuthorizeCredential(
 }
 
 /**
- * Verify the form and type of an MPT at runtime.
+ * Verify the form and type of an MPTAmount at runtime: exactly the two keys
+ * `mpt_issuance_id` (a 192-bit hex ID) and `value` (a canonical decimal
+ * integer from 0 to 2^63 - 1). Keys whose value is `undefined` are ignored,
+ * since they are dropped on serialisation.
  *
  * @param input - The input to check the form and type of.
  * @returns Whether the MPTAmount is properly formed.
@@ -335,9 +426,9 @@ export function isAuthorizeCredential(
 export function isMPTAmount(input: unknown): input is MPTAmount {
   return (
     isRecord(input) &&
-    Object.keys(input).length === MPT_CURRENCY_AMOUNT_SIZE &&
-    typeof input.value === 'string' &&
-    typeof input.mpt_issuance_id === 'string'
+    definedKeys(input).length === MPT_CURRENCY_AMOUNT_SIZE &&
+    isMPTValue(input.value) &&
+    isMPTokenIssuanceID(input.mpt_issuance_id)
   )
 }
 
@@ -652,6 +743,45 @@ export enum GlobalFlags {
 export interface GlobalFlagsInterface {
   tfInnerBatchTxn?: boolean
 }
+
+/**
+ * The (deprecated but still accepted) flag requesting a fully-canonical
+ * signature. rippled accepts it on every transaction type.
+ */
+const tfFullyCanonicalSig = 0x80000000
+
+/* eslint-disable no-bitwise -- Need bitwise operations to replicate rippled behavior */
+/**
+ * The flag bits rippled accepts on every transaction type (`tfUniversal`):
+ * `tfFullyCanonicalSig` and `tfInnerBatchTxn`. A transaction's `tf*Mask` is
+ * `~(tfUniversal | <its own flags>)`, so `Flags & mask` is non-zero exactly
+ * when an unknown bit is set.
+ */
+export const tfUniversal = tfFullyCanonicalSig | GlobalFlags.tfInnerBatchTxn
+
+/**
+ * Reject numeric `Flags` that set a bit outside the transaction's mask, as
+ * rippled does with `temINVALID_FLAG`. `mask` is the transaction's `tf*Mask`
+ * (`~(tfUniversal | allowed flags)`). Object-form flags are left alone: their
+ * names are checked when they are converted to a number.
+ *
+ * @param tx - The transaction to validate.
+ * @param mask - The transaction's `tf*Mask` (inverted allowed set).
+ * @throws ValidationError when `Flags` is not a UInt32 or sets a masked bit.
+ */
+export function validateFlagsMask(
+  tx: Record<string, unknown>,
+  mask: number,
+): void {
+  const flags = tx.Flags
+  if (flags === undefined || isRecord(flags)) {
+    return
+  }
+  if (!isUInt32(flags) || (flags & mask) !== 0) {
+    throw new ValidationError(`${String(tx.TransactionType)}: invalid Flags`)
+  }
+}
+/* eslint-enable no-bitwise */
 
 /**
  * Sponsor flags for transaction common fields.

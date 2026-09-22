@@ -16,7 +16,11 @@ const assertValid = (tx: any): void =>
 const assertInvalid = (tx: any, message: string): void =>
   assertTxValidationError(tx, validateMPTokenIssuanceSet, message)
 
-const TOKEN_ID = '000004C463C52827307480341125DA0577DEFC38405B0E3E'
+// The trailing 20 bytes of an MPTokenIssuanceID are the issuer's AccountID;
+// this one embeds the Account used throughout these tests.
+const TOKEN_ID = '000004C40596915CFDEEE3A695B3EFD6BDA9AC788A368B7B'
+// An issuance whose embedded issuer is a different account.
+const NON_ISSUER_TOKEN_ID = '000004C463C52827307480341125DA0577DEFC38405B0E3E'
 
 /**
  * MPTokenIssuanceSet Transaction Verification Testing.
@@ -225,7 +229,7 @@ describe('MPTokenIssuanceSet', function () {
 
     assertInvalid(
       invalid,
-      `MPTokenIssuanceSet: TransferFee must be between 0 and ${MAX_TRANSFER_FEE}`,
+      `MPTokenIssuanceSet: TransferFee must be an integer between 0 and ${MAX_TRANSFER_FEE}`,
     )
   })
 
@@ -239,7 +243,7 @@ describe('MPTokenIssuanceSet', function () {
 
     assertInvalid(
       invalid,
-      `MPTokenIssuanceSet: TransferFee must be between 0 and ${MAX_TRANSFER_FEE}`,
+      `MPTokenIssuanceSet: TransferFee must be an integer between 0 and ${MAX_TRANSFER_FEE}`,
     )
   })
 
@@ -479,5 +483,72 @@ describe('MPTokenIssuanceSet', function () {
       } as any,
       'MPTokenIssuanceSet: Can not lock/unlock while mutating MPTokenIssuance.',
     )
+  })
+
+  it(`throws w/ malformed MPTokenIssuanceID`, function () {
+    assertInvalid(
+      {
+        TransactionType: 'MPTokenIssuanceSet',
+        Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+        MPTokenIssuanceID: 'ABCD',
+        Flags: MPTokenIssuanceSetFlags.tfMPTLock,
+      } as any,
+      'MPTokenIssuanceSet: invalid field MPTokenIssuanceID',
+    )
+  })
+
+  it(`throws when Account is not the issuer`, function () {
+    assertInvalid(
+      {
+        TransactionType: 'MPTokenIssuanceSet',
+        Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+        MPTokenIssuanceID: NON_ISSUER_TOKEN_ID,
+        Flags: MPTokenIssuanceSetFlags.tfMPTLock,
+      } as any,
+      'MPTokenIssuanceSet: Account must be the issuer of the MPTokenIssuanceID',
+    )
+  })
+
+  it(`throws w/ flag bits outside tfMPTokenIssuanceSetMask`, function () {
+    for (const flags of [
+      0x8000,
+      0x200,
+      // eslint-disable-next-line no-bitwise -- required to OR the flags
+      MPTokenIssuanceSetFlags.tfMPTLock | 0x1000,
+    ]) {
+      assertInvalid(
+        {
+          TransactionType: 'MPTokenIssuanceSet',
+          Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+          MPTokenIssuanceID: TOKEN_ID,
+          Flags: flags,
+        } as any,
+        'MPTokenIssuanceSet: invalid Flags',
+      )
+    }
+
+    // Universal bits are allowed alongside a valid flag.
+    assertValid({
+      TransactionType: 'MPTokenIssuanceSet',
+      Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+      MPTokenIssuanceID: TOKEN_ID,
+      // tfFullyCanonicalSig, added (not OR-ed) to keep the number positive.
+      Flags: 0x80000000 + MPTokenIssuanceSetFlags.tfMPTLock,
+    } as any)
+  })
+
+  it(`throws w/ non-integer TransferFee`, function () {
+    for (const fee of [12.5, Number.NaN]) {
+      assertInvalid(
+        {
+          TransactionType: 'MPTokenIssuanceSet',
+          Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+          MPTokenIssuanceID: TOKEN_ID,
+          Flags: MPTokenIssuanceSetFlags.tfMPTSetCanTransfer,
+          TransferFee: fee,
+        } as any,
+        `MPTokenIssuanceSet: TransferFee must be an integer between 0 and ${MAX_TRANSFER_FEE}`,
+      )
+    }
   })
 })

@@ -6,6 +6,13 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 
 ### Added
 * Add `LendingProtocolV1_1` support.
+* Add `isMPTokenIssuanceID`, `isMPTValue`, `isUInt8`/`isUInt16`/`isUInt32` field guards, `validateFlagsMask`, and the per-transaction `tfMPTokenIssuanceCreateMask`/`tfMPTokenIssuanceSetMask`/`tfMPTokenAuthorizeMask`/`tfMPTokenIssuanceDestroyMask`/`tfClawbackMask` constants.
+
+### Fixed
+* `validate()` now rejects, with a `ValidationError` naming the field, MPT mistakes that previously reached rippled as `tem*`/`tec*` codes or failed inside the binary codec: a malformed `MPTokenIssuanceID`/`mpt_issuance_id` (must be 48 hex characters); a non-canonical or out-of-range MPT `value` (`'-1'`, `'1.5'`, `'1e2'`, `'+1'`, `'0x10'`, `''`, `' 1'`, `'007'`, above `2^63 - 1`); a zero MPT `Amount` on `Payment` and `Clawback`; numeric `Flags` bits outside the transaction's mask on `MPTokenIssuanceCreate`, `MPTokenIssuanceSet`, `MPTokenAuthorize`, `MPTokenIssuanceDestroy` and `Clawback`; `AssetScale` outside `0..255` or non-integer; non-integer `TransferFee`; non-`UInt32` `CredentialCreate.Expiration`.
+* `MPTokenAuthorize` now rejects `Holder === Account`, an issuer that omits `Holder`, and a non-issuer that supplies `Holder`; `MPTokenIssuanceSet`, `MPTokenIssuanceDestroy` and MPT `Clawback` now require `Account` to be the issuer encoded in the `MPTokenIssuanceID`.
+* `isMPTAmount` / `isIssuedCurrencyAmount` ignore keys whose value is `undefined` instead of rejecting the amount for its key count.
+* `validateMPTokenMetadata` checks `uris[].category` against the XLS-89 values (`website`, `social`, `docs`, `other`) and tolerates extra keys on a `uris` entry, as it already does at the top level.
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES

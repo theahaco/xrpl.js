@@ -257,4 +257,57 @@ describe('Payment', function () {
       'Payment: Credentials cannot contain duplicate elements'
     assertInvalid(payment, errorMessage)
   })
+
+  it(`throws w/ zero MPT Amount`, function () {
+    payment.Amount = {
+      mpt_issuance_id: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+      value: '0',
+    }
+    assertInvalid(
+      payment,
+      'PaymentTransaction: Amount value must be greater than zero',
+    )
+  })
+
+  it(`throws w/ malformed MPT Amount value or mpt_issuance_id`, function () {
+    for (const value of [
+      '-1',
+      '1.5',
+      '1e2',
+      '+1',
+      '0x10',
+      '',
+      ' 1',
+      '007',
+      '9223372036854775808',
+    ]) {
+      payment.Amount = {
+        mpt_issuance_id: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+        value,
+      }
+      assertInvalid(payment, 'PaymentTransaction: invalid Amount')
+    }
+
+    payment.Amount = { mpt_issuance_id: 'ABCD', value: '10' }
+    assertInvalid(payment, 'PaymentTransaction: invalid Amount')
+  })
+
+  it(`accepts an MPT Amount carrying an extra undefined-valued key`, function () {
+    payment.Amount = {
+      mpt_issuance_id: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+      value: '10',
+      currency: undefined,
+    }
+    assertValid(payment)
+  })
+
+  it(`accepts an issued-currency Amount carrying an extra undefined-valued key`, function () {
+    payment.Amount = {
+      currency: 'USD',
+      issuer: 'rfkE1aSy9G8Upk4JssnwBxhEv5p4mn2KTy',
+      value: '10',
+      mpt_issuance_id: undefined,
+    }
+    assertValid(payment)
+  })
 })

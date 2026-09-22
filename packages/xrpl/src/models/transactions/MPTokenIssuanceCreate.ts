@@ -14,12 +14,17 @@ import {
   isString,
   isNumber,
   isDomainID,
+  isUInt8,
+  tfUniversal,
+  validateFlagsMask,
 } from './common'
 import type { TransactionMetadataBase } from './metadata'
 
 // 2^63 - 1
 const MAX_AMT = '9223372036854775807'
 export const MAX_TRANSFER_FEE = 50000
+// `sfAssetScale` is a UInt8.
+export const MAX_ASSET_SCALE = 255
 
 /**
  * Transaction Flags for an MPTokenIssuanceCreate Transaction.
@@ -62,6 +67,25 @@ export enum MPTokenIssuanceCreateFlags {
    */
   tfMPTCanHoldConfidentialBalance = 0x00000080,
 }
+
+/* eslint-disable no-bitwise -- Need bitwise operations to replicate rippled behavior */
+/**
+ * Bits that are invalid in `Flags` of an MPTokenIssuanceCreate transaction
+ * (rippled's `tfMPTokenIssuanceCreateMask`): everything except the universal
+ * flags and the `tfMPTCan*`/`tfMPTRequireAuth` capability flags. Note that
+ * `0x1` (`lsfMPTLocked` on the ledger object) is not a valid create flag.
+ */
+export const tfMPTokenIssuanceCreateMask = ~(
+  tfUniversal |
+  MPTokenIssuanceCreateFlags.tfMPTCanLock |
+  MPTokenIssuanceCreateFlags.tfMPTRequireAuth |
+  MPTokenIssuanceCreateFlags.tfMPTCanEscrow |
+  MPTokenIssuanceCreateFlags.tfMPTCanTrade |
+  MPTokenIssuanceCreateFlags.tfMPTCanTransfer |
+  MPTokenIssuanceCreateFlags.tfMPTCanClawback |
+  MPTokenIssuanceCreateFlags.tfMPTCanHoldConfidentialBalance
+)
+/* eslint-enable no-bitwise */
 
 /**
  * ImmutableFlags for an MPTokenIssuanceCreate transaction (XLS-94D DynamicMPT).
@@ -289,6 +313,13 @@ export function validateMPTokenIssuanceCreate(
   validateOptionalField(tx, 'AssetScale', isNumber)
   validateOptionalField(tx, 'ImmutableFlags', isNumber)
   validateOptionalField(tx, 'DomainID', isDomainID)
+  validateFlagsMask(tx, tfMPTokenIssuanceCreateMask)
+
+  if (tx.AssetScale !== undefined && !isUInt8(tx.AssetScale)) {
+    throw new ValidationError(
+      `MPTokenIssuanceCreate: AssetScale must be an integer between 0 and ${MAX_ASSET_SCALE}`,
+    )
+  }
 
   if (
     tx.DomainID != null &&
@@ -354,9 +385,13 @@ export function validateMPTokenIssuanceCreate(
           )
         : (flags.tfMPTCanHoldConfidentialBalance ?? false)
 
-    if (tx.TransferFee < 0 || tx.TransferFee > MAX_TRANSFER_FEE) {
+    if (
+      !Number.isInteger(tx.TransferFee) ||
+      tx.TransferFee < 0 ||
+      tx.TransferFee > MAX_TRANSFER_FEE
+    ) {
       throw new ValidationError(
-        `MPTokenIssuanceCreate: TransferFee must be between 0 and ${MAX_TRANSFER_FEE}`,
+        `MPTokenIssuanceCreate: TransferFee must be an integer between 0 and ${MAX_TRANSFER_FEE}`,
       )
     }
 
