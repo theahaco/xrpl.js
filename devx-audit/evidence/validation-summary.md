@@ -35,8 +35,12 @@ The negative-outcome run adds one real validated `tec` branch. It is not exhaust
 - `SignedBlob<T>` carries an optional type hint; it does not decode or validate a blob and is not proof that its contents match `T`. Direct `Wallet.sign` typo rejection remains a known gap.
 - The proposed generic `simulate` redesign was removed after review. The method retains published behavior; the prototype makes no improved inference claim for it.
 - Five reviewed legacy portal families remain unchanged: claim-payment-channel, get-tx, partial-payment, paths and reliable-tx-submission. The broad original AMM example also remains alongside the new guided journey. The report identifies that remaining work.
-- The packed verification covers Node consumers and emitted declarations. No browser bundle was built into that tarball, and no browser-package compatibility or npm release verification is claimed. The documentation preview checks are not execution of the browser sample.
+- The packed verification covers Node consumers and emitted declarations. No browser bundle was built into that original tarball. A separate browser build passed during the Getting Started follow-up; browser-package compatibility or npm release verification is not claimed. The documentation preview checks are not execution of the browser sample.
 - All 18 API families were inventoried, with explicitly bounded static, compiler and runtime probes. The whole SDK has not received exhaustive behavioral, security, cryptographic or performance validation. The xrpl-rust crate and CLI are the proposed next audit phase.
 - The portal has a working local preview, not a hosted preview. Hosting needs a compatible Realm deployment setup.
 
 See the [portable reproduction guide](../README.md) for setup and commands, and the [independent prototype review](prototype-review.md) for the decisions that narrowed the implementation.
+
+## Getting Started follow-up
+
+The primary walkthrough now targets the prototype; its published 5.3.0 comparison is retained separately. Five focused editor checks pass, including real Payment field completion. The actual primary `run()` passes a successful payment and correctly rejects `tecUNFUNDED_PAYMENT` on the local ledger. Node/browser TypeScript and the SDK browser bundle build pass. See [follow-up evidence](getting-started-follow-up.md). The original four-journey records remain unchanged snapshots of the earlier revisions.

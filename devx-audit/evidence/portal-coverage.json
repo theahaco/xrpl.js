@@ -4,7 +4,7 @@
     "source": "_code-samples/get-started/ts/get-acct-info.ts",
     "baseline": "87b3007547539741d99425f43a0796802c834fc3",
     "scope": "source+baseline compile+improved compile",
-    "implementationStatus": "revised Node and browser",
+    "implementationStatus": "main Node/browser walkthrough uses prototype; published 5.3.0 comparison retained under devx-before/get-started",
     "baselinePublishedSDK": "5.3.0",
     "compiler": "5.9.3",
     "baselineCompilePassed": true,
@@ -16,7 +16,7 @@
         "line": 71,
         "evidence": "validate(payment as unknown as Record<string, unknown>)",
         "observation": "A double assertion bypasses the typed boundary; the prose incorrectly equates local validation with server checks.",
-        "recommendation": "satisfies Payment retains object shape; validate(payment) compiles without assertion; docs distinguish local constraints from ledger state."
+        "recommendation": "Pass the Payment literal directly to submitAndWait, relying on its discriminant for completion and its signing path for local validation; read parsed metadata directly and check the outcome."
       },
       {
         "id": "P-02",
@@ -34,7 +34,8 @@
         "observation": "Subscription promise is unobserved, result code is not checked, and exceptions before the delayed disconnect can leave connections open.",
         "recommendation": "Await subscription; inspect transaction result; finally disconnect; only report success after tesSUCCESS."
       }
-    ]
+    ],
+    "followUpEvidence": "getting-started-follow-up.md"
   },
   {
     "family": "create-amm",

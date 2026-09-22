@@ -1,0 +1,20 @@
+{
+  "date": "2026-09-22T17:02:07.892Z",
+  "node": "v25.9.0",
+  "endpoint": "ws://127.0.0.1:16006",
+  "scope": "Actual proposed Getting Started run() on an isolated standalone ledger. No public faucet or production account. Both success and validated-failure paths.",
+  "results": [
+    {
+      "name": "First payment succeeds",
+      "passed": true,
+      "receiverXrp": 1001
+    },
+    {
+      "name": "Validated failure is reported",
+      "passed": true,
+      "message": "Payment failed: tecUNFUNDED_PAYMENT",
+      "receiverXrp": 1001
+    }
+  ],
+  "server": "3.4.0-rc1"
+}

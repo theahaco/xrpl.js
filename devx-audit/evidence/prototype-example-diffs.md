@@ -1,6 +1,6 @@
 # Portal before/after excerpts for the walkthrough deck
 
-The **before** is the audit's corrected, current-release example using published xrpl 5.3.0. The **after** is the matching workflow using the **unreleased aha SDK prototype**. This is not a claim that npm already supplies the proposed APIs. Source paths below are relative to the portal fork. All imports remain ordinary `from 'xrpl'` imports; dependency selection lives in the separate prototype package.
+The **before** is the audit's corrected, current-release example using published xrpl 5.3.0. The **after** is the matching workflow using the **unreleased aha SDK prototype**. This is not a claim that npm already supplies the proposed APIs. Source paths below are relative to the portal fork. All imports remain ordinary `from 'xrpl'` imports; dependency selection lives in each package. Getting Started presents the prototype in its main directory and retains the released SDK comparison under `devx-before/get-started`.
 
 ## 1. Prepare, sign, submit: types follow the workflow
 
@@ -29,7 +29,7 @@ Editor story: choose a Payment; prepare it; see Fee as a populated string; sign 
 
 ## 2. Validation guarantees parsed metadata, not business success
 
-Before — `_code-samples/get-started/ts/get-acct-info.ts`:
+Before — `_code-samples/devx-before/get-started/get-acct-info.ts`:
 
 ```ts
 const metadata = submitted.result.meta
@@ -41,12 +41,12 @@ if (metadata.TransactionResult !== 'tesSUCCESS') {
 }
 ```
 
-After — `_code-samples/devx-after/get-started.ts`:
+After — `_code-samples/get-started/ts/get-acct-info.ts` (also mirrored in `devx-after`):
 
 ```ts
-const metadata = submitted.result.meta
-if (metadata.TransactionResult !== 'tesSUCCESS') {
-  throw new Error(`Payment failed: ${metadata.TransactionResult}`)
+const result = submitted.result.meta.TransactionResult
+if (result !== 'tesSUCCESS') {
+  throw new Error(`Payment failed: ${result}`)
 }
 ```
 
@@ -125,3 +125,29 @@ Across the four matched workflows (not across the whole SDK):
 - **All transaction-success checks remain.** These source changes do not establish a measured time saving or onboarding improvement.
 
 `portal-prototype-examples.patch` holds the complete pairwise diff. Prototype compilation and isolated-ledger execution are recorded separately, after the SDK integration is final.
+
+## Getting Started: let the discriminants guide the whole step
+
+The main walkthrough now uses the unreleased SDK directly:
+
+```ts
+const response = await client.request({
+  command: 'account_info',
+  account: testWallet.address,
+  ledger_index: 'validated'
+})
+
+const submitted = await client.submitAndWait({
+  TransactionType: 'Payment',
+  Account: testWallet.address,
+  Amount: xrpToDrops('1'),
+  Destination: destination.address
+}, { wallet: testWallet })
+
+const result = submitted.result.meta.TransactionResult
+if (result !== 'tesSUCCESS') {
+  throw new Error(`Payment failed: ${result}`)
+}
+```
+
+No `Payment`/`AccountInfoRequest` imports, annotations, `satisfies`, casts, or metadata-format guard are needed. The SDK validates during signing; a standalone `validate()` call adds no value to this first-payment journey. The editor actually offers `Amount`, `Destination`, and `DestinationTag` after the Payment discriminator. Five focused editor checks and the actual main example's success/failure runs are recorded in `getting-started-editor.json` and `getting-started-runtime.json`.

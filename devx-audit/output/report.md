@@ -64,9 +64,9 @@ The walkthrough uses three clearly labeled states: **existing tracked examples**
 
 ### Get Started: learn from inputs and inferred responses
 
-The corrected example uses `satisfies Payment` and `satisfies AccountInfoRequest` at construction, lets response types be inferred, and removes the double assertion around validation. It explains that local validation does not establish ledger-state validity. It checks the transaction result, observes subscription errors and releases the connection on failure.
+The proposed main walkthrough passes request and transaction literals directly to the client. `command: 'account_info'` and `TransactionType: 'Payment'` guide completion and inference, without importing the corresponding types, adding `satisfies`, or casting. Actual editor checks confirm Payment fields are offered and missing required fields or misspelled optional fields are rejected.
 
-The prototype then exposes parsed, validated metadata in the result type. A redundant representation guard disappears, while the `tesSUCCESS` check stays. **Validated means included in a validated ledger; it does not mean the requested business operation succeeded.**
+`submitAndWait` prepares and validates during signing, so the first-payment example needs no separate `validate()` call. The prototype guarantees parsed metadata; the application reads `TransactionResult` directly. The `tesSUCCESS` check stays, subscription errors are observed, and `finally` closes the connection. The published 5.3.0 workaround version is retained separately for comparison. **Validated means included in a validated ledger; it does not mean the requested business operation succeeded.**
 
 ### MPT issuance: the selected object should guide its answer
 
@@ -80,7 +80,7 @@ The Send XRP pair demonstrates `autofill`, signing and confirmation. The current
 
 Create AMM adds a focused, fully typed setup/create/query walkthrough beside the original broad example. Each setup transaction is checked independently. The original advanced sample remains available and is not represented as remediated; it still needs work on `any`, repeated result handling and failure propagation.
 
-Across the four paired workflows, the prototype removes five parsed-metadata guards, two MPT ledger-kind comparisons and one autofill generic argument. All transaction-success checks remain. These are scoped source changes, not a usability score or measured time saving.
+Across the four paired workflows, the prototype removes five parsed-metadata guards, two MPT ledger-kind comparisons and one autofill generic argument. Getting Started additionally removes two redundant `satisfies` clauses and a separate validation call. All transaction-success checks remain. These are scoped source changes, not a usability score or measured time saving.
 
 ## Prototype and compatibility
 
@@ -110,7 +110,7 @@ For the longer partnership, aha can take recurring responsibility for discovery,
 
 The accompanying findings register links each group to reproducible evidence and earlier work. The API coverage matrix distinguishes inventory from deeper investigation. Baseline and candidate compiler output, local runtime results, example diffs, test logs, source provenance and review notes are retained with the audit.
 
-All code and publication targets are aha forks. The docs preview runs locally at port 4400 and renders the four updated tutorials. A shareable hosted Realm preview needs compatible hosting configuration; that optional deployment is not part of the completed evidence.
+All code and publication targets are aha forks. The docs preview runs locally at port 4400. The initial four tutorials were visually checked. The revised Getting Started page passes compilation and source-reference checks; refreshed browser review remains outstanding. A shareable hosted Realm preview needs compatible hosting configuration; that optional deployment is not part of the completed evidence.
 
 The audit does not claim a cryptographic review, complete amendment/transaction coverage, browser runtime execution, observed novice success rates, or that every historical claim was reverified. The evidence is sufficient to prioritize and demonstrate a concrete improvement program while making the remaining work visible.
 

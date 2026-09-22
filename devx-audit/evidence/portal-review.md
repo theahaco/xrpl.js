@@ -64,7 +64,7 @@ The original working tree contained an untracked MPT TypeScript adaptation and s
 
 ## Implemented demonstrations
 
-- Get Started Node/browser: input `satisfies`, inferred responses, no double cast, owned Testnet destination, checked result, observed subscription promise, and unconditional cleanup. Browser output uses textContent. Runtime CDN and compiler package both pin 5.3.0.
+- Get Started Node/browser: the main walkthrough now targets the local prototype and uses inline discriminants, inferred responses, direct parsed metadata, an owned Testnet destination, a checked result and unconditional cleanup. The original 5.3.0 adaptation is retained under `devx-before/get-started`; see getting-started-follow-up.md. Browser output uses textContent and resolves to the same local SDK build as its declarations.
 - MPT: standalone strict TS issuance/lookup/update/confirm, metadata field guidance, named create flags, real parsed-metadata/issuance-ID/ledger-kind checks, and matching scripts. DynamicMPT-dependent updates stay explicit.
 - Send XRP: prepare → sign the returned object → submit → check result, with two fresh wallets. 5.3.0 needs `autofill<Payment>` to expose `Fee`; this is documented as a workaround, not an SDK fix.
 - Create AMM: new guided FOO/XRP issuance/create/query workflow using public types and independently checked submissions; old broad example retained and clearly excluded from the guided quality claim.
@@ -79,11 +79,11 @@ All four Node workflows export `run(client, funded wallets...)` without running 
 - `portal-improved-compile.json`: four improved families compile (Get Started includes Node/browser).
 - No `any`, unsafe assertions, or generic request overrides in new/rewritten workflow source; Send XRP explicit transaction generic remains necessary for current autofill typing.
 - Network tests and editor interaction measurement must be reported separately. Local docs preview passed; remote hosting remains conditional. No upstream issue, PR, or deploy was created by this reviewer.
-- Four remaining old families plus legacy Create AMM are findings, not remediated implementations. A passing current SDK compile does not prove their workflows execute or that their package-declared older dependency range behaves identically.
+- Five remaining old families plus legacy Create AMM are findings, not remediated implementations. A passing current SDK compile does not prove their workflows execute or that their package-declared older dependency range behaves identically.
 
 ## Unreleased SDK comparison
 
-The separate `_code-samples/devx-after/` package contains four matched workflows checked against the built aha SDK prototype, with runtime dependency also pointing at that local fork. All four compile. Default public examples remain pinned to published 5.3.0. `prototype-example-diffs.md` provides exact excerpts and narrowly scoped scaffold counts; `portal-prototype-examples.patch` supplies full pairwise differences.
+The separate `_code-samples/devx-after/` package contains four matched workflows checked against the built aha SDK prototype, with runtime dependency also pointing at that local fork. All four compile. The main Getting Started example now presents the prototype. Its retained comparison and the other ordinary sample families use published 5.3.0. `prototype-example-diffs.md` provides exact excerpts and narrowly scoped scaffold counts; `portal-prototype-examples.patch` supplies full pairwise differences.
 
 Direct typed-object submission already preserves issuance-specific metadata in 5.3.0. The comparison does not count that as a new capability. New demonstrated gains are populated autofill fields, parsed validated metadata, dependent MPT ledger lookup types, and Payment type preservation through a signed blob. Every transaction-success and optional-domain-value check remains.
 

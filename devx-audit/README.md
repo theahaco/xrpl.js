@@ -72,10 +72,10 @@ NODE
 
 ## Compile the example journeys
 
-The four revised public examples target published 5.3.0. The parallel `devx-after` examples target the built sibling SDK fork. From `xrpl.js`:
+Three revised public examples target published 5.3.0. The main Getting Started example now presents the proposed SDK experience, while its retained 5.3.0 comparison lives in `devx-before/get-started`. The parallel `devx-after` examples target the built sibling SDK fork. From `xrpl.js`:
 
 ```sh
-for sample in get-started/ts send-xrp/ts issue-mpt-with-metadata/ts create-amm/ts devx-after; do
+for sample in devx-before/get-started get-started/ts send-xrp/ts issue-mpt-with-metadata/ts create-amm/ts devx-after; do
   npm --prefix "../xrpl-dev-portal/_code-samples/$sample" install
   npm --prefix "../xrpl-dev-portal/_code-samples/$sample" run build
 done
@@ -130,3 +130,7 @@ node inventory-surface-probes.cjs /absolute/path/to/extracted/package/dist/npm/i
 ```
 
 Before release, review the prototype's explicit API v2 confirmation lookup, TypeScript minimum version, optional signed-blob type hint and remaining inference gaps. The [validation summary](evidence/validation-summary.md) explains these limits, the unchanged `simulate` behavior and the remaining legacy example work.
+
+## Getting Started follow-up
+
+The main Node/browser walkthrough now relies on inline discriminants and the SDK metadata guarantee. See [follow-up verification](evidence/getting-started-follow-up.md) for editor, runtime and browser-build checks. No SDK source change was needed. The original packed verification remains a Node/declaration check; a browser bundle was built separately during this follow-up.

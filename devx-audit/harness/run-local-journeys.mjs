@@ -12,7 +12,7 @@ const portalRoot = process.env.XRPL_PORTAL_PATH || (fs.existsSync(path.join(root
 const client = new Client(endpoint)
 const admin = new Client(endpoint)
 const entries = [
-  ['Get Started TypeScript', 'get-started/ts/dist/get-acct-info.js', 2],
+  ['Get Started TypeScript', 'devx-before/get-started/dist/get-acct-info.js', 2],
   ['Send XRP TypeScript', 'send-xrp/ts/dist/send-xrp.js', 2],
   ['MPT metadata TypeScript', 'issue-mpt-with-metadata/ts/dist/issue-mpt-with-metadata.js', 1],
   ['Guided Create AMM TypeScript', 'create-amm/ts/dist/create-amm-guided.js', 2],
