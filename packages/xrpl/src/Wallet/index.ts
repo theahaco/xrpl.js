@@ -23,6 +23,21 @@ import { computeSignature, validateEntropy } from './utils'
 const DEFAULT_ALGORITHM: ECDSA = ECDSA.ed25519
 const DEFAULT_DERIVATION_PATH = "m/44'/144'/0'/0/0"
 
+/**
+ * A signed transaction blob that remembers which transaction type produced it.
+ *
+ * At runtime this is exactly the hex string `Wallet.sign` returns — `__xrplTx` is an optional
+ * phantom property that is never populated — so a `SignedBlob<T>` can be used anywhere a `string`
+ * is expected. The brand lets {@link Client.submitAndWait} and {@link Client.simulate} infer `T`
+ * from a blob instead of falling back to the whole `SubmittableTransaction` union, which in turn
+ * narrows `result.meta` and `result.tx_json`.
+ *
+ * @category Signing
+ */
+export type SignedBlob<T extends Transaction = Transaction> = string & {
+  readonly __xrplTx?: T
+}
+
 type ValidHDKey = HDKey & {
   privateKey: Uint8Array
   publicKey: Uint8Array
@@ -372,12 +387,12 @@ export class Wallet {
    * @throws XrplError if the issued currency being signed is XRP ignoring case.
    */
   // eslint-disable-next-line max-lines-per-function -- introduced more checks to support both string and boolean inputs.
-  public sign(
+  public sign<T extends Transaction>(
     this: Wallet,
-    transaction: Transaction,
+    transaction: T,
     multisign?: boolean | string,
   ): {
-    tx_blob: string
+    tx_blob: SignedBlob<T>
     hash: string
   } {
     let multisignAddress: boolean | string = false
@@ -435,7 +450,12 @@ export class Wallet {
 
     const serialized = encode(txToSignAndEncode)
     return {
-      tx_blob: serialized,
+      /*
+       * `encode` returns a plain string; the brand is an optional phantom property that is never
+       * populated at runtime, so this only records which transaction type produced the blob.
+       */
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- see above
+      tx_blob: serialized as SignedBlob<T>,
       hash: hashSignedTx(serialized),
     }
   }

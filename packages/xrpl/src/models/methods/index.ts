@@ -195,7 +195,13 @@ import {
   TransactionEntryRequest,
   TransactionEntryResponse,
 } from './transactionEntry'
-import { TxRequest, TxResponse, TxV1Response, TxVersionResponseMap } from './tx'
+import {
+  TxRequest,
+  TxResponse,
+  TxV1Response,
+  TxVersionResponseMap,
+  ValidatedTxResponse,
+} from './tx'
 import {
   UnsubscribeBook,
   UnsubscribeRequest,
@@ -605,6 +611,7 @@ export {
   TxRequest,
   TxResponse,
   TxV1Response,
+  ValidatedTxResponse,
   // path and order book methods with types
   BookOffersRequest,
   BookOffer,
