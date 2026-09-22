@@ -6,6 +6,12 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 
 ### Added
 * Add `LendingProtocolV1_1` support.
+* Add `MPTHoldersRequest`/`MPTHoldersResponse` types for the Clio-only `mpt_holders` method, and support it in `Client.requestAll`. Document that rippled cannot enumerate the holders of an `MPTokenIssuance`.
+* `RippledError.data` is now typed as `RippledErrorResponse` (the rippled error response) instead of `unknown`, and `RippledError.code` returns the machine-readable error code (`data.error`), so `entryNotFound`/`txnNotFound` can be told apart from other failures without a structural guard.
+
+### Fixed
+* `Client.requestAll` now goes through `Client.request` for every page, so partial-payment `warnings` and X-address conversion of `account` apply to paginated requests too.
+* `ErrorResponse.error_code` is typed as `number`, matching what rippled sends.
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES

@@ -6,7 +6,7 @@ import type {
   Transaction,
   Wallet,
 } from '..'
-import { ValidationError, XrplError } from '../errors'
+import { RippledError, ValidationError, XrplError } from '../errors'
 import { Signer } from '../models/common'
 import { TxResponse } from '../models/methods'
 import { BaseTransaction } from '../models/transactions/common'
@@ -132,10 +132,8 @@ export async function waitForFinalTransactionOutcome<
       command: 'tx',
       transaction: txHash,
     })
-    .catch(async (error) => {
-      // error is of an unknown type and hence we assert type to extract the value we need.
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions,@typescript-eslint/no-unsafe-member-access -- ^
-      const message = error?.data?.error as string
+    .catch(async (error: unknown) => {
+      const message = error instanceof RippledError ? error.code : undefined
       if (message === 'txnNotFound') {
         return waitForFinalTransactionOutcome<T>(
           client,
@@ -145,7 +143,7 @@ export async function waitForFinalTransactionOutcome<
         )
       }
       throw new Error(
-        `${message} \n Preliminary result: ${submissionResult}.\nFull error details: ${String(
+        `${String(message)} \n Preliminary result: ${submissionResult}.\nFull error details: ${String(
           error,
         )}`,
       )
