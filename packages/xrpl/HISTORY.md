@@ -6,6 +6,9 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 
 ### Added
 * Add `LendingProtocolV1_1` support.
+
+### Fixed
+* Corrected and expanded the MPT doc comments: `MPTokenAuthorize` (previously copy-pasted from `MPTokenIssuanceSet`), `MPTokenIssuanceSet` (one-way `tfMPTSet*` flags, mutation fields, `DomainID`, encryption keys, and what a lock or unauthorize actually does to payments and `Clawback`), `MPTokenIssuanceCreate` (only `AssetScale`/`MaximumAmount` are fixed unless pinned with `ImmutableFlags`; `TransferFee` 0 is allowed without `tfMPTCanTransfer`; `MaximumAmount` must be positive), `MPTokenIssuance.Sequence` (the `TicketSequence` for ticketed creates), and `Clawback`/`ConfidentialMPTClawback` (confidential clawback is all-or-nothing and plain `Clawback` only reaches the transparent balance).
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES

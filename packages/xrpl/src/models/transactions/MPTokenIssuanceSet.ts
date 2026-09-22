@@ -36,41 +36,69 @@ import type { Transaction } from '.'
  */
 export enum MPTokenIssuanceSetFlags {
   /**
-   * If set, indicates that issuer locks the MPT
+   * Locks the MPT. With `Holder`, sets `lsfMPTLocked` on that holder's MPToken;
+   * without `Holder`, sets `lsfMPTLocked` on the issuance itself (global lock).
+   * Requires `lsfMPTCanLock` on the issuance.
+   *
+   * Effect on payments, for both kinds of lock: payments between holders fail
+   * with `tecLOCKED`, but payments to and from the issuer (issuance and
+   * redemption) still succeed. A lock does not stop `Clawback`. Locking is
+   * independent of authorization: authorizing or unauthorizing a holder leaves
+   * its lock in place, and `tecLOCKED` takes precedence over `tecNO_AUTH`. A
+   * locked holder cannot delete its own zero-balance MPToken (`tecNO_PERMISSION`),
+   * so its reserve stays pinned until unlocked. A payment from a holder with a
+   * zero balance fails with `tecPATH_PARTIAL` before the lock is checked.
+   *
+   * Idempotent: locking an already-locked target succeeds (`tesSUCCESS`), so
+   * read the ledger entry to tell "already locked" from "just locked".
    */
   tfMPTLock = 0x00000001,
   /**
-   * If set, indicates that issuer unlocks the MPT
+   * Unlocks the MPT. With `Holder`, clears `lsfMPTLocked` on that holder's
+   * MPToken; without `Holder`, clears the global lock on the issuance. A global
+   * unlock does not clear per-holder locks, and vice versa. Idempotent: unlocking
+   * an already-unlocked target succeeds (`tesSUCCESS`).
    */
   tfMPTUnlock = 0x00000002,
   /**
    * Sets the `lsfMPTCanLock` flag. Enables the token to be locked both individually and globally. (XLS-94D)
+   * One-way: once enabled, the capability cannot be disabled again.
    */
   tfMPTSetCanLock = 0x00000004,
   /**
    * Sets the `lsfMPTRequireAuth` flag. Requires individual holders to be authorized. (XLS-94D)
+   * One-way: once enabled, the capability cannot be disabled again.
    */
   tfMPTSetRequireAuth = 0x00000008,
   /**
    * Sets the `lsfMPTCanEscrow` flag. Allows holders to place balances into escrow. (XLS-94D)
+   * One-way: once enabled, the capability cannot be disabled again.
    */
   tfMPTSetCanEscrow = 0x00000010,
   /**
    * Sets the `lsfMPTCanTrade` flag. Allows holders to trade balances on the XRPL DEX. (XLS-94D)
+   * One-way: once enabled, the capability cannot be disabled again.
    */
   tfMPTSetCanTrade = 0x00000020,
   /**
    * Sets the `lsfMPTCanTransfer` flag. Allows tokens to be transferred to non-issuer accounts. (XLS-94D)
+   * One-way: once enabled, the capability cannot be disabled again.
    */
   tfMPTSetCanTransfer = 0x00000040,
   /**
    * Sets the `lsfMPTCanClawback` flag. Enables the issuer to claw back tokens
    * via `Clawback` or `AMMClawback` transactions. (XLS-94D)
+   * One-way: once enabled, the capability cannot be disabled again.
    */
   tfMPTSetCanClawback = 0x00000080,
   /**
    * Sets the `lsfMPTCanHoldConfidentialBalance` flag. Enables the token to be held
    * in a confidential balance. (XLS-96 Confidential MPT)
+   * One-way: once enabled, the capability cannot be disabled again.
+   * Once holders move funds into a confidential balance, the plain `Clawback`
+   * transaction no longer reaches those funds: a confidential balance can only be
+   * recovered with `ConfidentialMPTClawback`, which burns all of it. Cannot be
+   * enabled in the same transaction as a non-zero `TransferFee`.
    */
   tfMPTSetCanHoldConfidentialBalance = 0x00000100,
 }
@@ -98,33 +126,81 @@ export const tfMPTokenIssuanceSetEnableFlagMask =
  * @category Transaction Flags
  */
 export interface MPTokenIssuanceSetFlagsInterface extends GlobalFlagsInterface {
+  /**
+   * Lock one holder (with `Holder`) or every holder (without). Payments between
+   * holders fail with `tecLOCKED`; payments to and from the issuer and `Clawback`
+   * still succeed. See {@link MPTokenIssuanceSetFlags.tfMPTLock}.
+   */
   tfMPTLock?: boolean
+  /**
+   * Unlock one holder (with `Holder`) or clear the global lock (without).
+   * See {@link MPTokenIssuanceSetFlags.tfMPTUnlock}.
+   */
   tfMPTUnlock?: boolean
-  /* Sets the `lsfMPTCanLock` flag. Enables the token to be locked both individually and globally. */
+  /**
+   * Sets the `lsfMPTCanLock` flag. Enables the token to be locked both
+   * individually and globally. One-way: once enabled, the capability cannot be
+   * disabled again.
+   */
   tfMPTSetCanLock?: boolean
-  /* Sets the `lsfMPTRequireAuth` flag. Requires individual holders to be authorized. */
+  /**
+   * Sets the `lsfMPTRequireAuth` flag. Requires individual holders to be
+   * authorized. One-way: once enabled, the capability cannot be disabled again.
+   */
   tfMPTSetRequireAuth?: boolean
-  /* Sets the `lsfMPTCanEscrow` flag. Allows holders to place balances into escrow. */
+  /**
+   * Sets the `lsfMPTCanEscrow` flag. Allows holders to place balances into
+   * escrow. One-way: once enabled, the capability cannot be disabled again.
+   */
   tfMPTSetCanEscrow?: boolean
-  /* Sets the `lsfMPTCanTrade` flag. Allows holders to trade balances on the XRPL DEX. */
+  /**
+   * Sets the `lsfMPTCanTrade` flag. Allows holders to trade balances on the XRPL
+   * DEX. One-way: once enabled, the capability cannot be disabled again.
+   */
   tfMPTSetCanTrade?: boolean
-  /* Sets the `lsfMPTCanTransfer` flag. Allows tokens to be transferred to non-issuer accounts. */
+  /**
+   * Sets the `lsfMPTCanTransfer` flag. Allows tokens to be transferred to
+   * non-issuer accounts. One-way: once enabled, the capability cannot be
+   * disabled again.
+   */
   tfMPTSetCanTransfer?: boolean
   /**
    * Sets the `lsfMPTCanClawback` flag. Enables the issuer to claw back tokens
-   * via `Clawback` or `AMMClawback` transactions.
+   * via `Clawback` or `AMMClawback` transactions. One-way: once enabled, the
+   * capability cannot be disabled again.
    */
   tfMPTSetCanClawback?: boolean
   /**
    * Sets the `lsfMPTCanHoldConfidentialBalance` flag. Enables the token to be
-   * held in a confidential balance. (XLS-96 Confidential MPT)
+   * held in a confidential balance. (XLS-96 Confidential MPT) One-way: once
+   * enabled, the capability cannot be disabled again.
+   * See {@link MPTokenIssuanceSetFlags.tfMPTSetCanHoldConfidentialBalance} for
+   * the consequence for `Clawback`.
    */
   tfMPTSetCanHoldConfidentialBalance?: boolean
 }
 
 /**
- * The MPTokenIssuanceSet transaction is used to globally lock/unlock a MPTokenIssuance,
- * or lock/unlock an individual's MPToken.
+ * The MPTokenIssuanceSet transaction lets the issuer change an existing
+ * MPTokenIssuance. One transaction performs one kind of change:
+ * - Lock or unlock (`tfMPTLock` / `tfMPTUnlock`): every holder when `Holder` is
+ *   omitted (a global lock on the issuance), or a single holder's MPToken when
+ *   `Holder` is set. Under either kind of lock, payments between holders fail
+ *   with `tecLOCKED` while payments to and from the issuer, and `Clawback`,
+ *   still succeed.
+ * - Enable a capability with a `tfMPTSet*` flag (XLS-94D DynamicMPT). This is
+ *   one-way: once enabled, a capability cannot be disabled again. Pinning a bit
+ *   in `ImmutableFlags` (at create time or here) prevents it from ever being
+ *   enabled (`tecNO_PERMISSION`).
+ * - Mutate `MPTokenMetadata` or `TransferFee`, or add `ImmutableFlags` bits
+ *   (XLS-94D).
+ * - Set `DomainID` to gate holders by permissioned domain (XLS-80).
+ * - Register `IssuerEncryptionKey` / `AuditorEncryptionKey` for confidential
+ *   balances (XLS-96).
+ *
+ * `Holder` is only valid together with `tfMPTLock` or `tfMPTUnlock`; it cannot be
+ * combined with a `tfMPTSet*` flag, a mutation field, `DomainID` or an encryption
+ * key. A lock/unlock cannot be combined with a mutation either.
  */
 export interface MPTokenIssuanceSet extends BaseTransaction {
   TransactionType: 'MPTokenIssuanceSet'
@@ -133,8 +209,11 @@ export interface MPTokenIssuanceSet extends BaseTransaction {
    */
   MPTokenIssuanceID: string
   /**
-   * An optional XRPL Address of an individual token holder balance to lock/unlock.
-   * If omitted, this transaction will apply to all any accounts holding MPTs.
+   * The address of a single holder whose MPToken to lock or unlock. Only valid
+   * together with `tfMPTLock` or `tfMPTUnlock`, and must differ from `Account`.
+   * If omitted, the lock/unlock applies to the issuance as a whole (every
+   * holder). Fails with `tecOBJECT_NOT_FOUND` if the holder has not opted in
+   * via MPTokenAuthorize. Cannot be combined with any other kind of change.
    */
   Holder?: Account
   /**
@@ -174,8 +253,10 @@ export interface MPTokenIssuanceSet extends BaseTransaction {
    */
   ImmutableFlags?: number
   /**
-   * The PermissionedDomain object ID that gates who may hold this MPT. Cannot
-   * be set together with the `Holder` field.
+   * The PermissionedDomain object ID that gates who may hold this MPT (XLS-80).
+   * Requires `lsfMPTRequireAuth` on the issuance (`tecNO_PERMISSION` otherwise);
+   * the zero hash clears an existing domain. Cannot be set together with the
+   * `Holder` field.
    */
   DomainID?: string
 }

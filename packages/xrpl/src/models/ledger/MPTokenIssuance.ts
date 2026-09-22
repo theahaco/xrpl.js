@@ -13,11 +13,12 @@ export interface MPTokenIssuance extends BaseLedgerEntry, HasPreviousTxnID {
    */
   Issuer: string
   /**
-   * A 32-bit unsigned integer that is used to ensure issuances
-   * from a given sender may only ever exist once, even if an
-   * issuance is later deleted. Whenever a new issuance is
-   * created, this value must match the account's current
-   * Sequence number.
+   * The sequence number the creating MPTokenIssuanceCreate
+   * transaction consumed: its `Sequence`, or its `TicketSequence`
+   * when it was submitted with a ticket. Together with `Issuer`
+   * it forms the 192-bit `MPTokenIssuanceID`, and it ensures an
+   * issuer can never create the same issuance twice, even after
+   * the original is destroyed.
    */
   Sequence: number
   /**
