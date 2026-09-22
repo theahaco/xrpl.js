@@ -709,7 +709,10 @@ class Client extends EventEmitter<EventTypes> {
       promises.push(checkAccountDeleteBlockers(this, tx))
     }
     if (tx.TransactionType === 'Batch') {
-      promises.push(autofillBatchTxn(this, tx))
+      // The outer account's inner Sequences are anchored to the outer Sequence,
+      // so the outer fields must be settled before the inner ones are assigned.
+      await Promise.all(promises)
+      await autofillBatchTxn(this, tx)
     }
     if (tx.TransactionType === 'Payment' && tx.DeliverMax != null) {
       handleDeliverMax(tx)

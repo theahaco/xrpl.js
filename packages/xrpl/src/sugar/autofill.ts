@@ -29,6 +29,16 @@ const REQUIRED_NETWORKID_VERSION = '1.11.0'
 // Confidential MPT (XLS-0096) transactions are charged this many extra base
 // fees on top of the standard base fee (rippled kCONFIDENTIAL_FEE_MULTIPLIER).
 const CONFIDENTIAL_FEE_MULTIPLIER = 9
+
+/**
+ * Transaction types whose base fee is the owner reserve rather than the network base fee.
+ * Their fee is exempt from the `maxFeeXRP` cap.
+ */
+const RESERVE_PRICED_TRANSACTION_TYPES = [
+  'AccountDelete',
+  'AMMCreate',
+  'VaultCreate',
+]
 const CONFIDENTIAL_MPT_TRANSACTION_TYPES = [
   'ConfidentialMPTConvert',
   'ConfidentialMPTConvertBack',
@@ -248,6 +258,10 @@ async function getNextValidSequenceNumber(
 /**
  * Sets the next valid sequence number for a transaction.
  *
+ * A ticketed transaction (one with a `TicketSequence`) does not consume a sequence number and
+ * must carry `Sequence: 0` instead; rippled rejects a missing `Sequence` outright and a
+ * non-zero one with `temSEQ_AND_TICKET`.
+ *
  * @param client - The client object used for making requests.
  * @param tx - The transaction object for which the sequence number needs to be set.
  * @returns A Promise that resolves when the sequence number is set.
@@ -257,6 +271,11 @@ export async function setNextValidSequenceNumber(
   client: Client,
   tx: Transaction,
 ): Promise<void> {
+  if (tx.TicketSequence != null) {
+    // eslint-disable-next-line no-param-reassign -- param reassign is safe
+    tx.Sequence = 0
+    return
+  }
   // eslint-disable-next-line no-param-reassign, require-atomic-updates -- param reassign is safe with no race condition
   tx.Sequence = await getNextValidSequenceNumber(client, tx.Account)
 }
@@ -375,11 +394,9 @@ async function calculateFeePerTransactionType(
   const netFeeDrops = xrpToDrops(netFeeXRP)
   let baseFee = new BigNumber(netFeeDrops)
 
-  const isSpecialTxCost = [
-    'AccountDelete',
-    'AMMCreate',
-    'VaultCreate',
-  ].includes(tx.TransactionType)
+  const isSpecialTxCost = RESERVE_PRICED_TRANSACTION_TYPES.includes(
+    tx.TransactionType,
+  )
 
   // EscrowFinish Transaction with Fulfillment
   if (tx.TransactionType === 'EscrowFinish' && tx.Fulfillment != null) {
@@ -445,15 +462,34 @@ async function calculateFeePerTransactionType(
   baseFee = BigNumber.sum(baseFee, sponsorFee)
 
   const maxFeeDrops = xrpToDrops(client.maxFeeXRP)
-  // For special transactions (AccountDelete, AMMCreate, VaultCreate), the fee cap is bypassed.
-  // This means sponsor fees are also not subject to the cap for these transactions.
-  // For normal transactions, the total fee (base + sponsor) is capped at maxFeeXRP.
-  const totalFee = isSpecialTxCost
-    ? baseFee
-    : BigNumber.min(baseFee, maxFeeDrops)
+  /*
+   * For special transactions (AccountDelete, AMMCreate, VaultCreate), the fee cap is bypassed.
+   * This means sponsor fees are also not subject to the cap for these transactions.
+   * The same applies to a Batch that carries one of them as an inner transaction: its summed
+   * fee already includes the owner reserve, and capping it would under-fund the whole batch.
+   * For normal transactions, the total fee (base + sponsor) is capped at maxFeeXRP.
+   */
+  const bypassFeeCap =
+    isSpecialTxCost ||
+    (tx.TransactionType === 'Batch' && hasReservePricedInner(tx))
+  const totalFee = bypassFeeCap ? baseFee : BigNumber.min(baseFee, maxFeeDrops)
 
   // Round up baseFee and return it as a string
   return totalFee.dp(0, BigNumber.ROUND_CEIL)
+}
+
+/**
+ * Whether any inner transaction of a Batch is priced at the owner reserve.
+ *
+ * @param tx - The Batch transaction.
+ * @returns True if an inner transaction is an AccountDelete, AMMCreate or VaultCreate.
+ */
+function hasReservePricedInner(tx: Batch): boolean {
+  return tx.RawTransactions.some((rawTxn) =>
+    RESERVE_PRICED_TRANSACTION_TYPES.includes(
+      rawTxn.RawTransaction.TransactionType,
+    ),
+  )
 }
 
 /**
@@ -601,7 +637,39 @@ export function handleDeliverMax(tx: Payment): void {
 }
 
 /**
- * Autofills all the relevant `x` fields.
+ * Returns the first `Sequence` to assign to `account`'s inner transactions of a Batch.
+ *
+ * The outer account's inner transactions follow the outer `Sequence`: `outer + 1` when the
+ * outer consumes a sequence number, or the account's next sequence when the outer is
+ * ticketed (a ticketed outer does not consume one). A caller-supplied outer `Sequence` is
+ * honoured so that pre-assigned (pipelined) batches stay consistent. Every other account
+ * starts at its own next sequence.
+ *
+ * @param client - The client object.
+ * @param tx - The Batch transaction.
+ * @param account - The inner transaction's account.
+ * @returns A promise that resolves with the first inner sequence for `account`.
+ */
+async function getFirstInnerSequence(
+  client: Client,
+  tx: Batch,
+  account: string,
+): Promise<number> {
+  if (account !== tx.Account || tx.TicketSequence != null) {
+    return getNextValidSequenceNumber(client, account)
+  }
+  const outerSequence =
+    tx.Sequence ?? (await getNextValidSequenceNumber(client, account))
+  return outerSequence + 1
+}
+
+/**
+ * Autofills all the relevant `x` fields of the inner transactions of a Batch.
+ *
+ * The inner transactions are copied before being filled, so the caller's objects stay
+ * untouched and retrying the same Batch recomputes every inner `Sequence`. The outer
+ * account's inner `Sequence`s are derived from the outer `Sequence`, so when the outer
+ * `Sequence` is itself autofilled it must be set before this runs.
  *
  * @param client - The client object.
  * @param tx - The transaction object.
@@ -614,25 +682,35 @@ export async function autofillBatchTxn(
 ): Promise<void> {
   const accountSequences: Record<string, number> = {}
 
+  // eslint-disable-next-line no-param-reassign -- `tx` is autofill's own copy; the inner objects are the caller's
+  tx.RawTransactions = tx.RawTransactions.map((rawTxn) => ({
+    RawTransaction: { ...rawTxn.RawTransaction },
+  }))
+
   for (const rawTxn of tx.RawTransactions) {
     const txn = rawTxn.RawTransaction
 
+    if (txn.TransactionType === 'AccountDelete') {
+      // eslint-disable-next-line no-await-in-loop -- It has to wait
+      await checkAccountDeleteBlockers(client, txn)
+    }
+
     // Sequence processing
-    if (txn.Sequence == null && txn.TicketSequence == null) {
-      if (txn.Account in accountSequences) {
-        txn.Sequence = accountSequences[txn.Account]
-        accountSequences[txn.Account] += 1
-      } else {
+    if (txn.TicketSequence != null) {
+      // A ticketed transaction must carry `Sequence: 0`: rippled rejects a missing
+      // `Sequence` outright and a non-zero one with `temSEQ_AND_TICKET`.
+      txn.Sequence ??= 0
+    } else if (txn.Sequence == null) {
+      if (!(txn.Account in accountSequences)) {
         // eslint-disable-next-line no-await-in-loop -- It has to wait
-        const nextSequence = await getNextValidSequenceNumber(
+        accountSequences[txn.Account] = await getFirstInnerSequence(
           client,
+          tx,
           txn.Account,
         )
-        const sequence =
-          txn.Account === tx.Account ? nextSequence + 1 : nextSequence
-        accountSequences[txn.Account] = sequence + 1
-        txn.Sequence = sequence
       }
+      txn.Sequence = accountSequences[txn.Account]
+      accountSequences[txn.Account] += 1
     }
 
     if (txn.Fee == null) {

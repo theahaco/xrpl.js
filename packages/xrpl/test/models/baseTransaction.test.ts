@@ -13,6 +13,7 @@ const assertInvalid = (tx: any, message: string): void =>
  *
  * Providing runtime verification testing for each specific transaction type.
  */
+// eslint-disable-next-line max-statements -- test file with many test cases
 describe('BaseTransaction', function () {
   it(`Verifies all optional BaseTransaction`, function () {
     const txJson: any = {
@@ -56,7 +57,6 @@ describe('BaseTransaction', function () {
       SourceTag: 31,
       SigningPublicKey:
         '03680DD274EE55594F7244F489CD38CF3A5A1A4657122FB8143E185B2BA043DF36',
-      TicketSequence: 10,
       TxnSignature:
         '3045022100C6708538AE5A697895937C758E99A595B57A16393F370F11B8D4C032E80B532002207776A8E85BB9FAF460A92113B9C60F170CD964196B1F084E0DAB65BAEC368B66',
     }
@@ -146,6 +146,41 @@ describe('BaseTransaction', function () {
     assertInvalid(
       invalidTicketSequence,
       'Payment: invalid field TicketSequence',
+    )
+  })
+
+  it(`Verifies TicketSequence with Sequence 0`, function () {
+    const txJson = {
+      Account: 'r97KeayHuEsDwyU1yPBVtMLLoQr79QcRFe',
+      TransactionType: 'Payment',
+      Sequence: 0,
+      TicketSequence: 10,
+    }
+
+    assertValid(txJson)
+  })
+
+  it(`Verifies TicketSequence without Sequence`, function () {
+    const txJson = {
+      Account: 'r97KeayHuEsDwyU1yPBVtMLLoQr79QcRFe',
+      TransactionType: 'Payment',
+      TicketSequence: 10,
+    }
+
+    assertValid(txJson)
+  })
+
+  it(`Handles non-zero Sequence with TicketSequence`, function () {
+    const invalidSequence = {
+      Account: 'r97KeayHuEsDwyU1yPBVtMLLoQr79QcRFe',
+      TransactionType: 'Payment',
+      Sequence: 100,
+      TicketSequence: 10,
+    }
+
+    assertInvalid(
+      invalidSequence,
+      'BaseTransaction: Sequence must be 0 when TicketSequence is provided',
     )
   })
 

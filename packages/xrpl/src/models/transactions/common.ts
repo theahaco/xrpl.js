@@ -1014,6 +1014,16 @@ export function validateBaseTransaction(
 
   validateOptionalField(common, 'TicketSequence', isNumber)
 
+  if (
+    common.TicketSequence != null &&
+    common.Sequence != null &&
+    common.Sequence !== 0
+  ) {
+    throw new ValidationError(
+      'BaseTransaction: Sequence must be 0 when TicketSequence is provided',
+    )
+  }
+
   validateOptionalField(common, 'TxnSignature', isString)
 
   validateOptionalField(common, 'NetworkID', isNumber)
