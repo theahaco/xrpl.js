@@ -1,3 +1,5 @@
+import { TRANSACTION_TYPES } from 'ripple-binary-codec'
+
 import { ValidationError } from '../../errors'
 
 import {
@@ -5,8 +7,12 @@ import {
   validateBaseTransaction,
   validateRequiredField,
   isAccount,
+  isString,
+  areAddressesEqual,
   Account,
 } from './common'
+
+import type { Transaction } from '.'
 
 const PERMISSIONS_MAX_LENGTH = 10
 const NON_DELEGABLE_TRANSACTIONS = new Set([
@@ -22,9 +28,56 @@ const NON_DELEGABLE_TRANSACTIONS = new Set([
   'UNLModify',
 ])
 
+/**
+ * Granular permissions that can be delegated with a DelegateSet transaction
+ * (XLS-75). Each grants a subset of one transaction type rather than the
+ * whole type. The names match the `PermissionValue` encoding in
+ * ripple-binary-codec.
+ *
+ * @category Transaction Models
+ */
+export enum GranularPermission {
+  /** Authorize a trust line (TrustSet with tfSetfAuth). */
+  TrustlineAuthorize = 'TrustlineAuthorize',
+  /** Freeze a trust line (TrustSet with tfSetFreeze). */
+  TrustlineFreeze = 'TrustlineFreeze',
+  /** Unfreeze a trust line (TrustSet with tfClearFreeze). */
+  TrustlineUnfreeze = 'TrustlineUnfreeze',
+  /** Set the Domain field (AccountSet). */
+  AccountDomainSet = 'AccountDomainSet',
+  /** Set the EmailHash field (AccountSet). */
+  AccountEmailHashSet = 'AccountEmailHashSet',
+  /** Set the MessageKey field (AccountSet). */
+  AccountMessageKeySet = 'AccountMessageKeySet',
+  /** Set the TransferRate field (AccountSet). */
+  AccountTransferRateSet = 'AccountTransferRateSet',
+  /** Set the TickSize field (AccountSet). */
+  AccountTickSizeSet = 'AccountTickSizeSet',
+  /** Send a Payment that mints the issuer's own token. */
+  PaymentMint = 'PaymentMint',
+  /** Send a Payment that burns the issuer's own token. */
+  PaymentBurn = 'PaymentBurn',
+  /** Lock an MPT issuance or a single holder (MPTokenIssuanceSet with tfMPTLock). */
+  MPTokenIssuanceLock = 'MPTokenIssuanceLock',
+  /** Unlock an MPT issuance or a single holder (MPTokenIssuanceSet with tfMPTUnlock). */
+  MPTokenIssuanceUnlock = 'MPTokenIssuanceUnlock',
+}
+
+/**
+ * A value accepted in `Permission.PermissionValue`: a delegatable transaction
+ * type name or a {@link GranularPermission}.
+ */
+export type PermissionValue =
+  | Transaction['TransactionType']
+  | `${GranularPermission}`
+
+const GRANULAR_PERMISSIONS: Set<string> = new Set(
+  Object.values(GranularPermission),
+)
+
 export interface Permission {
   Permission: {
-    PermissionValue: string
+    PermissionValue: PermissionValue
   }
 }
 
@@ -42,7 +95,9 @@ export interface DelegateSet extends BaseTransaction {
   Authorize: Account
 
   /**
-   * The transaction permissions (represented by integers) that the account has been granted.
+   * The permissions granted to the authorized account: transaction type
+   * names or {@link GranularPermission} values. An empty array revokes all
+   * permissions.
    */
   Permissions: Permission[]
 }
@@ -59,7 +114,11 @@ export function validateDelegateSet(tx: Record<string, unknown>): void {
 
   validateRequiredField(tx, 'Authorize', isAccount)
 
-  if (tx.Authorize === tx.Account) {
+  if (
+    isString(tx.Authorize) &&
+    isString(tx.Account) &&
+    areAddressesEqual(tx.Authorize, tx.Account)
+  ) {
     throw new ValidationError(
       'DelegateSet: Authorize and Account must be different.',
     )
@@ -100,6 +159,14 @@ export function validateDelegateSet(tx: Record<string, unknown>): void {
     if (NON_DELEGABLE_TRANSACTIONS.has(permissionValue)) {
       throw new ValidationError(
         `DelegateSet: PermissionValue contains a non-delegatable transaction ${permissionValue}`,
+      )
+    }
+    if (
+      !GRANULAR_PERMISSIONS.has(permissionValue) &&
+      !TRANSACTION_TYPES.includes(permissionValue)
+    ) {
+      throw new ValidationError(
+        `DelegateSet: PermissionValue ${permissionValue} is not a transaction type or granular permission`,
       )
     }
     permissionValueSet.add(permissionValue)

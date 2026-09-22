@@ -1,4 +1,5 @@
 import { assert } from 'chai'
+import { classicAddressToXAddress } from 'ripple-address-codec'
 
 import {
   AccountSet,
@@ -201,6 +202,37 @@ describe('Clawback', function () {
         // @ts-expect-error: Known issue with unknown object type
         ledgerEntryResponse.result.node.MPTAmount,
         '9223372036854775307',
+      )
+
+      // Holder given as a tagged X-address: autofill normalizes it to the
+      // classic address before signing (a tagged Holder used to fail in the codec).
+      const xAddressClawTx: Clawback = {
+        TransactionType: 'Clawback',
+        Account: testContext.wallet.classicAddress,
+        Amount: {
+          mpt_issuance_id: mptID!,
+          value: '300',
+        },
+        Holder: classicAddressToXAddress(wallet2.classicAddress, 12345, false),
+      }
+      await testTransaction(
+        testContext.client,
+        xAddressClawTx,
+        testContext.wallet,
+      )
+
+      ledgerEntryResponse = await testContext.client.request({
+        command: 'ledger_entry',
+        mptoken: {
+          mpt_issuance_id: mptID!,
+          account: wallet2.classicAddress,
+        },
+      })
+
+      assert.equal(
+        // @ts-expect-error: Known issue with unknown object type
+        ledgerEntryResponse.result.node.MPTAmount,
+        '9223372036854775007',
       )
     },
     TIMEOUT,

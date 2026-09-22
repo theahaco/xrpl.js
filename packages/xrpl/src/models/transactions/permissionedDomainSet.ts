@@ -2,7 +2,7 @@ import { AuthorizeCredential } from '../common'
 
 import {
   BaseTransaction,
-  isString,
+  isDomainID,
   validateBaseTransaction,
   validateOptionalField,
   validateRequiredField,
@@ -21,7 +21,7 @@ export interface PermissionedDomainSet extends BaseTransaction {
 
   /* The credentials that are accepted by the domain. Ownership of one
   of these credentials automatically makes you a member of the domain.
-  An empty array means deleting the field. */
+  Must contain 1 to 10 entries; to remove a domain use PermissionedDomainDelete. */
   AcceptedCredentials: AuthorizeCredential[]
 }
 
@@ -36,7 +36,7 @@ export function validatePermissionedDomainSet(
 ): void {
   validateBaseTransaction(tx)
 
-  validateOptionalField(tx, 'DomainID', isString)
+  validateOptionalField(tx, 'DomainID', isDomainID)
   validateRequiredField(tx, 'AcceptedCredentials', isArray)
 
   validateCredentialsList(

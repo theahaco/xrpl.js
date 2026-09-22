@@ -90,4 +90,16 @@ describe('CredentialDelete', function () {
       'CredentialDelete: CredentialType must be encoded in hex'
     assertInvalid(credentialDelete, errorMessage)
   })
+
+  it(`throws w/ Subject not an address`, function () {
+    credentialDelete.Subject = 'nope'
+    const errorMessage = 'CredentialDelete: invalid field Subject'
+    assertInvalid(credentialDelete, errorMessage)
+  })
+
+  it(`throws w/ Issuer not an address`, function () {
+    credentialDelete.Issuer = 'nope'
+    const errorMessage = 'CredentialDelete: invalid field Issuer'
+    assertInvalid(credentialDelete, errorMessage)
+  })
 })

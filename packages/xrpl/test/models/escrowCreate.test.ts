@@ -99,4 +99,46 @@ describe('EscrowCreate', function () {
       'EscrowCreate: Either Condition or FinishAfter must be specified',
     )
   })
+
+  it(`throws w/ CancelAfter equal to FinishAfter`, function () {
+    escrow.CancelAfter = escrow.FinishAfter
+
+    assertInvalid(escrow, 'EscrowCreate: CancelAfter must be after FinishAfter')
+  })
+
+  it(`throws w/ CancelAfter before FinishAfter`, function () {
+    escrow.CancelAfter = escrow.FinishAfter - 1
+
+    assertInvalid(escrow, 'EscrowCreate: CancelAfter must be after FinishAfter')
+  })
+
+  it(`throws w/ zero XRP Amount`, function () {
+    escrow.Amount = '0'
+
+    assertInvalid(escrow, 'EscrowCreate: Amount must be greater than zero')
+  })
+
+  it(`throws w/ zero MPT Amount`, function () {
+    escrow.Amount = {
+      mpt_issuance_id: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+      value: '0',
+    }
+
+    assertInvalid(escrow, 'EscrowCreate: Amount must be greater than zero')
+  })
+
+  it(`verifies valid MPT Amount`, function () {
+    escrow.Amount = {
+      mpt_issuance_id: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+      value: '10',
+    }
+
+    assertValid(escrow)
+  })
+
+  it(`throws w/ non-hex Condition`, function () {
+    escrow.Condition = 'zz'
+
+    assertInvalid(escrow, 'EscrowCreate: Condition must be encoded in hex')
+  })
 })

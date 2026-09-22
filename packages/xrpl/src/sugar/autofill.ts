@@ -12,7 +12,11 @@ import {
   LedgerEntryRequest,
 } from '../models/methods'
 import { Batch, Payment, Transaction } from '../models/transactions'
-import { Account, areAddressesEqual } from '../models/transactions/common'
+import {
+  Account,
+  amountsEqual,
+  areAddressesEqual,
+} from '../models/transactions/common'
 import { xrpToDrops } from '../utils'
 
 import getFeeXrp from './getFeeXrp'
@@ -153,6 +157,14 @@ export function setValidAddresses(tx: Transaction): void {
   convertToClassicAddress(tx, 'Sponsor')
   convertToClassicAddress(tx, 'Sponsee')
   convertToClassicAddress(tx, 'CounterpartySponsor')
+  // XLS-75 Permission Delegation:
+  convertToClassicAddress(tx, 'Delegate')
+  // Clawback, MPTokenAuthorize, MPTokenIssuanceSet, AMMClawback:
+  convertToClassicAddress(tx, 'Holder')
+  // CredentialCreate, CredentialDelete:
+  convertToClassicAddress(tx, 'Subject')
+  // CredentialAccept, CredentialDelete, NFTokenMint:
+  convertToClassicAddress(tx, 'Issuer')
 }
 
 /**
@@ -589,7 +601,7 @@ export function handleDeliverMax(tx: Payment): void {
     tx.Amount ??= tx.DeliverMax
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- needed here
-    if (tx.Amount != null && tx.Amount !== tx.DeliverMax) {
+    if (tx.Amount != null && !amountsEqual(tx.Amount, tx.DeliverMax)) {
       throw new ValidationError(
         'PaymentTransaction: Amount and DeliverMax fields must be identical when both are provided',
       )

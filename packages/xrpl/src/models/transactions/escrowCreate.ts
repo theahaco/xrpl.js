@@ -1,5 +1,6 @@
 import { ValidationError } from '../../errors'
 import { Amount, MPTAmount } from '../common'
+import { isHex } from '../utils'
 
 import {
   Account,
@@ -7,6 +8,7 @@ import {
   isAccount,
   isAmount,
   isNumber,
+  parseAmountValue,
   validateBaseTransaction,
   validateOptionalField,
   validateRequiredField,
@@ -31,7 +33,7 @@ export interface EscrowCreate extends BaseTransaction {
   /**
    * The time, in seconds since the Ripple Epoch, when this escrow expires.
    * This value is immutable; the funds can only be returned the sender after.
-   * this time.
+   * this time. Must be strictly after FinishAfter when both are present.
    */
   CancelAfter?: number
   /**
@@ -58,6 +60,7 @@ export interface EscrowCreate extends BaseTransaction {
  * @param tx - An EscrowCreate Transaction.
  * @throws When the EscrowCreate is Malformed.
  */
+// eslint-disable-next-line max-lines-per-function -- lines required for validation
 export function validateEscrowCreate(tx: Record<string, unknown>): void {
   validateBaseTransaction(tx)
 
@@ -87,5 +90,24 @@ export function validateEscrowCreate(tx: Record<string, unknown>): void {
 
   if (tx.Condition !== undefined && typeof tx.Condition !== 'string') {
     throw new ValidationError('EscrowCreate: Condition must be a string')
+  }
+
+  if (tx.Condition !== undefined && !isHex(tx.Condition)) {
+    throw new ValidationError('EscrowCreate: Condition must be encoded in hex')
+  }
+
+  if (
+    typeof tx.CancelAfter === 'number' &&
+    typeof tx.FinishAfter === 'number' &&
+    tx.CancelAfter <= tx.FinishAfter
+  ) {
+    throw new ValidationError(
+      'EscrowCreate: CancelAfter must be after FinishAfter',
+    )
+  }
+
+  const value = parseAmountValue(tx.Amount)
+  if (!Number.isNaN(value) && value <= 0) {
+    throw new ValidationError('EscrowCreate: Amount must be greater than zero')
   }
 }

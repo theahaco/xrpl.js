@@ -1,3 +1,4 @@
+/* eslint-disable max-statements -- many validation cases in one describe block */
 import { assert } from 'chai'
 
 import { ValidationError } from '../../src'
@@ -361,5 +362,27 @@ describe('BaseTransaction', function () {
       invalidSponsorSignatureOnInnerBatchTxn,
       'Transaction: invalid SponsorSignature',
     )
+  })
+
+  it(`Handles invalid Account address`, function () {
+    const badChecksum = {
+      Account: 'rUn84CUYbNjRoTQ6mSW7BVJPSVJNLb1QLp',
+      TransactionType: 'Clawback',
+    } as any
+    assertInvalid(badChecksum, 'Clawback: invalid field Account')
+
+    const notAnAddress = {
+      Account: 'not-an-address',
+      TransactionType: 'Clawback',
+    } as any
+    assertInvalid(notAnAddress, 'Clawback: invalid field Account')
+  })
+
+  it(`Accepts an X-address Account`, function () {
+    const txJson = {
+      Account: 'XVnCM7Vnvc3i6oHUXpMz5zEXZYhoUqGrr5WK95vVVAY4n8q',
+      TransactionType: 'Payment',
+    } as any
+    assertValid(txJson)
   })
 })

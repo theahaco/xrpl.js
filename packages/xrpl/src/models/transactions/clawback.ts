@@ -2,7 +2,9 @@ import { ValidationError } from '../../errors'
 import { ClawbackAmount } from '../common'
 
 import {
+  areAddressesEqual,
   BaseTransaction,
+  isString,
   validateBaseTransaction,
   isIssuedCurrencyAmount,
   isMPTAmount,
@@ -51,11 +53,20 @@ export function validateClawback(tx: Record<string, unknown>): void {
     throw new ValidationError('Clawback: invalid Amount')
   }
 
-  if (isIssuedCurrencyAmount(tx.Amount) && tx.Account === tx.Amount.issuer) {
+  if (
+    isIssuedCurrencyAmount(tx.Amount) &&
+    isString(tx.Account) &&
+    areAddressesEqual(tx.Account, tx.Amount.issuer)
+  ) {
     throw new ValidationError('Clawback: invalid holder Account')
   }
 
-  if (isMPTAmount(tx.Amount) && tx.Account === tx.Holder) {
+  if (
+    isMPTAmount(tx.Amount) &&
+    isString(tx.Account) &&
+    isString(tx.Holder) &&
+    areAddressesEqual(tx.Account, tx.Holder)
+  ) {
     throw new ValidationError('Clawback: invalid holder Account')
   }
 

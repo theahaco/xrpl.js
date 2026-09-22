@@ -88,4 +88,99 @@ describe('PermissionedDomainSet', function () {
     tx.AcceptedCredentials = [{ Field1: 'Value1', Field2: 'Value2' }]
     assertInvalid(tx, 'PermissionedDomainSet: Invalid Credentials format')
   })
+
+  it(`throws with zero DomainID`, function () {
+    tx.DomainID = '0'.repeat(64)
+    assertInvalid(tx, 'PermissionedDomainSet: invalid field DomainID')
+  })
+
+  it(`throws with short DomainID`, function () {
+    tx.DomainID = 'abc'
+    assertInvalid(tx, 'PermissionedDomainSet: invalid field DomainID')
+  })
+
+  it('throws when AcceptedCredentials contains case-variant duplicates', function () {
+    tx.AcceptedCredentials = [
+      {
+        Credential: {
+          CredentialType: 'AB',
+          Issuer: sampleCredential.Credential.Issuer,
+        },
+      },
+      {
+        Credential: {
+          CredentialType: 'ab',
+          Issuer: sampleCredential.Credential.Issuer,
+        },
+      },
+    ]
+    assertInvalid(
+      tx,
+      'PermissionedDomainSet: Credentials cannot contain duplicate elements',
+    )
+  })
+
+  it('throws when AcceptedCredentials contains X-address duplicates', function () {
+    tx.AcceptedCredentials = [
+      {
+        Credential: {
+          CredentialType: 'AB',
+          Issuer: 'rfmDuhDyLGgx94qiwf3YF8BUV5j6KSvE8',
+        },
+      },
+      {
+        Credential: {
+          CredentialType: 'AB',
+          Issuer: 'X7TviWU5CBaTMzaWiPKt1KE3qKFdzANQk8JNXYAjL8fVZsP',
+        },
+      },
+    ]
+    assertInvalid(
+      tx,
+      'PermissionedDomainSet: Credentials cannot contain duplicate elements',
+    )
+  })
+
+  it('throws when a credential Issuer is not an address', function () {
+    tx.AcceptedCredentials = [
+      { Credential: { CredentialType: 'AB', Issuer: 'nope' } },
+    ]
+    assertInvalid(tx, 'PermissionedDomainSet: Invalid Credentials format')
+  })
+
+  it('throws when a credential CredentialType is not hex', function () {
+    tx.AcceptedCredentials = [
+      {
+        Credential: {
+          CredentialType: 'zz',
+          Issuer: sampleCredential.Credential.Issuer,
+        },
+      },
+    ]
+    assertInvalid(tx, 'PermissionedDomainSet: Invalid Credentials format')
+  })
+
+  it('throws when a credential CredentialType is empty', function () {
+    tx.AcceptedCredentials = [
+      {
+        Credential: {
+          CredentialType: '',
+          Issuer: sampleCredential.Credential.Issuer,
+        },
+      },
+    ]
+    assertInvalid(tx, 'PermissionedDomainSet: Invalid Credentials format')
+  })
+
+  it('throws when a credential CredentialType exceeds 64 bytes', function () {
+    tx.AcceptedCredentials = [
+      {
+        Credential: {
+          CredentialType: 'AB'.repeat(65),
+          Issuer: sampleCredential.Credential.Issuer,
+        },
+      },
+    ]
+    assertInvalid(tx, 'PermissionedDomainSet: Invalid Credentials format')
+  })
 })

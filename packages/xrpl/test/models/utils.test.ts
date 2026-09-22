@@ -61,6 +61,34 @@ describe('Models Utils', function () {
       assert.isFalse(containsDuplicates(list_without_dups))
     })
 
+    it(`use nested-objects, case-variant hex and X-address issuer are duplicates`, function () {
+      const list_with_duplicates: AuthorizeCredential[] = [
+        {
+          Credential: {
+            Issuer: 'rfmDuhDyLGgx94qiwf3YF8BUV5j6KSvE8',
+            CredentialType: 'ab',
+          },
+        },
+        {
+          Credential: {
+            Issuer: 'X7TviWU5CBaTMzaWiPKt1KE3qKFdzANQk8JNXYAjL8fVZsP',
+            CredentialType: 'AB',
+          },
+        },
+      ]
+
+      assert.isTrue(containsDuplicates(list_with_duplicates))
+    })
+
+    it(`use string-IDs, case-variant hex are duplicates`, function () {
+      const list_with_duplicates: string[] = [
+        'EA85602C1B41F6F1F5E83C0E6B87142FB8957BD209469E4CC347BA2D0C26F66A',
+        'ea85602c1b41f6f1f5e83c0e6b87142fb8957bd209469e4cc347ba2d0c26f66a',
+      ]
+
+      assert.isTrue(containsDuplicates(list_with_duplicates))
+    })
+
     it(`use string-IDs for input parameters`, function () {
       const list_without_dups: string[] = [
         'EA85602C1B41F6F1F5E83C0E6B87142FB8957BD209469E4CC347BA2D0C26F66A',

@@ -113,4 +113,23 @@ describe('credentialCreate', function () {
     const errorMessage = 'CredentialCreate: URI must be encoded in hex'
     assertInvalid(credentialCreate, errorMessage)
   })
+
+  it(`throws w/ Subject not an address`, function () {
+    credentialCreate.Subject = 'nope'
+    const errorMessage = 'CredentialCreate: invalid field Subject'
+    assertInvalid(credentialCreate, errorMessage)
+  })
+
+  it(`throws w/ Account not an address`, function () {
+    credentialCreate.Account = 'nope'
+    const errorMessage = 'CredentialCreate: invalid field Account'
+    assertInvalid(credentialCreate, errorMessage)
+  })
+
+  it(`throws w/ odd-length hex credentialType`, function () {
+    credentialCreate.CredentialType = 'ABC'
+    const errorMessage =
+      'CredentialCreate: CredentialType must have an even number of hex characters'
+    assertInvalid(credentialCreate, errorMessage)
+  })
 })

@@ -3,11 +3,13 @@ import { Currency, IssuedCurrency, IssuedCurrencyAmount } from '../common'
 
 import {
   Account,
+  areAddressesEqual,
   BaseTransaction,
   GlobalFlagsInterface,
   isAccount,
   isIssuedCurrency,
   isIssuedCurrencyAmount,
+  isString,
   validateBaseTransaction,
   validateOptionalField,
   validateRequiredField,
@@ -85,13 +87,13 @@ export function validateAMMClawback(tx: Record<string, unknown>): void {
 
   const asset = tx.Asset
 
-  if (tx.Holder === asset.issuer) {
+  if (isString(tx.Holder) && areAddressesEqual(tx.Holder, asset.issuer)) {
     throw new ValidationError(
       'AMMClawback: Holder and Asset.issuer must be distinct',
     )
   }
 
-  if (tx.Account !== asset.issuer) {
+  if (!isString(tx.Account) || !areAddressesEqual(tx.Account, asset.issuer)) {
     throw new ValidationError(
       'AMMClawback: Account must be the same as Asset.issuer',
     )
