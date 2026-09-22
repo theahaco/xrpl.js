@@ -5,14 +5,15 @@ import {
   decode,
   ECDSA,
   encode,
-  SubmittableTransaction,
   ValidationError,
   Wallet,
 } from '../../src'
 import { BatchFlags, BatchSigner } from '../../src/models/transactions/batch'
+import { SponsorFlags } from '../../src/models/transactions/common'
 import {
   combineBatchSigners,
   signMultiBatch,
+  verifyBatchSigners,
 } from '../../src/Wallet/batchSigner'
 
 // rPMh7Pi9ct699iZUTWaytJUoHcJ7cgyziK
@@ -51,6 +52,7 @@ describe('Wallet batch operations', function () {
       transaction = {
         Account: 'rJCxK2hX9tDMzbnn3cg1GU2g19Kfmhzxkp',
         Flags: 1,
+        Sequence: 215,
         RawTransactions: [
           {
             RawTransaction: {
@@ -89,7 +91,7 @@ describe('Wallet batch operations', function () {
             SigningPubKey:
               '02691AC5AE1C4C333AE5DF8A93BDC495F0EEBFC6DB0DA7EB6EF808F3AFC006E3FE',
             TxnSignature:
-              '304502210098890858AA57D6515D7C523FE076FA97BFA87DA666A87B4A7CF44249181DC1DC02201B90E513FE2F45D41FB31850F463C0ECBA8F5126B1AF431B67C4004CA0DD8042',
+              '304502210082FE86BE1CF91682B04EF85FD13A6CF2A74C0EBD48021753821AD167DEF4D311022058C78078550C7E20F35DAC415FE03FBF7D8A610AD354BF0D87D2DD6FE29E34C1',
           },
         },
       ]
@@ -109,7 +111,7 @@ describe('Wallet batch operations', function () {
             SigningPubKey:
               'ED3CC3D14FD80C213BC92A98AFE13A405A030F845EDCFD5E395286A6E9E62BA638',
             TxnSignature:
-              '27B496F0C1F2C4789A0E6CF25265069980190C786053CF5D6C066C07E21D632A6EB87C56275109A8542EEDE782FDC5591EA51FAF28C3FCFCF35BCE960F1D8601',
+              'AA4995012BC1376C37778593B8819F240D774E0C7898799FC6BC6FD84B06F28533F5BC69EBB890CA11CE07920FA38FF08974510F17C2B0022FDE87F453977905',
           },
         },
       ]
@@ -131,7 +133,7 @@ describe('Wallet batch operations', function () {
             SigningPubKey:
               'ED37D3F048B7F1E680B0A97F70C7843160B9F25D6398D07E68B9A2C83AA8E1B156',
             TxnSignature:
-              '046315C731DF089E08EB6662251F12B22938ED462F66BC561A847A87DF6B3C9AC811D9EC5971EDEC2BA96C959BDE883CD838B7EF6460A47AD9B71518F1A2A00B',
+              '7B61EE9C17BA32145EDB791180C3C825556AD00C75DD99C9B76959DEE30FB6FE6E7291DE1F96F9A2F6AD35022018798CF17268947E1E6E053A77FFB39C28630D',
           },
         },
       ]
@@ -158,7 +160,7 @@ describe('Wallet batch operations', function () {
                   SigningPubKey:
                     'ED37D3F048B7F1E680B0A97F70C7843160B9F25D6398D07E68B9A2C83AA8E1B156',
                   TxnSignature:
-                    '8FCA6C1056C2146DC13F4D10BA297335A82F562D837FA3C65D75DCDC87540F61428B7370FCC1DE4D83B6FA1A00A18CD9283E7B08089091ED84CC3E4A8B43F00F',
+                    '1FDE7D437581075DA61E56D0E0D7B57857BBED15016AAC36771201799D5CA35643DC19038533DB2CC89DCAE146F3372EA31D72EB5FC01F37CE4813580FAE2D07',
                 },
               },
             ],
@@ -188,7 +190,7 @@ describe('Wallet batch operations', function () {
                   SigningPubKey:
                     'ED37D3F048B7F1E680B0A97F70C7843160B9F25D6398D07E68B9A2C83AA8E1B156',
                   TxnSignature:
-                    'D80D4195BF67D5CB12CA225D04DA4D00AC77250803671E09DF61F1695A831FAD6BF820F335DD2D8CFE16DA55CFC2E64AEC8A1429524E6CDB6C36B7AEA717C700',
+                    '190CE17CF03760B35EA5CD65EE7BCB976625F0F50A2A36BAE323CE17D554BAB97814802ACD52E2AFA3A1059B3D219BCBCBCD9C531766A7457159709033B3E004',
                 },
               },
             ],
@@ -227,6 +229,87 @@ describe('Wallet batch operations', function () {
         () => signMultiBatch(otherWallet, transaction),
         ValidationError,
         'Must be signing for an address submitting a transaction in the Batch.',
+      )
+    })
+
+    it('signs for the Sponsor of an inner transaction', function () {
+      // XLS-68: the sponsor's authorization of a sponsored inner transaction
+      // is its BatchSigner entry, not a SponsorSignature.
+      transaction.RawTransactions[0].RawTransaction.Sponsor =
+        regkeyWallet.address
+      transaction.RawTransactions[0].RawTransaction.SponsorFlags =
+        SponsorFlags.spfSponsorReserve
+
+      signMultiBatch(regkeyWallet, transaction)
+
+      assert.strictEqual(transaction.BatchSigners?.length, 1)
+      assert.strictEqual(
+        transaction.BatchSigners?.[0].BatchSigner.Account,
+        regkeyWallet.address,
+      )
+      assert.isTrue(
+        verifyBatchSigners(transaction).every((result) => result.valid),
+      )
+    })
+
+    it('appends a signature instead of overwriting existing BatchSigners', function () {
+      signMultiBatch(edWallet, transaction)
+      signMultiBatch(secpWallet, transaction)
+
+      assert.strictEqual(transaction.BatchSigners?.length, 2)
+      assert.includeMembers(
+        transaction.BatchSigners?.map((signer) => signer.BatchSigner.Account) ??
+          [],
+        [secpWallet.address, edWallet.address],
+      )
+      assert.isTrue(
+        verifyBatchSigners(transaction).every((result) => result.valid),
+      )
+    })
+
+    it('pools multisign Signers for the same account', function () {
+      signMultiBatch(regkeyWallet, transaction, {
+        batchAccount: edWallet.address,
+        multisign: true,
+      })
+      signMultiBatch(secpWallet, transaction, {
+        batchAccount: edWallet.address,
+        multisign: true,
+      })
+
+      assert.strictEqual(transaction.BatchSigners?.length, 1)
+      const signers = transaction.BatchSigners?.[0].BatchSigner.Signers
+      assert.strictEqual(signers?.length, 2)
+      assert.includeMembers(
+        signers?.map((signer) => signer.Signer.Account) ?? [],
+        [regkeyWallet.address, secpWallet.address],
+      )
+      assert.isTrue(
+        verifyBatchSigners(transaction).every((result) => result.valid),
+      )
+    })
+
+    it('fails when signing for the Batch Account', function () {
+      assert.throws(
+        () => signMultiBatch(submitWallet, transaction),
+        ValidationError,
+        'is the Batch Account; it signs the outer transaction with Wallet.sign, not as a BatchSigner.',
+      )
+      assert.notProperty(transaction, 'BatchSigners')
+    })
+
+    it('fails when the Batch has not been autofilled', function () {
+      delete transaction.Sequence
+      transaction.RawTransactions[1].RawTransaction.Fee = undefined
+      assert.throws(
+        () => signMultiBatch(edWallet, transaction),
+        ValidationError,
+        'RawTransactions[1].RawTransaction.Fee',
+      )
+      assert.throws(
+        () => signMultiBatch(edWallet, transaction),
+        ValidationError,
+        'Sequence (or TicketSequence)',
       )
     })
 
@@ -302,38 +385,48 @@ describe('Wallet batch operations', function () {
       assert.deepEqual(decode(result).BatchSigners, expectedValid)
     })
 
-    it('removes signer for Batch submitter', function () {
-      // add a third inner transaction from the transaction submitter
-      const rawTx3: { RawTransaction: SubmittableTransaction } = {
-        RawTransaction: {
-          Account: 'rJCxK2hX9tDMzbnn3cg1GU2g19Kfmhzxkp',
-          Amount: '1000000',
-          Destination: 'rPMh7Pi9ct699iZUTWaytJUoHcJ7cgyziK',
-          Fee: '0',
-          Flags: 0x40000000,
-          Sequence: 470,
-          SigningPubKey: '',
-          TransactionType: 'Payment',
-        },
+    it('rejects the Batch Account as a BatchSigner', function () {
+      // rippled answers temBAD_SIGNER, so the combiner must not silently drop
+      // such an entry: it is a signing mistake upstream.
+      const badTx = {
+        ...tx1,
+        BatchSigners: (tx1.BatchSigners ?? []).concat({
+          BatchSigner: {
+            Account: originalTx.Account,
+            SigningPubKey: submitWallet.publicKey,
+            TxnSignature: 'DEADBEEF',
+          },
+        }),
       }
-      const rawTxs = originalTx.RawTransactions.concat(rawTx3)
+      assert.throws(
+        () => combineBatchSigners([badTx, tx2]),
+        ValidationError,
+        'Batch: BatchSigners[1].BatchSigner.Account is the Batch Account; it signs the outer transaction, not as a BatchSigner.',
+      )
+    })
 
-      // set up all the transactions again (repeat what's done in `beforeEach`)
-      const newTx = {
-        ...originalTx,
-        RawTransactions: rawTxs,
-      }
-      tx1 = { ...newTx }
-      tx2 = { ...newTx }
-      const tx3 = { ...newTx }
-      signMultiBatch(edWallet, tx1)
-      signMultiBatch(secpWallet, tx2)
-      signMultiBatch(submitWallet, tx3)
+    it('merges multisign fragments for one account into one BatchSigner', function () {
+      const multiTx1 = { ...originalTx }
+      const multiTx2 = { ...originalTx }
+      signMultiBatch(regkeyWallet, multiTx1, {
+        batchAccount: edWallet.address,
+        multisign: true,
+      })
+      signMultiBatch(secpWallet, multiTx2, {
+        batchAccount: edWallet.address,
+        multisign: true,
+      })
 
-      // run test
-      const result = combineBatchSigners([tx1, tx2, tx3])
-      const expected = (tx1.BatchSigners ?? []).concat(tx2.BatchSigners ?? [])
-      assert.deepEqual(decode(result).BatchSigners, expected)
+      const combined = decode(combineBatchSigners([multiTx1, multiTx2]))
+      const signers = combined.BatchSigners as BatchSigner[]
+      assert.strictEqual(signers.length, 1)
+      assert.strictEqual(signers[0].BatchSigner.Account, edWallet.address)
+      assert.strictEqual(signers[0].BatchSigner.Signers?.length, 2)
+      assert.isTrue(
+        verifyBatchSigners(combined as unknown as Batch).every(
+          (result) => result.valid,
+        ),
+      )
     })
 
     it('fails with no transactions provided', function () {
@@ -404,6 +497,83 @@ describe('Wallet batch operations', function () {
         () => combineBatchSigners([tx1, badTx2]),
         ValidationError,
         'Account, sequence, flags, and transaction hashes must be the same for all provided transactions.',
+      )
+    })
+  })
+
+  describe('verifyBatchSigners', function () {
+    let transaction: Batch
+
+    beforeEach(() => {
+      transaction = {
+        Account: 'rJCxK2hX9tDMzbnn3cg1GU2g19Kfmhzxkp',
+        Flags: BatchFlags.tfAllOrNothing,
+        Sequence: 215,
+        RawTransactions: [
+          {
+            RawTransaction: {
+              Account: 'rJy554HmWFFJQGnRfZuoo8nV97XSMq77h7',
+              Amount: '5000000',
+              Destination: 'rPMh7Pi9ct699iZUTWaytJUoHcJ7cgyziK',
+              Fee: '0',
+              Flags: 0x40000000,
+              Sequence: 215,
+              SigningPubKey: '',
+              TransactionType: 'Payment',
+            },
+          },
+        ],
+        TransactionType: 'Batch',
+      }
+      signMultiBatch(edWallet, transaction)
+    })
+
+    it('accepts a valid signature', function () {
+      assert.deepEqual(verifyBatchSigners(transaction), [
+        { account: edWallet.address, valid: true },
+      ])
+      assert.deepEqual(verifyBatchSigners(encode(transaction)), [
+        { account: edWallet.address, valid: true },
+      ])
+    })
+
+    it('rejects a tampered TxnSignature', function () {
+      const signer = (transaction.BatchSigners ?? [])[0].BatchSigner
+      signer.TxnSignature = `${(signer.TxnSignature ?? '').slice(0, -2)}00`
+      assert.deepEqual(verifyBatchSigners(transaction), [
+        { account: edWallet.address, valid: false },
+      ])
+    })
+
+    it('rejects a signature over a different inner transaction', function () {
+      // Mutating an inner transaction after co-signing invalidates the
+      // BatchSigners, because the signature binds the inner transaction IDs.
+      transaction.RawTransactions[0].RawTransaction.Amount = '5000001'
+      assert.deepEqual(verifyBatchSigners(transaction), [
+        { account: edWallet.address, valid: false },
+      ])
+    })
+
+    it('rejects a BatchSigner with no signature material', function () {
+      transaction.BatchSigners = [
+        { BatchSigner: { Account: edWallet.address } },
+      ]
+      assert.deepEqual(verifyBatchSigners(transaction), [
+        { account: edWallet.address, valid: false },
+      ])
+    })
+
+    it('returns an empty array with no BatchSigners', function () {
+      delete transaction.BatchSigners
+      assert.deepEqual(verifyBatchSigners(transaction), [])
+    })
+
+    it('fails with a non-Batch transaction', function () {
+      assert.throws(
+        // @ts-expect-error - needed for JS/codecov
+        () => verifyBatchSigners(nonBatchTx),
+        ValidationError,
+        'TransactionType must be `Batch`.',
       )
     })
   })

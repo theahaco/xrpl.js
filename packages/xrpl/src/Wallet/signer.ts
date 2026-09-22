@@ -5,6 +5,7 @@ import { ValidationError } from '../errors'
 import { Signer } from '../models/common'
 import { Transaction, validate } from '../models/transactions'
 
+import { verifyBatchSigners } from './batchSigner'
 import { compareSigners, getDecodedTransaction } from './utils'
 
 /**
@@ -57,9 +58,16 @@ function multisign(transactions: Array<Transaction | string>): string {
 /**
  * Verifies that the given transaction has a valid signature based on public-key encryption.
  *
+ * On a Batch transaction, every `BatchSigner` co-signature must also verify
+ * (see `verifyBatchSigners`): the outer `TxnSignature` does not cover
+ * `BatchSigners`, so a valid outer signature alone says nothing about them.
+ * Multi-signed transactions (`Signers` instead of `TxnSignature`) are not
+ * supported and throw.
+ *
  * @param tx - A transaction to verify the signature of. (Can be in object or encoded string format).
- * @param [publicKey] Specific public key to use to verify. If not specified the `SigningPublicKey` of tx will be used.
- * @returns Returns true if tx has a valid signature, and returns false otherwise.
+ * @param [publicKey] Specific public key to use to verify the outer
+ * signature. If not specified the `SigningPublicKey` of tx will be used.
+ * @returns Returns true if tx has a valid signature (and, for a Batch, valid `BatchSigners`), and returns false otherwise.
  * @throws Error when transaction is missing TxnSignature
  * @throws Error when publicKey is not provided and transaction is missing SigningPubKey
  * @category Utilities
@@ -87,7 +95,14 @@ function verifySignature(
     key = decodedTx.SigningPubKey
   }
 
-  return verify(encodeForSigning(decodedTx), decodedTx.TxnSignature, key)
+  if (!verify(encodeForSigning(decodedTx), decodedTx.TxnSignature, key)) {
+    return false
+  }
+
+  if (decodedTx.TransactionType === 'Batch' && decodedTx.BatchSigners != null) {
+    return verifyBatchSigners(decodedTx).every((result) => result.valid)
+  }
+  return true
 }
 
 /**

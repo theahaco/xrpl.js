@@ -6,11 +6,17 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 
 ### Added
 * Add `LendingProtocolV1_1` support.
+* `verifyBatchSigners(batch)` checks every `BatchSigner` co-signature of a `Batch`, including multi-signed entries, and works on unsigned co-signed fragments.
 
 ### Fixed
 * `Client.autofill` now sets `Sequence: 0` on a ticketed transaction (one with `TicketSequence`), both top-level and inside a `Batch`, instead of fetching a live `Sequence` (`temSEQ_AND_TICKET`) or emitting none at all; `validate()` rejects a non-zero `Sequence` alongside `TicketSequence`.
 * `Client.autofill` derives the inner `Sequence`s of a `Batch` from the outer `Sequence` (a caller-supplied one is honoured, and a ticketed outer no longer skips a sequence number), and copies the inner transactions so the caller's objects are never mutated and retrying the same `Batch` recomputes every `Sequence`.
 * The `maxFeeXRP` cap bypass for reserve-priced transactions (`AccountDelete`, `AMMCreate`, `VaultCreate`) now also applies to a `Batch` that contains one; such a `Batch` is also checked for `AccountDelete` blockers and submitted with `fail_hard`.
+* `signMultiBatch` now accepts the `Sponsor` of a sponsored inner transaction as a `BatchSigner`, rejects the Batch `Account` (rippled: `temBAD_SIGNER`; `validate()` now rejects such a `BatchSigners` entry too), requires the Batch to be autofilled first (the co-signature binds the outer sequence value and every inner transaction hash) and appends to existing `BatchSigners` instead of overwriting them.
+* `combineBatchSigners` now merges the `Signers` of multi-signed `BatchSigner` fragments for the same account instead of keeping only one of them, and throws on conflicting entries; its docs now state that the result is unsigned and must still be signed by the Batch `Account`.
+* `Client.submit` / `Client.submitAndWait` now throw instead of silently invalidating the `BatchSigners` of a co-signed `Batch` when autofilling it would change a field the co-signatures bind (for example the outer `Sequence`).
+* `verifySignature` / `Wallet.verifyTransaction` now return `false` for a `Batch` whose `BatchSigners` do not verify; the outer `TxnSignature` does not cover `BatchSigners`, so a valid outer signature alone said nothing about them.
+
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES

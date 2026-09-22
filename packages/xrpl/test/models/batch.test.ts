@@ -134,6 +134,14 @@ describe('Batch', function () {
     )
   })
 
+  it('throws w/ the Batch Account as a BatchSigner', function () {
+    tx.BatchSigners[0].BatchSigner.Account = tx.Account
+    assertInvalid(
+      tx,
+      'Batch: BatchSigners[0].BatchSigner.Account is the Batch Account; it signs the outer transaction, not as a BatchSigner.',
+    )
+  })
+
   it('throws w/ non-object in BatchSigner list', function () {
     tx.BatchSigners = [1]
     assertInvalid(tx, 'Batch: BatchSigners[0] is not object.')

@@ -2,7 +2,9 @@ import { assert } from 'chai'
 import { decode, encode } from 'ripple-binary-codec'
 
 import { Transaction, ValidationError } from '../../src'
+import { Batch, BatchFlags } from '../../src/models/transactions/batch'
 import { Wallet } from '../../src/Wallet'
+import { signMultiBatch } from '../../src/Wallet/batchSigner'
 import { multisign, verifySignature } from '../../src/Wallet/signer'
 
 const publicKey =
@@ -207,6 +209,43 @@ describe('Signer', function () {
       '0330E7FC9D56BB25D6893BA3F317AE5BCF33B3291BD63DB32654A313222F7FD020'
 
     assert.isFalse(verifySignature(decodedTx))
+  })
+
+  it('verifySignature checks the BatchSigners of a Batch', function () {
+    const cosigner = Wallet.generate()
+    const batch: Batch = {
+      TransactionType: 'Batch',
+      Account: address,
+      Flags: BatchFlags.tfAllOrNothing,
+      RawTransactions: [
+        {
+          RawTransaction: {
+            TransactionType: 'Payment',
+            Flags: 0x40000000,
+            Account: cosigner.classicAddress,
+            Destination: address,
+            Amount: '1000',
+            Fee: '0',
+            Sequence: 5,
+            SigningPubKey: '',
+          },
+        },
+      ],
+      Sequence: 1,
+      Fee: '24',
+      SigningPubKey: publicKey,
+    }
+    signMultiBatch(cosigner, batch)
+    assert.isTrue(verifySignature(verifyWallet.sign(batch).tx_blob))
+
+    // BatchSigners is not covered by the outer TxnSignature, so a garbage
+    // co-signature leaves the outer signature valid but the Batch unusable.
+    const signedBatch = decode(
+      verifyWallet.sign(batch).tx_blob,
+    ) as unknown as Batch
+    const signer = (signedBatch.BatchSigners ?? [])[0].BatchSigner
+    signer.TxnSignature = `${(signer.TxnSignature ?? '').slice(0, -2)}00`
+    assert.isFalse(verifySignature(signedBatch))
   })
 
   it('verifySignature throws for a missing public key', function () {
