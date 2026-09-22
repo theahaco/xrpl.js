@@ -47,7 +47,7 @@ describe('AMMClawback', function () {
   })
 
   it(`verifies valid AMMClawback with tfClawTwoAssets`, function () {
-    ammClawback.flags = AMMClawbackFlags.tfClawTwoAssets
+    ammClawback.Flags = AMMClawbackFlags.tfClawTwoAssets
     assertValid(ammClawback)
   })
 

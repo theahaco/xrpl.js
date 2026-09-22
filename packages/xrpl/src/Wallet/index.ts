@@ -4,14 +4,15 @@ import { wordlist } from '@scure/bip39/wordlists/english.js'
 import { bytesToHex } from '@xrplf/isomorphic/utils'
 import BigNumber from 'bignumber.js'
 import { classicAddressToXAddress, encodeSeed } from 'ripple-address-codec'
-import { encode } from 'ripple-binary-codec'
+import { decode, encode } from 'ripple-binary-codec'
 import { deriveAddress, deriveKeypair, generateSeed } from 'ripple-keypairs'
 
 import ECDSA from '../ECDSA'
 import { ValidationError } from '../errors'
 import { Transaction, validate } from '../models/transactions'
-import { GlobalFlags } from '../models/transactions/common'
+import { GlobalFlags, isMPTAmount } from '../models/transactions/common'
 import { hasFlag } from '../models/utils'
+import { convertTxFlagsToNumber } from '../models/utils/flags'
 import { ensureClassicAddress } from '../sugar/utils'
 import { omitBy } from '../utils/collections'
 import { hashSignedTx } from '../utils/hashes/hashLedger'
@@ -400,16 +401,23 @@ export class Wallet {
       )
     }
 
-    removeTrailingZeros(tx)
-
     /*
-     * This will throw a more clear error for JS users if the supplied transaction has incorrect formatting
+     * This will throw a more clear error for JS users if the supplied transaction has incorrect formatting.
+     * It runs before any rewriting below so a malformed field surfaces as a ValidationError
+     * rather than as a TypeError from the rewrite helpers.
      */
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- validate does not accept Transaction type
     validate(tx as unknown as Record<string, unknown>)
     if (hasFlag(tx, GlobalFlags.tfInnerBatchTxn, 'tfInnerBatchTxn')) {
       throw new ValidationError('Cannot sign a Batch inner transaction.')
     }
+
+    // `validate` only converts interface-form Flags on its own copy; the codec needs a number.
+    if (tx.Flags != null) {
+      tx.Flags = convertTxFlagsToNumber(tx)
+    }
+
+    removeTrailingZeros(tx)
 
     const txToSignAndEncode = { ...tx }
 
@@ -434,6 +442,7 @@ export class Wallet {
     }
 
     const serialized = encode(txToSignAndEncode)
+    checkTxSerialization(txToSignAndEncode, serialized)
     return {
       tx_blob: serialized,
       hash: hashSignedTx(serialized),
@@ -464,17 +473,44 @@ export class Wallet {
 }
 
 /**
- * Remove trailing insignificant zeros for non-XRP Payment amount.
+ * Verify that every field of the transaction survived serialization. The binary codec
+ * skips fields it does not know when their name starts with a lowercase letter, so a
+ * typo such as `holder` would otherwise be signed away silently and a different
+ * transaction submitted. `validate` rejects unknown fields up front; this is the
+ * last line of defence against a field the codec knows but does not serialize.
+ *
+ * @param tx - The transaction that was encoded.
+ * @param serialized - The tx_blob produced from it.
+ * @throws ValidationError When a field of `tx` is missing from the decoded blob.
+ */
+function checkTxSerialization(tx: Transaction, serialized: string): void {
+  const decoded = decode(serialized)
+  const dropped = Object.keys(tx).filter((key) => !(key in decoded))
+  if (dropped.length > 0) {
+    throw new ValidationError(
+      `${tx.TransactionType}: field(s) ${dropped
+        .map((key) => `"${key}"`)
+        .join(', ')} were dropped during serialization`,
+    )
+  }
+}
+
+/**
+ * Remove trailing insignificant zeros for issued-currency Payment amounts.
  * This resolves the serialization mismatch bug when encoding/decoding a non-XRP Payment transaction
  * with an amount that contains trailing insignificant zeros; for example, '123.4000' would serialize
  * to '123.4' and cause a mismatch.
  *
- * @param tx - The transaction prior to signing.
+ * MPT amounts are left alone: their value must already be a canonical integer string, and
+ * rewriting `"10.0"` to `"10"` here would hide an input that every other transaction type rejects.
+ *
+ * @param tx - The transaction prior to signing. Must already have passed `validate`.
  */
 function removeTrailingZeros(tx: Transaction): void {
   if (
     tx.TransactionType === 'Payment' &&
     typeof tx.Amount !== 'string' &&
+    !isMPTAmount(tx.Amount) &&
     tx.Amount.value.includes('.') &&
     tx.Amount.value.endsWith('0')
   ) {

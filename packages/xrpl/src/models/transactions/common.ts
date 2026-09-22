@@ -6,7 +6,7 @@ import {
   isValidXAddress,
   xAddressToClassicAddress,
 } from 'ripple-address-codec'
-import { TRANSACTION_TYPES } from 'ripple-binary-codec'
+import { DEFAULT_DEFINITIONS, TRANSACTION_TYPES } from 'ripple-binary-codec'
 
 import { ValidationError } from '../../errors'
 import {
@@ -953,6 +953,56 @@ export function validateSponsorFields(tx: Record<string, unknown>): void {
 }
 
 /**
+ * Fields the SDK accepts on a transaction object but strips or rewrites before
+ * the codec sees them, keyed by the transaction types they are allowed on.
+ * `DeliverMax` is the RPC-level alias for `Payment.Amount` that `autofill`
+ * folds into `Amount`.
+ */
+const SDK_ONLY_FIELDS: ReadonlyMap<string, readonly string[]> = new Map([
+  ['DeliverMax', ['Payment']],
+])
+
+/**
+ * Whether the binary codec knows a field by exactly this name.
+ *
+ * @param key - The field name to look up.
+ * @returns True if the codec has a field definition with this exact name.
+ */
+function isCodecField(key: string): boolean {
+  // `fromString` is a plain property lookup, so it also resolves inherited
+  // members such as `constructor` or `fromString` itself; require a field
+  // record whose name matches exactly.
+  const field: unknown = DEFAULT_DEFINITIONS.field.fromString(key)
+  return isRecord(field) && field.name === key
+}
+
+/**
+ * Reject any top-level key the binary codec does not know. Without this an
+ * unknown key whose first character is lowercase (`holder`, `assetScale`) is
+ * silently dropped at encode time and a *different* transaction is signed,
+ * while an unknown capitalised key only surfaces as a raw codec `Error`.
+ *
+ * @param tx - The transaction object being validated.
+ * @throws ValidationError When a key is not a codec field nor an SDK-only field
+ * permitted on this transaction type.
+ */
+export function validateNoUnknownFields(tx: Record<string, unknown>): void {
+  const txType = String(tx.TransactionType)
+  const unknown = Object.keys(tx).find(
+    (key) => !isCodecField(key) && !SDK_ONLY_FIELDS.get(key)?.includes(txType),
+  )
+  if (unknown == null) {
+    return
+  }
+  const suggestion = Object.keys(DEFAULT_DEFINITIONS.field).find(
+    (name) =>
+      name.toLowerCase() === unknown.toLowerCase() && isCodecField(name),
+  )
+  const hint = suggestion == null ? '' : ` (did you mean "${suggestion}"?)`
+  throw new ValidationError(`${txType}: unknown field "${unknown}"${hint}`)
+}
+
+/**
  * Verify the common fields of a transaction. The validate functionality will be
  * optional, and will check transaction form at runtime. This should be called
  * any time a transaction will be verified.
@@ -983,6 +1033,8 @@ export function validateBaseTransaction(
       `BaseTransaction: Unknown TransactionType ${common.TransactionType}`,
     )
   }
+
+  validateNoUnknownFields(common)
 
   validateRequiredField(common, 'Account', isString)
 
