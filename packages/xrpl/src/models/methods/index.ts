@@ -206,6 +206,8 @@ import {
   TxV1Response,
   TxVersionResponseMap,
   ValidatedTxResponse,
+  SuccessfulTxResponse,
+  SubmitResult,
 } from './tx'
 import {
   UnsubscribeBook,
@@ -655,6 +657,8 @@ export {
   TxResponse,
   TxV1Response,
   ValidatedTxResponse,
+  SuccessfulTxResponse,
+  SubmitResult,
   // path and order book methods with types
   BookOffersRequest,
   BookOffer,

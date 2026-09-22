@@ -151,3 +151,17 @@ export type ValidatedTxResponse<T extends BaseTransaction = Transaction> =
 export type TxVersionResponseMap<
   Version extends APIVersion = typeof DEFAULT_API_VERSION,
 > = Version extends typeof RIPPLED_API_V1 ? TxV1Response : TxResponse
+
+/** A validated transaction whose operation succeeded. */
+export type SuccessfulTxResponse<T extends BaseTransaction = Transaction> =
+  ValidatedTxResponse<T> & {
+    result: { meta: { TransactionResult: 'tesSUCCESS' } }
+  }
+
+/**
+ * Explicit outcome of trySubmitAndWait. An error can represent a failed ledger
+ * transaction or an unknown outcome after a transport failure; do not retry blindly.
+ */
+export type SubmitResult<T extends BaseTransaction = Transaction> =
+  | { ok: true; response: SuccessfulTxResponse<T> }
+  | { ok: false; error: Error }

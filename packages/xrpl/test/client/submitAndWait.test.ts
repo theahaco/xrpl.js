@@ -1,6 +1,6 @@
 import { assert } from 'chai'
 
-import { XrplError } from '../../src'
+import { XrplError, TransactionFailedError } from '../../src'
 import { Transaction } from '../../src/models/transactions'
 import rippled from '../fixtures/rippled'
 import {
@@ -148,7 +148,7 @@ describe('client.submitAndWait', function () {
     })
   })
 
-  it('returns a validated tec result for the caller to inspect', async function () {
+  it('throws a structured error for an unsuccessful validated result', async function () {
     addSubmission('tecUNFUNDED_PAYMENT')
     testContext.mockRippled!.addResponse('tx', {
       ...validatedTx,
@@ -161,12 +161,48 @@ describe('client.submitAndWait', function () {
       },
     })
 
-    const response = await testContext.client.submitAndWait(signedTransaction)
+    try {
+      await testContext.client.submitAndWait(signedTransaction)
+      assert.fail('Expected unsuccessful transaction to throw')
+    } catch (error) {
+      assert.instanceOf(error, TransactionFailedError)
+      if (!(error instanceof TransactionFailedError)) {
+        throw error
+      }
+      assert.strictEqual(error.phase, 'validated')
+      assert.strictEqual(error.engineResult, 'tecUNFUNDED_PAYMENT')
+      assert.strictEqual(error.response?.result.validated, true)
+    }
+  })
+  it('returns an explicit failed result from trySubmitAndWait', async function () {
+    addSubmission('tecUNFUNDED_PAYMENT')
+    testContext.mockRippled!.addResponse('tx', {
+      ...validatedTx,
+      result: {
+        ...validatedTx.result,
+        meta: {
+          ...validatedTx.result.meta,
+          TransactionResult: 'tecUNFUNDED_PAYMENT',
+        },
+      },
+    })
+    const result = await testContext.client.trySubmitAndWait(signedTransaction)
+    assert.isFalse(result.ok)
+    assert.instanceOf(result.error, TransactionFailedError)
+  })
 
-    assert.strictEqual(response.result.validated, true)
-    assert.strictEqual(
-      response.result.meta.TransactionResult,
-      'tecUNFUNDED_PAYMENT',
-    )
+  it('returns an explicit successful response from trySubmitAndWait', async function () {
+    addSubmission()
+    testContext.mockRippled!.addResponse('tx', validatedTx)
+    const result = await testContext.client.trySubmitAndWait(signedTransaction)
+    assert.isTrue(result.ok)
+    assert.strictEqual(result.response.result.validated, true)
+  })
+
+  it('returns malformed submission errors rather than throwing from the try method', async function () {
+    testContext.mockRippled!.addResponse('submit', rippled.submit.temError)
+    const result = await testContext.client.trySubmitAndWait(signedTransaction)
+    assert.isFalse(result.ok)
+    assert.instanceOf(result.error, XrplError)
   })
 })

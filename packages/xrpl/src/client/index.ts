@@ -7,6 +7,7 @@ import {
   RippledError,
   NotFoundError,
   ValidationError,
+  TransactionFailedError,
   XrplError,
 } from '../errors'
 import {
@@ -32,7 +33,8 @@ import {
   // ledger methods
   LedgerDataRequest,
   LedgerDataResponse,
-  ValidatedTxResponse,
+  SuccessfulTxResponse,
+  SubmitResult,
 } from '../models/methods'
 import type {
   BaseRequest,
@@ -90,7 +92,12 @@ import {
   separateBuySellOrders,
   sortAndLimitOffers,
 } from '../sugar/getOrderbook'
-import { dropsToXrp, hashes, isValidClassicAddress } from '../utils'
+import {
+  dropsToXrp,
+  hashes,
+  isValidClassicAddress,
+  isTesSuccess,
+} from '../utils'
 import { SignedBlob, Wallet } from '../Wallet'
 import {
   type FaucetRequestBody,
@@ -98,6 +105,7 @@ import {
   requestFunding,
 } from '../Wallet/fundWallet'
 
+import { createCommands, Commands } from './commands'
 import {
   Connection,
   ConnectionUserOptions,
@@ -109,6 +117,8 @@ import {
 } from './partialPayment'
 
 export interface ClientOptions extends ConnectionUserOptions {
+  /** Default signing wallet. WalletClient also exposes transaction builders. */
+  wallet?: Wallet
   /**
    * Multiplication factor to multiply estimated fee by to provide a cushion in case the
    * required fee rises during submission of a transaction. Defaults to 1.2.
@@ -244,6 +254,12 @@ class Client extends EventEmitter<EventTypes> {
    */
   public apiVersion: APIVersion = DEFAULT_API_VERSION
 
+  /** Default wallet used to sign unsigned transactions. */
+  public readonly wallet?: Wallet
+
+  /** Discover modeled server commands and their inferred replies. */
+  public readonly command: Commands = createCommands(this)
+
   /**
    * Creates a new Client with a websocket connection to a rippled server.
    *
@@ -276,6 +292,7 @@ class Client extends EventEmitter<EventTypes> {
       )
     }
 
+    this.wallet = options.wallet
     this.feeCushion = options.feeCushion ?? DEFAULT_FEE_CUSHION
     this.maxFeeXRP = options.maxFeeXRP ?? DEFAULT_MAX_FEE_XRP
 
@@ -839,70 +856,26 @@ class Client extends EventEmitter<EventTypes> {
       wallet?: Wallet
     },
   ): Promise<SubmitResponse> {
-    const signedTx = await getSignedTx(this, transaction, opts)
+    const signedTx = await getSignedTx(this, transaction, {
+      ...opts,
+      wallet: opts?.wallet ?? this.wallet,
+    })
     return submitRequest(this, signedTx, opts?.failHard)
   }
 
   /**
-   * Asynchronously submits a transaction and verifies that it has been included in a
-   * validated ledger (or has errored/will not be included for some reason).
-   * See [Reliable Transaction Submission](https://xrpl.org/reliable-transaction-submission.html).
+   * Prepare, sign and submit a transaction; resolve only after validated success.
+   * No result-code string comparisons are needed in the application.
+   * Use trySubmitAndWait for an explicit success/error result instead of exceptions.
    *
-   * @category Core
-   *
-   * @example
-   * ```ts
-   * import { Client, xrpToDrops } from 'xrpl'
-   * import type { Payment } from 'xrpl'
-   *
-   * const client = new Client('wss://s.altnet.rippletest.net:51233')
-   * try {
-   *   await client.connect()
-   *   const { wallet: sender } = await client.fundWallet()
-   *   const { wallet: recipient } = await client.fundWallet()
-   *   const payment = {
-   *     TransactionType: 'Payment',
-   *     Account: sender.address,
-   *     Destination: recipient.address,
-   *     Amount: xrpToDrops('1'),
-   *   } satisfies Payment
-   *   const response = await client.submitAndWait(payment, { wallet: sender })
-   *   if (response.result.meta.TransactionResult !== 'tesSUCCESS') {
-   *     throw new Error(response.result.meta.TransactionResult)
-   *   }
-   *   console.log(response.result.hash)
-   * } finally {
-   *   await client.disconnect()
-   * }
-   * ```
-   *
-   * The promise resolves as soon as the transaction is in a validated ledger, **whatever its result**. A transaction
-   * validated with a `tec*` code (e.g. `tecNO_AUTH`, `tecLOCKED`, `tecINSUFFICIENT_FUNDS`, `tecUNFUNDED_PAYMENT`) did
-   * not have its intended effect but did reach the ledger and charged its fee, so it resolves normally: always read
-   * `result.meta.TransactionResult` (see `getTransactionResultCode` and `isTesSuccess`) before treating a resolved
-   * promise as success.
-   *
-   * @remarks `autofill` reads the account's `Sequence` from the server and reserves nothing, so concurrent
-   * `submitAndWait` calls for the same account can select the same `Sequence` and conflict.
-   * Submit one transaction at a time per account, or use Tickets (`TicketCreate` + `TicketSequence`) for
-   * parallel submissions.
-   * Confirmation uses API version 2 for its internal transaction lookup, even
-   * when `client.apiVersion` is 1, so the validated result consistently uses
-   * the `tx_json` response shape.
-   * @param transaction - A transaction to autofill, sign & encode, and submit.
-   * @param opts - (Optional) Options used to sign and submit a transaction.
-   * @param opts.autofill - If true, autofill a transaction.
-   * @param opts.failHard - If true, and the transaction fails locally, do not retry or relay the transaction to other servers.
-   * @param opts.wallet - A wallet to sign a transaction. It must be provided when submitting an unsigned transaction.
-   * @throws {ValidationError} If the transaction is unsigned and no wallet is given, or it has no `LastLedgerSequence`.
-   * @throws {XrplError} If the preliminary result is malformed (`tem*`), or the
-   * transaction expires before it can be found in a validated ledger.
-   * @throws {Error} If a network or server request fails. Errors from the
-   * transaction lookup are wrapped in a generic Error by the existing polling
-   * path. The transaction may still have been submitted: look it up by hash
-   * before re-submitting.
-   * @returns A promise that resolves with the validated transaction: `result.meta` is decoded
-   * metadata (never a hex string, never `undefined`) and `result.validated` is `true`.
+   * @remarks Submit sequentially per account, or manage Tickets explicitly.
+   * Confirmation requests API v2 independently of client.apiVersion.
+   * A transport error can leave the outcome unknown: inspect by hash before retrying.
+   * @param transaction - A transaction or signed blob.
+   * @param opts - Signing and submission options; the client wallet is the default.
+   * @returns A successful validated response with decoded metadata.
+   * @throws TransactionFailedError for an unsuccessful validated outcome.
+   * @throws Error for validation, submission, transport or expiry failures.
    */
   public async submitAndWait<
     const T extends SubmittableTransaction = SubmittableTransaction,
@@ -913,7 +886,7 @@ class Client extends EventEmitter<EventTypes> {
       failHard?: boolean
       wallet?: Wallet
     },
-  ): Promise<ValidatedTxResponse<T>>
+  ): Promise<SuccessfulTxResponse<T>>
 
   public async submitAndWait<
     T extends SubmittableTransaction = SubmittableTransaction,
@@ -925,7 +898,7 @@ class Client extends EventEmitter<EventTypes> {
       failHard?: boolean
       wallet?: Wallet
     },
-  ): Promise<ValidatedTxResponse<T>>
+  ): Promise<SuccessfulTxResponse<T>>
 
   public async submitAndWait<
     T extends SubmittableTransaction = SubmittableTransaction,
@@ -939,31 +912,68 @@ class Client extends EventEmitter<EventTypes> {
       // A wallet to sign a transaction. It must be provided when submitting an unsigned transaction.
       wallet?: Wallet
     },
-  ): Promise<ValidatedTxResponse<T>> {
-    const signedTx = await getSignedTx(this, transaction, opts)
+  ): Promise<SuccessfulTxResponse<T>> {
+    return this.submitSuccessfulTransaction(transaction, opts)
+  }
 
-    const lastLedger = getLastLedgerSequence(signedTx)
-    if (lastLedger == null) {
-      throw new ValidationError(
-        'Transaction must contain a LastLedgerSequence value for reliable submission.',
-      )
+  /**
+   * Submit and wait without throwing: inspect ok, then response or error.
+   * Transport and expiry errors may leave the ledger outcome unknown.
+   *
+   * @param transaction - Transaction or signed blob.
+   * @param opts - Optional signing and submission settings.
+   * @returns An explicit success or error result.
+   */
+  public async trySubmitAndWait<
+    const T extends SubmittableTransaction = SubmittableTransaction,
+  >(
+    transaction: StrictTransaction<T>,
+    opts?: {
+      autofill?: boolean
+      failHard?: boolean
+      wallet?: Wallet
+    },
+  ): Promise<SubmitResult<T>>
+
+  public async trySubmitAndWait<
+    T extends SubmittableTransaction = SubmittableTransaction,
+  >(
+    // eslint-disable-next-line @typescript-eslint/unified-signatures -- JSON/blob union breaks transaction-union inference
+    transaction: SignedBlob<T> | string,
+    opts?: {
+      autofill?: boolean
+      failHard?: boolean
+      wallet?: Wallet
+    },
+  ): Promise<SubmitResult<T>>
+
+  public async trySubmitAndWait<
+    T extends SubmittableTransaction = SubmittableTransaction,
+  >(
+    transaction: T | SignedBlob<T> | string,
+    opts?: {
+      // If true, autofill a transaction.
+      autofill?: boolean
+      // If true, and the transaction fails locally, do not retry or relay the transaction to other servers.
+      failHard?: boolean
+      // A wallet to sign a transaction. It must be provided when submitting an unsigned transaction.
+      wallet?: Wallet
+    },
+  ): Promise<SubmitResult<T>> {
+    try {
+      return {
+        ok: true,
+        response: await this.submitSuccessfulTransaction(transaction, opts),
+      }
+    } catch (error) {
+      return {
+        ok: false,
+        error:
+          error instanceof Error
+            ? error
+            : new XrplError('Submission failed', error),
+      }
     }
-
-    const response = await submitRequest(this, signedTx, opts?.failHard)
-
-    if (response.result.engine_result.startsWith('tem')) {
-      throw new XrplError(
-        `Transaction failed, ${response.result.engine_result}: ${response.result.engine_result_message}`,
-      )
-    }
-
-    const txHash = hashes.hashSignedTx(signedTx)
-    return waitForFinalTransactionOutcome(
-      this,
-      txHash,
-      lastLedger,
-      response.result.engine_result,
-    )
   }
 
   /**
@@ -1333,6 +1343,52 @@ class Client extends EventEmitter<EventTypes> {
       walletToFund,
       postBody,
     )
+  }
+
+  private async submitSuccessfulTransaction<T extends SubmittableTransaction>(
+    transaction: T | SignedBlob<T> | string,
+    opts?: { autofill?: boolean; failHard?: boolean; wallet?: Wallet },
+  ): Promise<SuccessfulTxResponse<T>> {
+    const signedTx = await getSignedTx(this, transaction, {
+      ...opts,
+      wallet: opts?.wallet ?? this.wallet,
+    })
+
+    const lastLedger = getLastLedgerSequence(signedTx)
+    if (lastLedger == null) {
+      throw new ValidationError(
+        'Transaction must contain a LastLedgerSequence value for reliable submission.',
+      )
+    }
+
+    const submission = await submitRequest(this, signedTx, opts?.failHard)
+
+    if (submission.result.engine_result.startsWith('tem')) {
+      throw new XrplError(
+        `Transaction failed, ${submission.result.engine_result}: ${submission.result.engine_result_message}`,
+      )
+    }
+
+    const txHash = hashes.hashSignedTx(signedTx)
+    const response = await waitForFinalTransactionOutcome<T>(
+      this,
+      txHash,
+      lastLedger,
+      submission.result.engine_result,
+    )
+    if (!isTesSuccess(response.result.meta.TransactionResult)) {
+      throw new TransactionFailedError(
+        `Transaction failed: ${response.result.meta.TransactionResult}`,
+        {
+          engineResult: response.result.meta.TransactionResult,
+          phase: 'validated',
+          response,
+        },
+        response,
+      )
+    }
+    // The success code is checked above; all other response fields are preserved.
+    return response as SuccessfulTxResponse<T>
   }
 }
 

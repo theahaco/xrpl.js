@@ -1,4 +1,6 @@
-/* eslint-disable max-classes-per-file -- Errors can be defined in the same file */
+/* eslint-disable max-classes-per-file -- Error subclasses share this module. */
+import type { ValidatedTxResponse } from './models/methods/tx'
+
 /**
  * Base Error class for xrpl.js. All Errors thrown by xrpl.js should throw
  * XrplErrors.
@@ -118,17 +120,10 @@ class ResponseFormatError extends ConnectionError {}
 class ValidationError extends XrplError {}
 
 /**
- * Error thrown by `submitAndWait` when a transaction will never reach a validated ledger.
- *
- * It is thrown in two situations, distinguished by `phase`:
- * - `'submit'`: the preliminary result of the `submit` request was terminal (`tem*`,
- *   `tef*` or `tel*`), so rippled neither applied, queued, nor relayed the transaction.
- * - `'expired'`: the transaction's `LastLedgerSequence` was passed by the validated
- *   ledger without the transaction being included in a validated ledger.
- *
- * A validated `tec*` result does NOT throw this error: the transaction reached a
- * validated ledger (and charged its fee), so `submitAndWait` resolves and the code is
- * in `result.meta.TransactionResult`. See `getTransactionResultCode` and `isTesSuccess`.
+ * A transaction with a known unsuccessful result.
+ * submitAndWait throws this after an unsuccessful validated outcome. The response
+ * retains the transaction hash and parsed metadata; ledger fees may still apply.
+ * Preliminary retryable results continue through the existing confirmation loop.
  *
  * @category Errors
  */
@@ -137,8 +132,10 @@ class TransactionFailedError extends XrplError {
   public readonly engineResult: string
   /** rippled's human-readable description of `engineResult`, when it was available. */
   public readonly engineResultMessage: string | undefined
-  /** Whether the failure was detected at submission or after `LastLedgerSequence` passed. */
-  public readonly phase: 'submit' | 'expired'
+  /** Whether failure was detected at submission, expiry or validated inclusion. */
+  public readonly phase: 'submit' | 'expired' | 'validated'
+  /** The validated failure, when available. */
+  public readonly response?: ValidatedTxResponse
 
   /**
    * Construct a TransactionFailedError.
@@ -147,7 +144,8 @@ class TransactionFailedError extends XrplError {
    * @param details - The engine result that caused the failure and the phase it was detected in.
    * @param details.engineResult - The engine result code.
    * @param details.engineResultMessage - rippled's description of the engine result, if any.
-   * @param details.phase - `'submit'` for a terminal preliminary result, `'expired'` when `LastLedgerSequence` passed.
+   * @param details.phase - The phase in which failure was established.
+   * @param details.response - Validated response carrying the unsuccessful outcome.
    * @param data - The data that caused the error (the `submit` result, when available).
    */
   public constructor(
@@ -155,7 +153,8 @@ class TransactionFailedError extends XrplError {
     details: {
       engineResult: string
       engineResultMessage?: string
-      phase: 'submit' | 'expired'
+      phase: 'submit' | 'expired' | 'validated'
+      response?: ValidatedTxResponse
     },
     data?: unknown,
   ) {
@@ -163,6 +162,7 @@ class TransactionFailedError extends XrplError {
     this.engineResult = details.engineResult
     this.engineResultMessage = details.engineResultMessage
     this.phase = details.phase
+    this.response = details.response
   }
 }
 
