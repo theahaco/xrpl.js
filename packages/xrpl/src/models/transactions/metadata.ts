@@ -89,6 +89,14 @@ export interface TransactionMetadataBase {
   TransactionIndex: number
   TransactionResult: string
 
+  /**
+   * Present on the metadata of an inner transaction of a `Batch` that was
+   * applied to the ledger: the hash of the outer `Batch` transaction. An inner
+   * transaction is recorded as its own transaction (looked up by the hash
+   * `getBatchInnerHashes` computes) with its own `TransactionResult`; an inner
+   * transaction that was reverted or skipped is not recorded at all. See
+   * `Batch` and `Client.getBatchResults`.
+   */
   ParentBatchID?: string
 }
 

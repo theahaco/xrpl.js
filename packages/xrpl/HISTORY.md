@@ -6,6 +6,7 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 
 ### Added
 * Add `LendingProtocolV1_1` support.
+* Add `getBatchInnerHashes` and `Client.getBatchResults`, which report the per-inner outcome of a `Batch` (`tesSUCCESS`, a `tec` code, or `not-applied`) that the outer `tesSUCCESS` of `submit`/`submitAndWait` does not describe. The `Batch` model, `BatchFlags`, `BatchSigner` and `ParentBatchID` are now documented, including which inner transactions are reverted or skipped under each flag.
 
 ### Fixed
 * `Client.autofill` now sets `Sequence: 0` on a ticketed transaction (one with `TicketSequence`), both top-level and inside a `Batch`, instead of fetching a live `Sequence` (`temSEQ_AND_TICKET`) or emitting none at all; `validate()` rejects a non-zero `Sequence` alongside `TicketSequence`.

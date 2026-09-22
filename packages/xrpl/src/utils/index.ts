@@ -32,6 +32,7 @@ import { Transaction } from '../models/transactions/transaction'
 
 import { deriveKeypair, deriveAddress, deriveXAddress } from './derive'
 import getBalanceChanges from './getBalanceChanges'
+import getBatchInnerHashes from './getBatchInnerHashes'
 import getNFTokenID from './getNFTokenID'
 import getXChainClaimID from './getXChainClaimID'
 import {
@@ -200,6 +201,7 @@ const hashes = {
 
 export {
   getBalanceChanges,
+  getBatchInnerHashes,
   dropsToXrp,
   xrpToDrops,
   hasNextPage,
