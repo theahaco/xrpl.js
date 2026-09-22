@@ -14,8 +14,13 @@ import {
 } from './common'
 
 /**
- * The ConfidentialMPTClawback transaction lets an issuer claw back a confidential
- * MPT amount from a holder's confidential balance.
+ * The ConfidentialMPTClawback transaction lets an issuer claw back a holder's
+ * confidential (encrypted) MPT balance (XLS-96). It is all-or-nothing: rippled
+ * always burns the holder's entire confidential balance. The `ZKProof` is built
+ * against the holder's issuer-encrypted balance, so the issuer needs the ElGamal
+ * keypair whose public key it registered as `IssuerEncryptionKey`. The holder's
+ * transparent balance is not affected; use the plain `Clawback` transaction for
+ * that. Use {@link prepareConfidentialClawback} to build this transaction.
  *
  * @category Transaction Models
  */
@@ -28,7 +33,11 @@ export interface ConfidentialMPTClawback extends BaseTransaction {
   /** The XRPL Address of the holder whose confidential balance is clawed back. */
   Holder: Account
   /**
-   * The MPT amount being clawed back from the holder.
+   * The holder's entire confidential balance, as a decimal string. Confidential
+   * clawback is all-or-nothing: this must equal the full balance, because the
+   * `ZKProof` binds it to the holder's issuer-encrypted balance ciphertext. A
+   * smaller value does not claw back a partial amount; it produces a proof that
+   * rippled rejects (`tecBAD_PROOF`).
    */
   MPTAmount: string
   /**

@@ -228,6 +228,24 @@ describe('MPTokenIssuanceCreate', function () {
     assertInvalid(invalid, 'MPTokenIssuanceCreate: MaximumAmount out of range')
   })
 
+  it(`verifies TransferFee 0 without tfMPTCanTransfer`, function () {
+    // rippled only requires tfMPTCanTransfer for a non-zero fee (temMALFORMED
+    // otherwise); a zero fee is always allowed, with or without the flag, and
+    // alongside tfMPTCanHoldConfidentialBalance.
+    assertValid({
+      TransactionType: 'MPTokenIssuanceCreate',
+      Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+      TransferFee: 0,
+    } as any)
+
+    assertValid({
+      TransactionType: 'MPTokenIssuanceCreate',
+      Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+      TransferFee: 0,
+      Flags: { tfMPTCanHoldConfidentialBalance: true },
+    } as any)
+  })
+
   it(`throws with Zero DomainID`, function () {
     const invalid = {
       TransactionType: 'MPTokenIssuanceCreate',

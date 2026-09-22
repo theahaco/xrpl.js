@@ -135,6 +135,10 @@ export const tifMPTokenIssuanceImmutableMask = ~(
  */
 // eslint-disable-next-line max-len -- Disable for interface declaration.
 export interface MPTokenIssuanceCreateFlagsInterface extends GlobalFlagsInterface {
+  /**
+   * If set, indicates that the MPT can be locked both individually and globally.
+   * If not set, the MPT cannot be locked in any way.
+   */
   tfMPTCanLock?: boolean
   /**
    * If set, indicates that individual holders must be authorized.
@@ -207,12 +211,19 @@ export interface MPTokenIssuanceCreateImmutableFlagsInterface {
 }
 
 /**
- * The MPTokenIssuanceCreate transaction creates a MPTokenIssuance object
- * and adds it to the relevant directory node of the creator account.
- * This transaction is the only opportunity an issuer has to specify any token fields
- * that are defined as immutable (e.g., MPT Flags). If the transaction is successful,
- * the newly created token will be owned by the account (the creator account) which
- * executed the transaction.
+ * The MPTokenIssuanceCreate transaction creates a MPTokenIssuance object and
+ * adds it to the relevant directory node of the creator account, which becomes
+ * the issuer. Only `AssetScale` and `MaximumAmount` are fixed here for the life
+ * of the issuance. The capability flags, `MPTokenMetadata` and `TransferFee`
+ * can still be changed later through MPTokenIssuanceSet (flags can only ever be
+ * turned on, never off) unless pinned with `ImmutableFlags` (XLS-94D DynamicMPT).
+ * Set `ImmutableFlags` here for any capability that holders must be able to rely
+ * on never appearing, such as `tifMPTCanTrade` or `tifMPTCanHoldConfidentialBalance`.
+ *
+ * The resulting `MPTokenIssuanceID` is derived from the issuer address and the
+ * sequence number the transaction consumed (`TicketSequence` when submitted with
+ * a ticket, otherwise `Sequence`). It is reported in the transaction metadata as
+ * `mpt_issuance_id`.
  */
 export interface MPTokenIssuanceCreate extends BaseTransaction {
   TransactionType: 'MPTokenIssuanceCreate'
@@ -226,8 +237,9 @@ export interface MPTokenIssuanceCreate extends BaseTransaction {
   AssetScale?: number
   /**
    * Specifies the maximum asset amount of this token that should ever be issued.
-   * It is a non-negative integer string that can store a range of up to 63 bits. If not set, the max
-   * amount will default to the largest unsigned 63-bit integer (0x7FFFFFFFFFFFFFFF or 9223372036854775807)
+   * A positive integer string between 1 and 9223372036854775807 (2^63 - 1)
+   * inclusive; `'0'` is rejected (`temMALFORMED`). If not set, the maximum
+   * defaults to 2^63 - 1 (0x7FFFFFFFFFFFFFFF). Cannot be changed after creation.
    *
    * Example:
    * ```
@@ -236,10 +248,12 @@ export interface MPTokenIssuanceCreate extends BaseTransaction {
    */
   MaximumAmount?: string
   /**
-   * Specifies the fee to charged by the issuer for secondary sales of the Token,
-   * if such sales are allowed. Valid values for this field are between 0 and 50,000 inclusive,
-   * allowing transfer rates of between 0.000% and 50.000% in increments of 0.001.
-   * The field must NOT be present if the `tfMPTCanTransfer` flag is not set.
+   * The fee charged by the issuer on secondary sales (holder-to-holder
+   * transfers), in units of 0.001%. Valid values are 0 to 50,000 inclusive,
+   * that is 0% to 50% (50,000 = 50%). `0` is always allowed. A non-zero value
+   * requires the `tfMPTCanTransfer` flag and cannot be combined with
+   * `tfMPTCanHoldConfidentialBalance` (`temBAD_TRANSFER_FEE`). Mutable later via
+   * MPTokenIssuanceSet unless `tifMPTTransferFee` is set in `ImmutableFlags`.
    */
   TransferFee?: number
 
@@ -264,7 +278,10 @@ export interface MPTokenIssuanceCreate extends BaseTransaction {
    */
   ImmutableFlags?: number
 
-  /* The domainID that governs admissibility pertaining to the MPToken. */
+  /**
+   * The PermissionedDomain object ID that gates who may hold this MPT (XLS-80).
+   * Only valid together with the `tfMPTRequireAuth` flag.
+   */
   DomainID?: string
 }
 
