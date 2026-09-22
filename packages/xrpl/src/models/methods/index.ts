@@ -121,6 +121,11 @@ import {
   LedgerEntryResponse,
 } from './ledgerEntry'
 import { ManifestRequest, ManifestResponse } from './manifest'
+import {
+  MPTHolder,
+  MPTHoldersRequest,
+  MPTHoldersResponse,
+} from './mptHolders'
 import { NFTBuyOffersRequest, NFTBuyOffersResponse } from './nftBuyOffers'
 import {
   NFTHistoryRequest,
@@ -257,6 +262,7 @@ type Request =
   | NFTInfoRequest
   | NFTHistoryRequest
   | NFTsByIssuerRequest
+  | MPTHoldersRequest
   // AMM methods
   | AMMInfoRequest
   // Price Oracle methods
@@ -319,6 +325,7 @@ type Response<Version extends APIVersion = typeof DEFAULT_API_VERSION> =
   | NFTInfoResponse
   | NFTHistoryResponse
   | NFTsByIssuerResponse
+  | MPTHoldersResponse
   // AMM methods
   | AMMInfoResponse
   // Price Oracle methods
@@ -489,6 +496,8 @@ export type RequestResponseMap<
   ? NFTsByIssuerResponse
   : T extends NFTHistoryRequest
   ? NFTHistoryResponse
+  : T extends MPTHoldersRequest
+  ? MPTHoldersResponse
   : T extends VaultInfoRequest
   ? VaultInfoResponse
   : Response<Version>
@@ -523,6 +532,8 @@ export type RequestAllResponseMap<
   ? LedgerDataResponse
   : T extends BookOffersRequest
   ? BookOffersResponse
+  : T extends MPTHoldersRequest
+  ? MPTHoldersResponse
   : MarkerResponse<Version>
 
 export {
@@ -679,6 +690,9 @@ export {
   NFTHistoryTransaction,
   NFTsByIssuerRequest,
   NFTsByIssuerResponse,
+  MPTHolder,
+  MPTHoldersRequest,
+  MPTHoldersResponse,
   // AMM methods
   AMMInfoRequest,
   AMMInfoResponse,
