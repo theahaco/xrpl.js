@@ -171,11 +171,9 @@ describe('Clawback', function () {
           },
         })
 
-      assert.equal(
-        // @ts-expect-error: Known issue with unknown object type
-        ledgerEntryResponse.result.node.MPTAmount,
-        '9223372036854775807',
-      )
+      let holderToken = ledgerEntryResponse.result.node
+      assert(holderToken?.LedgerEntryType === 'MPToken')
+      assert.equal(holderToken.MPTAmount, '9223372036854775807')
 
       // actual test - clawback
       const clawTx: Clawback = {
@@ -197,11 +195,9 @@ describe('Clawback', function () {
         },
       })
 
-      assert.equal(
-        // @ts-expect-error: Known issue with unknown object type
-        ledgerEntryResponse.result.node.MPTAmount,
-        '9223372036854775307',
-      )
+      holderToken = ledgerEntryResponse.result.node
+      assert(holderToken?.LedgerEntryType === 'MPToken')
+      assert.equal(holderToken.MPTAmount, '9223372036854775307')
     },
     TIMEOUT,
   )

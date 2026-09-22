@@ -6,7 +6,10 @@ import Amendments, { Majority, AMENDMENTS_ID } from './Amendments'
 import AMM, { VoteSlot } from './AMM'
 import Bridge from './Bridge'
 import Check from './Check'
-import Credential from './Credential'
+import Credential, {
+  CredentialFlags,
+  CredentialFlagsInterface,
+} from './Credential'
 import Delegate from './Delegate'
 import DepositPreauth from './DepositPreauth'
 import DID from './DID'
@@ -22,7 +25,7 @@ import { LedgerEntry, LedgerEntryFilter } from './LedgerEntry'
 import LedgerHashes from './LedgerHashes'
 import Loan, { LoanFlags } from './Loan'
 import LoanBroker from './LoanBroker'
-import { MPToken } from './MPToken'
+import { MPToken, MPTokenFlags, MPTokenFlagsInterface } from './MPToken'
 import {
   MPTokenIssuance,
   MPTokenIssuanceFlags,
@@ -54,6 +57,8 @@ export {
   Bridge,
   Check,
   Credential,
+  CredentialFlags,
+  CredentialFlagsInterface,
   Delegate,
   DepositPreauth,
   DirectoryNode,
@@ -80,6 +85,8 @@ export {
   MPTokenIssuanceImmutableFlags,
   MPTokenIssuanceImmutableFlagsInterface,
   MPToken,
+  MPTokenFlags,
+  MPTokenFlagsInterface,
   NFTokenOffer,
   NFTokenPage,
   NFToken,

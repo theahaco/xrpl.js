@@ -3,6 +3,7 @@ import { assert } from 'chai'
 import {
   decodeMPTokenMetadata,
   encodeMPTokenMetadata,
+  MPTokenIssuance,
   MPTokenIssuanceCreate,
   MPTokenIssuanceCreateFlags,
   MPTokenIssuanceCreateImmutableFlags,
@@ -11,7 +12,6 @@ import {
   parseMPTokenIssuanceImmutableFlags,
   TransactionMetadata,
 } from '../../../src'
-import type { MPTokenIssuance } from '../../../src/models/ledger/MPTokenIssuance'
 import serverUrl from '../serverUrl'
 import {
   setupClient,
@@ -83,17 +83,13 @@ describe('MPTokenIssuanceCreate', function () {
         1,
         'Should be exactly one issuance on the ledger',
       )
-      assert.equal(
-        // @ts-expect-error: Known issue with unknown object type
-        accountObjectsResponse.result.account_objects[0].MaximumAmount,
-        `9223372036854775807`,
-      )
+      const issuance = accountObjectsResponse.result.account_objects[0]
+      assert(issuance.LedgerEntryType === 'MPTokenIssuance')
+      assert.equal(issuance.MaximumAmount, `9223372036854775807`)
 
+      assert(issuance.MPTokenMetadata != null)
       assert.deepStrictEqual(
-        decodeMPTokenMetadata(
-          // @ts-expect-error: Known issue with unknown object type
-          accountObjectsResponse.result.account_objects[0].MPTokenMetadata,
-        ),
+        decodeMPTokenMetadata(issuance.MPTokenMetadata),
         metadata,
       )
     },

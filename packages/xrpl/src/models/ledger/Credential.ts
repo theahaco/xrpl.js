@@ -1,9 +1,16 @@
-import { GlobalFlagsInterface } from '../transactions/common'
-
 import { BaseLedgerEntry, HasPreviousTxnID } from './BaseLedgerEntry'
 
-export interface CredentialFlags extends GlobalFlagsInterface {
+export interface CredentialFlagsInterface {
+  /**
+   * The subject has accepted the credential via CredentialAccept. An
+   * unaccepted credential does not satisfy any PermissionedDomain or
+   * DepositPreauth credential check.
+   */
   lsfAccepted?: boolean
+}
+
+export enum CredentialFlags {
+  lsfAccepted = 0x00010000,
 }
 
 /**
@@ -16,9 +23,10 @@ export interface CredentialFlags extends GlobalFlagsInterface {
 export default interface Credential extends BaseLedgerEntry, HasPreviousTxnID {
   LedgerEntryType: 'Credential'
   /**
-   * A bit-map of boolean flags
+   * A bit-map of boolean `lsf*` flags. Use `parseCredentialFlags` to read it
+   * as a {@link CredentialFlagsInterface}.
    */
-  Flags: number | CredentialFlags
+  Flags: number
 
   /** The account that the credential is for. */
   Subject: string
