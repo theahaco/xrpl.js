@@ -6,14 +6,18 @@ import Check from './Check'
 import Credential from './Credential'
 import Delegate from './Delegate'
 import DepositPreauth from './DepositPreauth'
+import DID from './DID'
 import DirectoryNode from './DirectoryNode'
 import Escrow from './Escrow'
 import FeeSettings from './FeeSettings'
 import LedgerHashes from './LedgerHashes'
 import Loan from './Loan'
 import LoanBroker from './LoanBroker'
+import { MPToken } from './MPToken'
 import { MPTokenIssuance } from './MPTokenIssuance'
 import NegativeUNL from './NegativeUNL'
+import { NFTokenOffer } from './NFTokenOffer'
+import { NFTokenPage } from './NFTokenPage'
 import Offer from './Offer'
 import Oracle from './Oracle'
 import PayChannel from './PayChannel'
@@ -35,13 +39,18 @@ type LedgerEntry =
   | Credential
   | Delegate
   | DepositPreauth
+  | DID
   | DirectoryNode
   | Escrow
   | FeeSettings
   | LedgerHashes
   | Loan
   | LoanBroker
+  | MPToken
+  | MPTokenIssuance
   | NegativeUNL
+  | NFTokenOffer
+  | NFTokenPage
   | Offer
   | Oracle
   | PayChannel
@@ -53,7 +62,6 @@ type LedgerEntry =
   | Vault
   | XChainOwnedClaimID
   | XChainOwnedCreateAccountClaimID
-  | MPTokenIssuance
 
 type LedgerEntryFilter =
   | 'account'
