@@ -56,7 +56,10 @@ export enum MPTokenIssuanceSetFlags {
    */
   tfMPTSetCanEscrow = 0x00000010,
   /**
-   * Sets the `lsfMPTCanTrade` flag. Allows holders to trade balances on the XRPL DEX. (XLS-94D)
+   * Sets the `lsfMPTCanTrade` flag. (XLS-94D) Reserved: marks the issuance as tradable on
+   * the XRP Ledger DEX and AMM once a future amendment enables MPT trading. It has no
+   * effect on rippled 3.x, and the SDK's `OfferCreate`, `AMM*` and `book_offers` models
+   * do not accept MPT amounts.
    */
   tfMPTSetCanTrade = 0x00000020,
   /**
@@ -65,7 +68,8 @@ export enum MPTokenIssuanceSetFlags {
   tfMPTSetCanTransfer = 0x00000040,
   /**
    * Sets the `lsfMPTCanClawback` flag. Enables the issuer to claw back tokens
-   * via `Clawback` or `AMMClawback` transactions. (XLS-94D)
+   * via the `Clawback` transaction. (XLS-94D) `AMMClawback` does not apply to MPTs
+   * because MPTs cannot be deposited into an AMM.
    */
   tfMPTSetCanClawback = 0x00000080,
   /**
@@ -106,13 +110,19 @@ export interface MPTokenIssuanceSetFlagsInterface extends GlobalFlagsInterface {
   tfMPTSetRequireAuth?: boolean
   /* Sets the `lsfMPTCanEscrow` flag. Allows holders to place balances into escrow. */
   tfMPTSetCanEscrow?: boolean
-  /* Sets the `lsfMPTCanTrade` flag. Allows holders to trade balances on the XRPL DEX. */
+  /**
+   * Sets the `lsfMPTCanTrade` flag. Reserved: marks the issuance as tradable on the XRP
+   * Ledger DEX and AMM once a future amendment enables MPT trading. It has no effect on
+   * rippled 3.x, and the SDK's `OfferCreate`, `AMM*` and `book_offers` models do not
+   * accept MPT amounts.
+   */
   tfMPTSetCanTrade?: boolean
   /* Sets the `lsfMPTCanTransfer` flag. Allows tokens to be transferred to non-issuer accounts. */
   tfMPTSetCanTransfer?: boolean
   /**
    * Sets the `lsfMPTCanClawback` flag. Enables the issuer to claw back tokens
-   * via `Clawback` or `AMMClawback` transactions.
+   * via the `Clawback` transaction. `AMMClawback` does not apply to MPTs because
+   * MPTs cannot be deposited into an AMM.
    */
   tfMPTSetCanClawback?: boolean
   /**
@@ -125,6 +135,8 @@ export interface MPTokenIssuanceSetFlagsInterface extends GlobalFlagsInterface {
 /**
  * The MPTokenIssuanceSet transaction is used to globally lock/unlock a MPTokenIssuance,
  * or lock/unlock an individual's MPToken.
+ *
+ * @category Transaction Models
  */
 export interface MPTokenIssuanceSet extends BaseTransaction {
   TransactionType: 'MPTokenIssuanceSet'

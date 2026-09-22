@@ -48,8 +48,11 @@ export interface AccountObjectsRequest
 }
 
 /**
- * Account Objects can be a Check, a DepositPreauth, an Escrow, an Offer, a
- * PayChannel, a SignerList, a Ticket, or a RippleState.
+ * A ledger object owned by an account, as returned by `account_objects`:
+ * any {@link LedgerEntry} other than the ledger-wide singletons (Amendments,
+ * FeeSettings, LedgerHashes). This includes MPTokenIssuance and MPToken
+ * objects, which can be selected with the `mpt_issuance` and `mptoken`
+ * values of {@link AccountObjectsRequest.type}.
  */
 export type AccountObject = Exclude<
   LedgerEntry,

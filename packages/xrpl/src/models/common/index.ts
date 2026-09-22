@@ -24,8 +24,16 @@ export interface IssuedCurrencyAmount extends IssuedCurrency {
   value: string
 }
 
+/**
+ * An amount of a Multi-Purpose Token (MPT).
+ */
 export interface MPTAmount {
+  /** The 192-bit `MPTokenIssuanceID` (48 hex characters) of the issuance. */
   mpt_issuance_id: string
+  /**
+   * Integer string, in fractional units of the issuance's `AssetScale`:
+   * with an `AssetScale` of 2, `'1234'` is 12.34 standard units.
+   */
   value: string
 }
 

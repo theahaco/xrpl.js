@@ -1,11 +1,28 @@
 import { BaseLedgerEntry, HasPreviousTxnID } from './BaseLedgerEntry'
 
+/**
+ * An MPToken object represents one account's holding of a Multi-Purpose
+ * Token (MPT) issuance, including its balance and per-holder flags such
+ * as authorized and locked.
+ *
+ * @category Ledger Entries
+ */
 export interface MPToken extends BaseLedgerEntry, HasPreviousTxnID {
   LedgerEntryType: 'MPToken'
+  /** The 192-bit `MPTokenIssuanceID` (48 hex characters) of the issuance this holding belongs to. */
   MPTokenIssuanceID: string
+  /**
+   * The holder's balance, as an integer in fractional units of the
+   * issuance's `AssetScale`.
+   */
   MPTAmount: string
   Flags: number
   OwnerNode?: string
+  /**
+   * The amount of this holder's balance, in fractional units of the
+   * issuance's `AssetScale`, that is currently held in Escrow (XLS-85
+   * token escrow). Absent when nothing is escrowed.
+   */
   LockedAmount?: string
   /** ElGamal ciphertext of the holder's pending confidential inbox balance. */
   ConfidentialBalanceInbox?: string

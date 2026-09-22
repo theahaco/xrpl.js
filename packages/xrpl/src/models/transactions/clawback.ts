@@ -15,6 +15,8 @@ import {
 /**
  * The Clawback transaction is used by the token issuer to claw back
  * issued tokens from a holder.
+ *
+ * @category Transaction Models
  */
 export interface Clawback extends BaseTransaction {
   TransactionType: 'Clawback'
