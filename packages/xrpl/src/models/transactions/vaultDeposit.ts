@@ -1,4 +1,4 @@
-import { Amount, MPTAmount } from '../common'
+import { Amount } from '../common'
 
 import {
   BaseTransaction,
@@ -24,8 +24,7 @@ export interface VaultDeposit extends BaseTransaction {
   /**
    * Asset amount to deposit.
    */
-  // TODO: remove MPTAmount when MPTv2 is released
-  Amount: Amount | MPTAmount
+  Amount: Amount
 }
 
 /**

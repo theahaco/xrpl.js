@@ -10,7 +10,7 @@ import type {
   RIPPLED_API_V2,
 } from '../common'
 import { Offer } from '../ledger'
-import { OfferCreate, Transaction } from '../transactions'
+import { OfferCreate, Transaction, TransactionV2 } from '../transactions'
 import { TransactionMetadata } from '../transactions/metadata'
 
 import type { BaseRequest, BaseResponse } from './baseMethod'
@@ -321,9 +321,9 @@ interface TransactionStreamBase<
    * in detail.
    */
   meta?: TransactionMetadata
-  /** JSON object defining the transaction. */
+  /** JSON object defining the transaction, in its API v2 read shape. */
   tx_json?: Version extends typeof RIPPLED_API_V2
-    ? Transaction & ResponseOnlyTxInfo
+    ? TransactionV2 & ResponseOnlyTxInfo
     : never
   /** JSON object defining the transaction in rippled API v1. */
   transaction?: Version extends typeof RIPPLED_API_V1

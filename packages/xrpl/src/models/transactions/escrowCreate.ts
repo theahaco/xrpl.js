@@ -1,5 +1,5 @@
 import { ValidationError } from '../../errors'
-import { Amount, MPTAmount } from '../common'
+import { Amount } from '../common'
 
 import {
   Account,
@@ -25,7 +25,7 @@ export interface EscrowCreate extends BaseTransaction {
    * or returned to the sender (after any cancellation times/conditions). Can represent XRP, in drops,
    * an IOU token, or an MPT. Must always be a positive value.
    */
-  Amount: Amount | MPTAmount
+  Amount: Amount
   /** Address to receive escrowed XRP. */
   Destination: Account
   /**

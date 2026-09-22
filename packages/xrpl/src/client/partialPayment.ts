@@ -12,7 +12,6 @@ import type {
   IssuedCurrency,
   APIVersion,
   DEFAULT_API_VERSION,
-  MPTAmount,
 } from '../models/common'
 import type {
   AccountTxTransaction,
@@ -20,7 +19,12 @@ import type {
 } from '../models/methods'
 import { AccountTxVersionResponseMap } from '../models/methods/accountTx'
 import { BaseRequest, BaseResponse } from '../models/methods/baseMethod'
-import { PaymentFlags, Transaction, isMPTAmount } from '../models/transactions'
+import {
+  PaymentFlags,
+  Transaction,
+  TransactionV2,
+  isMPTAmount,
+} from '../models/transactions'
 import type { TransactionMetadata } from '../models/transactions/metadata'
 import { isFlagEnabled } from '../models/utils'
 
@@ -28,10 +32,7 @@ const WARN_PARTIAL_PAYMENT_CODE = 2001
 
 /* eslint-disable complexity -- check different token types */
 /* eslint-disable @typescript-eslint/consistent-type-assertions -- known currency type */
-function amountsEqual(
-  amt1: Amount | MPTAmount,
-  amt2: Amount | MPTAmount,
-): boolean {
+function amountsEqual(amt1: Amount, amt2: Amount): boolean {
   // Compare XRP
   if (typeof amt1 === 'string' && typeof amt2 === 'string') {
     return amt1 === amt2
@@ -70,7 +71,7 @@ function amountsEqual(
 
 /* eslint-disable complexity -- required here for multiple checks */
 function isPartialPayment(
-  tx?: Transaction,
+  tx?: Transaction | TransactionV2,
   metadata?: TransactionMetadata | string,
 ): boolean {
   if (tx == null || metadata == null || tx.TransactionType !== 'Payment') {
@@ -100,7 +101,7 @@ function isPartialPayment(
 
   const amount = tx.DeliverMax ?? tx.Amount
 
-  if (delivered === undefined) {
+  if (delivered === undefined || amount === undefined) {
     return false
   }
 

@@ -29,8 +29,11 @@ export interface MPTAmount {
   value: string
 }
 
-// TODO: add MPTAmount to Amount once MPTv2 is released
-export type Amount = IssuedCurrencyAmount | string
+/**
+ * Any amount the ledger can express: XRP in drops (a string), an issued
+ * currency amount, or a Multi-Purpose Token amount.
+ */
+export type Amount = IssuedCurrencyAmount | MPTAmount | string
 
 export type ClawbackAmount = IssuedCurrencyAmount | MPTAmount
 

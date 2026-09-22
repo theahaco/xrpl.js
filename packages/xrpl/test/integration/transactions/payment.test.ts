@@ -1,6 +1,7 @@
 import { assert } from 'chai'
 
 import {
+  Amount,
   Payment,
   Wallet,
   MPTokenIssuanceCreate,
@@ -184,7 +185,25 @@ describe('Payment', function () {
         },
       }
 
-      await testTransaction(testContext.client, payTx, testContext.wallet)
+      const payRes = await testTransaction(
+        testContext.client,
+        payTx,
+        testContext.wallet,
+      )
+
+      // Read the validated payment back: API v2 reports the requested amount
+      // as DeliverMax and omits Amount, and the types must say so.
+      const readBack = await testContext.client.request({
+        command: 'tx',
+        transaction: payRes.result.tx_json.hash,
+      })
+      const readPayment = readBack.result.tx_json
+      if (readPayment.TransactionType !== 'Payment') {
+        assert.fail('expected a Payment')
+      }
+      const deliverMax: Amount = readPayment.DeliverMax
+      assert.deepEqual(deliverMax, payTx.Amount)
+      assert.isUndefined(readPayment.Amount)
 
       accountObjectsResponse = await testContext.client.request({
         command: 'account_objects',

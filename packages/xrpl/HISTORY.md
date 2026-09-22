@@ -4,6 +4,10 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 
 ## Unreleased
 
+### BREAKING CHANGES
+* `Amount` now includes `MPTAmount` (`IssuedCurrencyAmount | MPTAmount | string`). The hand-written `Amount | MPTAmount` unions on `Payment`, `EscrowCreate`, `VaultDeposit`, `VaultWithdraw`, `LoanPay`, `LoanBrokerCoverDeposit`, `LoanBrokerCoverWithdraw` and transaction metadata collapse to `Amount`, and `isAmount` now narrows to the same set it accepts at runtime. Code that narrows an `Amount` with `typeof amount === 'string' ? … : amount.currency` must also handle the MPT case (`'mpt_issuance_id' in amount`).
+* API v2 read paths now type a `Payment` as `PaymentV2`: `tx_json` in `TxResponse` (and therefore the result of `Client.submitAndWait`), `account_tx`, `transaction_entry` and transaction streams carries the requested amount as a required `DeliverMax` and no `Amount`, matching what rippled returns. `TransactionV2<T>` maps any transaction type to its read shape, and `Payment` keeps its submit shape (`Amount` required). Code that read `tx_json.Amount` from those responses was getting `undefined` at runtime; read `DeliverMax` instead. Code that passed such a `tx_json` to a helper typed on `Transaction` (for example `hashSignedTx`) must move `DeliverMax` back into `Amount` first.
+
 ### Added
 * Add `LendingProtocolV1_1` support.
 ## 5.2.0 (2026-09-11)

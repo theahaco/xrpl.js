@@ -1,5 +1,5 @@
 import { ValidationError } from '../../errors'
-import { Amount, MPTAmount } from '../common'
+import { Amount } from '../common'
 import { isFlagEnabled } from '../utils'
 
 import {
@@ -60,7 +60,7 @@ export interface LoanPay extends BaseTransaction {
   /**
    * The amount of funds to pay.
    */
-  Amount: Amount | MPTAmount
+  Amount: Amount
 
   Flags?: number | LoanPayFlagsInterface
 }

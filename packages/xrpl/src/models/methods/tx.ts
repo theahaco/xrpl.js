@@ -4,7 +4,11 @@ import {
   RIPPLED_API_V1,
   RIPPLED_API_V2,
 } from '../common'
-import { Transaction, TransactionMetadata } from '../transactions'
+import {
+  Transaction,
+  TransactionMetadata,
+  TransactionV2,
+} from '../transactions'
 import { BaseTransaction } from '../transactions/common'
 
 import { BaseRequest, BaseResponse } from './baseMethod'
@@ -96,7 +100,8 @@ interface BaseTxResult<
 export interface TxResponse<
   T extends BaseTransaction = Transaction,
 > extends BaseResponse {
-  result: BaseTxResult<typeof RIPPLED_API_V2, T> & { tx_json: T }
+  /** The transaction in its API v2 read shape; see {@link TransactionV2}. */
+  result: BaseTxResult<typeof RIPPLED_API_V2, T> & { tx_json: TransactionV2<T> }
   /**
    * If true, the server was able to search all of the specified ledger
    * versions, and the transaction was in none of them. If false, the server did
