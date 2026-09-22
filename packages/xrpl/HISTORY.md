@@ -7,9 +7,16 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 ### Added
 * Add `LendingProtocolV1_1` support.
 * Add `MPToken`, `DID`, `NFTokenOffer` and `NFTokenPage` to the `LedgerEntry` union so `LedgerEntryType` checks narrow to them; add `MPTokenFlags`/`parseMPTokenFlags` and `CredentialFlags`/`parseCredentialFlags` for the `lsfMPTLocked`, `lsfMPTAuthorized` and `lsfAccepted` ledger flags; re-export the non-colliding ledger entry types (`MPToken`, `MPTokenIssuance`, `AccountRoot`, ...) at the package root alongside the existing `LedgerEntry` namespace.
+* Add `MPTHoldersRequest`/`MPTHoldersResponse` types for the Clio-only `mpt_holders` method, and support it in `Client.requestAll`. Document that rippled cannot enumerate the holders of an `MPTokenIssuance`.
+* `RippledError.data` is now typed as `RippledErrorResponse` (the rippled error response) instead of `unknown`, and `RippledError.code` returns the machine-readable error code (`data.error`), so `entryNotFound`/`txnNotFound` can be told apart from other failures without a structural guard.
+* Add MPT helpers: `getMPTokenIssuanceID`/`parseMPTokenIssuanceID`/`getMPTokenIssuanceIDFromMeta` for the MPTokenIssuanceID (including ticketed creates), the `hashMPTokenIssuance`, `hashMPToken`, `hashCredential` and `hashPermissionedDomain` ledger-index helpers, `getCreatedEntryIndex` for the index of any entry a transaction created, `mptToUnits`/`unitsToMpt` for `AssetScale` conversion, and `percentToMPTTransferFee`/`mptTransferFeeToPercent`/`MAX_MPT_TRANSFER_FEE` for the MPT `TransferFee` (which is *not* the billionths `TransferRate`). `MAX_TRANSFER_FEE` is now exported.
+* `fetchMPToken` and `fetchMPTokenIssuance` are now exported from the package root (they were reachable only through the confidential module), take any object with a `request` method, and have `fetchMPTokenOrUndefined`/`fetchMPTokenIssuanceOrUndefined` variants that return `undefined` instead of throwing `entryNotFound`.
+* Add the `tx()` transaction factory and the `TransactionOf<K>` type, so a transaction literal can be typed as its model without an `as` assertion and without its `TransactionType` widening to `string`.
 
 ### Fixed
 * Fix the `MPToken` ledger type to match rippled: add the required `Account` field, make `MPTAmount` optional (rippled omits it when the balance is zero) and `OwnerNode` required. Add the synthetic `mpt_issuance_id` rippled returns on every `MPTokenIssuance` JSON view. Type `Credential.Flags` as a `number` (the ledger never returns a flags object).
+* `Client.requestAll` now goes through `Client.request` for every page, so partial-payment `warnings` and X-address conversion of `account` apply to paginated requests too.
+* `ErrorResponse.error_code` is typed as `number`, matching what rippled sends.
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES

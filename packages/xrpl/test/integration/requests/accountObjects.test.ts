@@ -52,3 +52,30 @@ describe('account_objects', function () {
     TIMEOUT,
   )
 })
+
+describe('account_objects via requestAll', function () {
+  let testContext: XrplIntegrationTestContext
+
+  beforeEach(async () => {
+    testContext = await setupClient(serverUrl)
+  })
+  afterEach(async () => teardownClient(testContext))
+
+  it(
+    'accepts an X-address account',
+    async () => {
+      const responses = await testContext.client.requestAll({
+        command: 'account_objects',
+        account: testContext.wallet.getXAddress(),
+        ledger_index: 'validated',
+      })
+      assert.equal(responses.length, 1)
+      assert.equal(
+        responses[0].result.account,
+        testContext.wallet.classicAddress,
+      )
+      assert.deepEqual(responses[0].result.account_objects, [])
+    },
+    TIMEOUT,
+  )
+})

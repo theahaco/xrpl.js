@@ -32,6 +32,10 @@ const ledgerSpaces = {
   vault: 'V',
   loanBroker: 'l',
   loan: 'L',
+  mptIssuance: '~',
+  mptoken: 't',
+  credential: 'D',
+  permissionedDomain: 'm',
 }
 
 export default ledgerSpaces

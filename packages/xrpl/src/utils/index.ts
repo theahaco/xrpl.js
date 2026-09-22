@@ -32,6 +32,13 @@ import { Transaction } from '../models/transactions/transaction'
 
 import { deriveKeypair, deriveAddress, deriveXAddress } from './derive'
 import getBalanceChanges from './getBalanceChanges'
+import getCreatedEntryIndex from './getCreatedEntryIndex'
+import {
+  getMPTokenIssuanceID,
+  getMPTokenIssuanceIDFromMeta,
+  parseMPTokenIssuanceID,
+} from './getMPTokenIssuanceID'
+import type { MPTokenIssuanceIDSource } from './getMPTokenIssuanceID'
 import getNFTokenID from './getNFTokenID'
 import getXChainClaimID from './getXChainClaimID'
 import {
@@ -50,7 +57,19 @@ import {
   hashVault,
   hashLoanBroker,
   hashLoan,
+  hashMPTokenIssuance,
+  hashMPToken,
+  hashPermissionedDomain,
+  hashCredential,
 } from './hashes'
+import { mptToUnits, unitsToMpt } from './mptConversion'
+import {
+  fetchMPToken,
+  fetchMPTokenIssuance,
+  fetchMPTokenOrUndefined,
+  fetchMPTokenIssuanceOrUndefined,
+} from './mptLedgerEntries'
+import type { MPTLedgerReader } from './mptLedgerEntries'
 import parseNFTokenID from './parseNFTokenID'
 import {
   percentToTransferRate,
@@ -59,6 +78,9 @@ import {
   percentToQuality,
   decimalToQuality,
   qualityToDecimal,
+  MAX_MPT_TRANSFER_FEE,
+  percentToMPTTransferFee,
+  mptTransferFeeToPercent,
 } from './quality'
 import signPaymentChannelClaim from './signPaymentChannelClaim'
 import { convertHexToString, convertStringToHex } from './stringConversion'
@@ -196,6 +218,10 @@ const hashes = {
   hashVault,
   hashLoanBroker,
   hashLoan,
+  hashMPTokenIssuance,
+  hashMPToken,
+  hashPermissionedDomain,
+  hashCredential,
 }
 
 export {
@@ -213,6 +239,11 @@ export {
   decimalToTransferRate,
   transferRateToDecimal,
   qualityToDecimal,
+  MAX_MPT_TRANSFER_FEE,
+  percentToMPTTransferFee,
+  mptTransferFeeToPercent,
+  mptToUnits,
+  unitsToMpt,
   isValidSecret,
   isValidAddress,
   hashes,
@@ -247,4 +278,18 @@ export {
   getNFTokenID,
   parseNFTokenID,
   getXChainClaimID,
+  getCreatedEntryIndex,
+  getMPTokenIssuanceID,
+  getMPTokenIssuanceIDFromMeta,
+  parseMPTokenIssuanceID,
+  MPTokenIssuanceIDSource,
+  fetchMPToken,
+  fetchMPTokenIssuance,
+  fetchMPTokenOrUndefined,
+  fetchMPTokenIssuanceOrUndefined,
+  MPTLedgerReader,
+  hashMPTokenIssuance,
+  hashMPToken,
+  hashPermissionedDomain,
+  hashCredential,
 }
