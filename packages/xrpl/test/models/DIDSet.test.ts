@@ -48,6 +48,21 @@ describe('DIDSet', function () {
     assertInvalid(tx, 'DIDSet: invalid field URI')
   })
 
+  it('verifies valid DIDSet w/ 256-byte URI (rippled maximum)', function () {
+    tx.URI = 'AB'.repeat(256)
+
+    assertValid(tx)
+  })
+
+  it('throws w/ URI too long', function () {
+    tx.URI = 'AB'.repeat(257)
+
+    assertInvalid(
+      tx,
+      'DIDSet: URI length must be <= 512 hex characters (256 bytes)',
+    )
+  })
+
   it('throws w/ empty DID', function () {
     delete tx.Data
     delete tx.DIDDocument

@@ -12,7 +12,10 @@ import {
   validateRequiredField,
 } from './common'
 
-const MAX_URI_LENGTH = 256
+// rippled's maxCredentialURILength is 256 bytes; the field is hex-encoded, so
+// the string may be up to twice that many characters.
+const MAX_URI_BYTE_LENGTH = 256
+const MAX_URI_LENGTH = MAX_URI_BYTE_LENGTH * 2
 
 /**
  * Creates a Credential object. It must be sent by the issuer.
@@ -34,7 +37,10 @@ export interface CredentialCreate extends BaseTransaction {
   /** Credential expiration. */
   Expiration?: number
 
-  /** Additional data about the credential (such as a link to the VC document). */
+  /**
+   * Additional data about the credential (such as a link to the VC document),
+   * hex-encoded. At most 256 bytes (512 hex characters).
+   */
   URI?: string
 }
 
@@ -71,7 +77,7 @@ function validateURI(URI: unknown): void {
     throw new ValidationError('CredentialCreate: URI cannot be an empty string')
   } else if (URI.length > MAX_URI_LENGTH) {
     throw new ValidationError(
-      `CredentialCreate: URI length must be <= ${MAX_URI_LENGTH}`,
+      `CredentialCreate: URI length must be <= ${MAX_URI_LENGTH} hex characters (${MAX_URI_BYTE_LENGTH} bytes)`,
     )
   }
 

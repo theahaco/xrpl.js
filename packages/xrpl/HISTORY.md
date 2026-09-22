@@ -6,6 +6,11 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 
 ### Added
 * Add `LendingProtocolV1_1` support.
+
+### Fixed
+* `MPTokenIssuanceSet` now accepts an all-zero `DomainID` (`'0'.repeat(64)`), which is how rippled removes the domain from an issuance; previously `validate` rejected it as an invalid field.
+* `CredentialCreate` now allows `URI` up to rippled's limit of 256 bytes (512 hex characters) instead of 128 bytes, and `DIDSet` now rejects a `URI` over the same 256-byte limit client-side.
+
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES

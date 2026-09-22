@@ -365,6 +365,54 @@ describe('MPTokenIssuanceSet', function () {
     assertInvalid(invalid, 'MPTokenIssuanceSet: invalid field DomainID')
   })
 
+  it(`accepts the all-zero DomainID (clears the domain per rippled)`, function () {
+    const valid = {
+      TransactionType: 'MPTokenIssuanceSet',
+      Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+      MPTokenIssuanceID: TOKEN_ID,
+      DomainID: '0'.repeat(64),
+    } as any
+
+    assertValid(valid)
+  })
+
+  it(`Throws w/ wrong-length DomainID`, function () {
+    const invalid = {
+      TransactionType: 'MPTokenIssuanceSet',
+      Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+      MPTokenIssuanceID: TOKEN_ID,
+      DomainID: '0'.repeat(63),
+    } as any
+
+    assertInvalid(invalid, 'MPTokenIssuanceSet: invalid field DomainID')
+  })
+
+  it(`Throws w/ non-hex DomainID`, function () {
+    const invalid = {
+      TransactionType: 'MPTokenIssuanceSet',
+      Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+      MPTokenIssuanceID: TOKEN_ID,
+      DomainID: 'Z'.repeat(64),
+    } as any
+
+    assertInvalid(invalid, 'MPTokenIssuanceSet: invalid field DomainID')
+  })
+
+  it(`Throws w/ both all-zero DomainID and Holder fields`, function () {
+    const invalid = {
+      TransactionType: 'MPTokenIssuanceSet',
+      Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+      MPTokenIssuanceID: TOKEN_ID,
+      Holder: 'rajgkBmMxmz161r8bWYH7CQAFZP5bA9oSG',
+      DomainID: '0'.repeat(64),
+    } as any
+
+    assertInvalid(
+      invalid,
+      'MPTokenIssuanceSet: Cannot set both DomainID and Holder fields.',
+    )
+  })
+
   it(`Throws w/ both DomainID and Holder fields`, function () {
     const invalid = {
       TransactionType: 'MPTokenIssuanceSet',

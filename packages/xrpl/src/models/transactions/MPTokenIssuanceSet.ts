@@ -18,7 +18,7 @@ import {
   isAccount,
   GlobalFlagsInterface,
   isNumber,
-  isDomainID,
+  isDomainIDOrZero,
   isHexWithByteLength,
   CONFIDENTIAL_EC_POINT_BYTES,
 } from './common'
@@ -175,7 +175,10 @@ export interface MPTokenIssuanceSet extends BaseTransaction {
   ImmutableFlags?: number
   /**
    * The PermissionedDomain object ID that gates who may hold this MPT. Cannot
-   * be set together with the `Holder` field.
+   * be set together with the `Holder` field. Set to all zeros
+   * (`'0'.repeat(64)`) to remove the domain from the issuance; rippled makes
+   * the field absent, so admission falls back to explicit `MPTokenAuthorize`
+   * allow-listing.
    */
   DomainID?: string
 }
@@ -209,7 +212,7 @@ export function validateMPTokenIssuanceSet(tx: Record<string, unknown>): void {
   validateOptionalField(tx, 'MPTokenMetadata', isString)
   validateOptionalField(tx, 'TransferFee', isNumber)
   validateOptionalField(tx, 'ImmutableFlags', isNumber)
-  validateOptionalField(tx, 'DomainID', isDomainID)
+  validateOptionalField(tx, 'DomainID', isDomainIDOrZero)
 
   if (tx.DomainID != null && tx.Holder != null) {
     throw new ValidationError(
