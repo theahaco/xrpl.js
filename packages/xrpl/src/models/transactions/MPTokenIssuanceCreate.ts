@@ -13,6 +13,7 @@ import {
   validateOptionalField,
   isString,
   isNumber,
+  isRecord,
   isDomainID,
 } from './common'
 import type { TransactionMetadataBase } from './metadata'
@@ -207,6 +208,57 @@ export interface MPTokenIssuanceCreateImmutableFlagsInterface {
 }
 
 /**
+ * Verify that a value has the form of an `ImmutableFlags` field: either the
+ * numeric bitmask or the {@link MPTokenIssuanceCreateImmutableFlagsInterface}
+ * boolean-map form. The individual flag names are checked by
+ * {@link convertImmutableFlagsToNumber}.
+ *
+ * @param value - The object to check the form and type of.
+ * @returns Whether the value is a number or a flag map.
+ */
+export function isImmutableFlags(
+  value: unknown,
+): value is number | MPTokenIssuanceCreateImmutableFlagsInterface {
+  return isNumber(value) || isRecord(value)
+}
+
+/**
+ * Convert an `ImmutableFlags` value into its numeric bitmask.
+ *
+ * Accepts either the numeric bitmask used on the wire or the
+ * {@link MPTokenIssuanceCreateImmutableFlagsInterface} boolean-map form, so
+ * `ImmutableFlags` can be written the same way as `Flags`. It is the inverse of
+ * `parseMPTokenIssuanceImmutableFlags`, which reads the on-ledger value.
+ *
+ * @param immutableFlags - A number, or a map of `tif*` flag names to booleans.
+ * @returns The bitmask of every flag set to `true`. An empty or all-`false` map
+ * yields `0`, which transaction validation rejects just like an explicit
+ * `ImmutableFlags: 0` (rippled returns `temINVALID_FLAG` for it).
+ * @throws ValidationError When the map contains a key that is not a `tif*` flag.
+ * @category Utilities
+ */
+export function convertImmutableFlagsToNumber(
+  immutableFlags: number | MPTokenIssuanceCreateImmutableFlagsInterface,
+): number {
+  if (typeof immutableFlags === 'number') {
+    return immutableFlags
+  }
+
+  return Object.entries(immutableFlags).reduce(
+    (resultFlags: number, [flag, enabled]) => {
+      const bit: unknown = MPTokenIssuanceCreateImmutableFlags[flag]
+      if (typeof bit !== 'number') {
+        throw new ValidationError(`Invalid ImmutableFlags flag ${flag}.`)
+      }
+
+      // eslint-disable-next-line no-bitwise -- flags require bitwise operations
+      return enabled ? resultFlags | bit : resultFlags
+    },
+    0,
+  )
+}
+
+/**
  * The MPTokenIssuanceCreate transaction creates a MPTokenIssuance object
  * and adds it to the relevant directory node of the creator account.
  * This transaction is the only opportunity an issuer has to specify any token fields
@@ -261,8 +313,13 @@ export interface MPTokenIssuanceCreate extends BaseTransaction {
    * By default `MPTokenMetadata`, `TransferFee`, and the MPT issuance flags
    * remain mutable via MPTokenIssuanceSet; setting a bit here opts out of that
    * mutability for the life of the issuance. (XLS-94D)
+   *
+   * Like `Flags`, this accepts either the numeric bitmask or a
+   * {@link MPTokenIssuanceCreateImmutableFlagsInterface} map such as
+   * `{ tifMPTCanTrade: true, tifMPTCanEscrow: true }`; `autofill` and
+   * `validate` convert the map form with {@link convertImmutableFlagsToNumber}.
    */
-  ImmutableFlags?: number
+  ImmutableFlags?: number | MPTokenIssuanceCreateImmutableFlagsInterface
 
   /* The domainID that governs admissibility pertaining to the MPToken. */
   DomainID?: string
@@ -287,7 +344,7 @@ export function validateMPTokenIssuanceCreate(
   validateOptionalField(tx, 'MPTokenMetadata', isString)
   validateOptionalField(tx, 'TransferFee', isNumber)
   validateOptionalField(tx, 'AssetScale', isNumber)
-  validateOptionalField(tx, 'ImmutableFlags', isNumber)
+  validateOptionalField(tx, 'ImmutableFlags', isImmutableFlags)
   validateOptionalField(tx, 'DomainID', isDomainID)
 
   if (
@@ -303,11 +360,12 @@ export function validateMPTokenIssuanceCreate(
     )
   }
 
-  if (typeof tx.ImmutableFlags === 'number') {
+  if (isImmutableFlags(tx.ImmutableFlags)) {
+    const immutableFlags = convertImmutableFlagsToNumber(tx.ImmutableFlags)
     // eslint-disable-next-line no-bitwise -- Need bitwise operations to replicate rippled behavior
-    const invalidBits = tx.ImmutableFlags & tifMPTokenIssuanceImmutableMask
+    const invalidBits = immutableFlags & tifMPTokenIssuanceImmutableMask
     // rippled rejects a present-but-zero ImmutableFlags, as well as out-of-mask bits.
-    if (tx.ImmutableFlags === 0 || invalidBits !== 0) {
+    if (immutableFlags === 0 || invalidBits !== 0) {
       throw new ValidationError(
         'MPTokenIssuanceCreate: Invalid ImmutableFlags value',
       )
