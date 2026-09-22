@@ -50,8 +50,10 @@ abstract class UInt extends Comparable<UInt | number> {
 
   static checkUintRange(val: number, min: number, max: number): void {
     if (val < min || val > max) {
+      // `this` is the concrete class (UInt8, UInt16, ...) when called as
+      // `UInt8.checkUintRange(...)`; `this.constructor.name` would be "Function".
       throw new Error(
-        `Invalid ${this.constructor.name}: ${val} must be >= ${min} and <= ${max}`,
+        `Invalid ${this.name}: ${val} must be >= ${min} and <= ${max}`,
       )
     }
   }

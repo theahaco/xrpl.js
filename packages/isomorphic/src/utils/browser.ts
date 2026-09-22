@@ -21,11 +21,15 @@ export const bytesToHex: typeof BytesToHexFn = (bytes) => {
 
 // A clone of hexToBytes from @noble/hashes without the length checks. This allows us to do our own checks.
 export const hexToBytes: typeof HexToBytesFn = (hex): Uint8Array => {
-  const len = hex.length
-  const array = new Uint8Array(len / 2)
   if (!HEX_REGEX.test(hex)) {
     throw new Error('Invalid hex string')
   }
+  const len = hex.length
+  if (len % 2 !== 0) {
+    // Uint8Array(len / 2) would floor and silently drop the trailing nibble.
+    throw new Error(`Invalid hex string: odd length (${len})`)
+  }
+  const array = new Uint8Array(len / 2)
   for (let i = 0; i < array.length; i++) {
     const j = i * 2
     const hexByte = hex.slice(j, j + 2)

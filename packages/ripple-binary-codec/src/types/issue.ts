@@ -62,16 +62,21 @@ class Issue extends SerializedType {
 
     if (isIssueObject(value)) {
       if (value.currency) {
-        const currency = Currency.from(value.currency.toString()).toBytes()
-
-        //IOU case
-        if (value.issuer) {
-          const issuer = AccountID.from(value.issuer.toString()).toBytes()
-          return new Issue(concat([currency, issuer]))
-        }
+        const currency = Currency.from(value.currency.toString())
 
         //XRP case
-        return new Issue(currency)
+        if (currency.iso() === 'XRP') {
+          return new Issue(currency.toBytes())
+        }
+
+        //IOU case
+        if (typeof value.issuer !== 'string' || value.issuer === '') {
+          throw new Error(
+            `Issue: issuer is required for non-XRP currency ${value.currency.toString()}`,
+          )
+        }
+        const issuer = AccountID.from(value.issuer).toBytes()
+        return new Issue(concat([currency.toBytes(), issuer]))
       }
 
       // MPT case

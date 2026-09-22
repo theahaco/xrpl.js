@@ -1005,7 +1005,7 @@ describe('Wallet', function () {
       }
       assert.throws(() => {
         wallet.sign(payment)
-      }, /^1.1234567 is an illegal amount/u)
+      }, /^Amount: 1.1234567 is an illegal amount/u)
     })
 
     const issuedCurrencyPayment: Transaction = {

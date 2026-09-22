@@ -68,6 +68,10 @@ export const hexToBytes: typeof HexToBytesFn = (hex) => {
   if (!HEX_REGEX.test(hex)) {
     throw new Error('Invalid hex string')
   }
+  if (hex.length % 2 !== 0) {
+    // Buffer.from(hex, 'hex') silently drops a trailing odd nibble.
+    throw new Error(`Invalid hex string: odd length (${hex.length})`)
+  }
   return toUint8Array(Buffer.from(hex, 'hex'))
 }
 

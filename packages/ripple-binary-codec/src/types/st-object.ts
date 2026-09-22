@@ -55,6 +55,22 @@ function checkForDuplicateTags(obj1: JsonObject, obj2: JsonObject): void {
 }
 
 /**
+ * Wrap an error raised while encoding one field so the message names the field.
+ * A message that already starts with the field name (e.g. UInt64 base-10
+ * errors) is passed through unchanged.
+ *
+ * @param fieldName Name of the field being encoded
+ * @param error The error thrown by the field's type constructor
+ * @returns An Error whose message starts with the field name
+ */
+function nameFieldError(fieldName: string, error: unknown): Error {
+  const message = error instanceof Error ? error.message : String(error)
+  const alreadyNamed =
+    message.startsWith(`${fieldName} `) || message.startsWith(`${fieldName}:`)
+  return new Error(alreadyNamed ? message : `${fieldName}: ${message}`)
+}
+
+/**
  * Class for Serializing/Deserializing objects
  */
 class STObject extends SerializedType {
@@ -144,14 +160,19 @@ class STObject extends SerializedType {
     }
 
     sorted.forEach((field) => {
-      const associatedValue =
-        field.type.name === ST_OBJECT
-          ? this.from(xAddressDecoded[field.name], undefined, definitions)
-          : field.type.name === 'STArray'
-            ? STArray.from(xAddressDecoded[field.name], definitions)
-            : field.type.name === 'UInt64'
-              ? UInt64.from(xAddressDecoded[field.name], field.name)
-              : field.associatedType.from(xAddressDecoded[field.name])
+      let associatedValue: SerializedType
+      try {
+        associatedValue =
+          field.type.name === ST_OBJECT
+            ? this.from(xAddressDecoded[field.name], undefined, definitions)
+            : field.type.name === 'STArray'
+              ? STArray.from(xAddressDecoded[field.name], definitions)
+              : field.type.name === 'UInt64'
+                ? UInt64.from(xAddressDecoded[field.name], field.name)
+                : field.associatedType.from(xAddressDecoded[field.name])
+      } catch (error) {
+        throw nameFieldError(field.name, error)
+      }
 
       if (associatedValue == undefined) {
         throw new TypeError(

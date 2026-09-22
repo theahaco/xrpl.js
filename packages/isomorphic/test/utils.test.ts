@@ -35,6 +35,18 @@ describe('utils', function () {
     expect(() => hexToBytes('hello')).toThrow(new Error('Invalid hex string'))
   })
 
+  it('hexToBytes - odd length throws instead of dropping the last nibble', () => {
+    expect(() => hexToBytes('ABC')).toThrow(
+      new Error('Invalid hex string: odd length (3)'),
+    )
+    expect(() => hexToBytes('A')).toThrow(
+      new Error('Invalid hex string: odd length (1)'),
+    )
+    expect(() => hexToBytes('ABCDE')).toThrow(
+      new Error('Invalid hex string: odd length (5)'),
+    )
+  })
+
   it('bytesToHex - 010203', () => {
     expect(bytesToHex([1, 2, 3])).toEqual('010203')
   })
@@ -43,8 +55,14 @@ describe('utils', function () {
     expect(bytesToHex(new Uint8Array([222, 173, 190, 239]))).toEqual('DEADBEEF')
   })
 
-  it('hexToString - deadbeef+infinity symbol (HEX ASCII)', () => {
-    expect(hexToString('646561646265656658D', 'ascii')).toEqual('deadbeefX')
+  it('hexToString - deadbeefX (HEX ASCII)', () => {
+    expect(hexToString('646561646265656658', 'ascii')).toEqual('deadbeefX')
+  })
+
+  it('hexToString - odd length throws', () => {
+    expect(() => hexToString('646561646265656658D', 'ascii')).toThrow(
+      new Error('Invalid hex string: odd length (19)'),
+    )
   })
 
   it('hexToString - deadbeef+infinity symbol (HEX)', () => {

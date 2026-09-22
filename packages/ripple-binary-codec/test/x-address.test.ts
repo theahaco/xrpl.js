@@ -136,7 +136,9 @@ describe('X-Address Account is equivalent to a classic address w/ SourceTag', ()
   })
 
   it('Throws when X-Address is invalid', () => {
-    expect(() => encode(json_invalid_x)).toThrow(new Error('checksum_invalid'))
+    expect(() => encode(json_invalid_x)).toThrow(
+      new Error('Issuer: checksum_invalid'),
+    )
   })
 
   it('Encodes issued currency w/ x-address', () => {
@@ -159,7 +161,9 @@ describe('Invalid X-Address behavior', () => {
 
   it('Throws when issued currency has tag', () => {
     expect(() => encode(json_issued_with_tag)).toThrow(
-      new Error('Only allowed to have tag on Account or Destination'),
+      new Error(
+        'TakerPays: Only allowed to have tag on Account or Destination',
+      ),
     )
   })
 })

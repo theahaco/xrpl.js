@@ -28,11 +28,13 @@ describe('Can encode Pseudo Transactions', () => {
     expect(decode(encode(json))).toEqual(json)
   })
 
-  it('Blank AccountID is ACCOUNT_ZERO', () => {
-    expect(encode(json_blank_acct)).toEqual(binary)
+  it('Blank AccountID throws instead of silently encoding ACCOUNT_ZERO', () => {
+    expect(() => encode(json_blank_acct)).toThrow(
+      'Account: Cannot construct AccountID from an empty string',
+    )
   })
 
-  it('Decodes Blank AccountID', () => {
-    expect(decode(encode(json_blank_acct))).toEqual(json)
+  it('ACCOUNT_ZERO round-trips through its base58 form', () => {
+    expect(decode(encode(json))).toEqual(json)
   })
 })

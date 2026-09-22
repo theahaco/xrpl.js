@@ -34,7 +34,9 @@ class AccountID extends Hash160 {
 
     if (typeof value === 'string') {
       if (value === '') {
-        return new AccountID()
+        throw new Error(
+          'Cannot construct AccountID from an empty string (use rrrrrrrrrrrrrrrrrrrrrhoLvTp for ACCOUNT_ZERO)',
+        )
       }
 
       return HEX_REGEX.test(value)

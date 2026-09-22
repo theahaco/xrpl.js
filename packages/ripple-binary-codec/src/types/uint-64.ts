@@ -7,6 +7,7 @@ import { DEFAULT_DEFINITIONS, XrplDefinitionsBase } from '../enums'
 const HEX_REGEX = /^[a-fA-F0-9]{1,16}$/
 const BASE10_REGEX = /^[0-9]{1,20}$/
 const mask = BigInt(0x00000000ffffffff)
+const MAX_UINT64 = BigInt('18446744073709551615')
 
 const BASE10_AMOUNT_FIELDS = new Set([
   'MaximumAmount',
@@ -72,6 +73,9 @@ class UInt64 extends UInt {
       if (isBase10(fieldName)) {
         if (!BASE10_REGEX.test(val)) {
           throw new Error(`${fieldName} ${val} is not a valid base 10 string`)
+        }
+        if (BigInt(val) > MAX_UINT64) {
+          throw new Error(`${fieldName} ${val} exceeds 2^64-1`)
         }
         val = BigInt(val).toString(16) as T
       }

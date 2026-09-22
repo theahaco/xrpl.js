@@ -17,9 +17,9 @@ describe('Hash128', function () {
     expect(h1.toJSON()).toBe('')
   })
   it('can be compared against another', function () {
-    const h1 = Hash128.from('100000000000000000000000000000000')
-    const h2 = Hash128.from('200000000000000000000000000000000')
-    const h3 = Hash128.from('000000000000000000000000000000003')
+    const h1 = Hash128.from('10000000000000000000000000000000')
+    const h2 = Hash128.from('20000000000000000000000000000000')
+    const h3 = Hash128.from('00000000000000000000000000000003')
     expect(h1.lt(h2)).toBe(true)
     expect(h3.lt(h2)).toBe(true)
     expect(h2.gt(h1)).toBe(true)
@@ -32,11 +32,20 @@ describe('Hash128', function () {
     expect(h1.eq(h2)).toBe(false)
   })
   it('throws when constructed from invalid hash length', () => {
-    expect(() => Hash128.from('1000000000000000000000000000000')).toThrow(
+    expect(() => Hash128.from('100000000000000000000000000000')).toThrow(
       new Error('Invalid Hash length 15'),
     )
-    expect(() => Hash128.from('10000000000000000000000000000000000')).toThrow(
+    expect(() => Hash128.from('1000000000000000000000000000000000')).toThrow(
       new Error('Invalid Hash length 17'),
+    )
+  })
+
+  it('throws when constructed from odd-length hex', () => {
+    expect(() => Hash128.from('1000000000000000000000000000000')).toThrow(
+      new Error('Invalid hex string: odd length (31)'),
+    )
+    expect(() => Hash128.from('100000000000000000000000000000000')).toThrow(
+      new Error('Invalid hex string: odd length (33)'),
     )
   })
 
@@ -96,11 +105,25 @@ describe('Hash192', function () {
 
   it('throws when constructed from invalid hash length', () => {
     expect(() =>
-      Hash192.from('10000000000000000000000000000000000000000000000'),
+      Hash192.from('1000000000000000000000000000000000000000000000'),
     ).toThrow(new Error('Invalid Hash length 23'))
     expect(() =>
       Hash192.from('10000000000000000000000000000000000000000000000000'),
     ).toThrow(new Error('Invalid Hash length 25'))
+  })
+
+  it('throws when constructed from odd-length hex (was accepted and shifted)', () => {
+    const id = '00000001A407AF5856CCF3C42619DAA925813FC955C72983'
+    expect(() => Hash192.from(`F${id}`)).toThrow(
+      new Error('Invalid hex string: odd length (49)'),
+    )
+    expect(() => Hash192.from(id.slice(1))).toThrow(
+      new Error('Invalid hex string: odd length (47)'),
+    )
+  })
+
+  it('throws when constructed from an empty string (was ZERO_192)', () => {
+    expect(() => Hash192.from('')).toThrow(new Error('Invalid Hash length 0'))
   })
 
   it(`throws when constructed from non-hexadecimal string`, () => {
@@ -145,6 +168,28 @@ describe('Hash256', function () {
   it(`throws when constructed from non-hexadecimal string`, () => {
     expect(() => Hash256.from('Z'.repeat(64))).toThrow(
       new Error('Invalid hash string ' + 'Z'.repeat(64)),
+    )
+  })
+
+  it('throws when constructed from odd-length hex', () => {
+    expect(() => Hash256.from('F' + 'C'.repeat(64))).toThrow(
+      new Error('Invalid hex string: odd length (65)'),
+    )
+  })
+})
+
+describe('AccountID', function () {
+  it('throws when constructed from an empty string (was ACCOUNT_ZERO)', () => {
+    expect(() => AccountID.from('')).toThrow(
+      new Error(
+        'Cannot construct AccountID from an empty string (use rrrrrrrrrrrrrrrrrrrrrhoLvTp for ACCOUNT_ZERO)',
+      ),
+    )
+  })
+
+  it('still constructs ACCOUNT_ZERO from its base58 form', () => {
+    expect(AccountID.from('rrrrrrrrrrrrrrrrrrrrrhoLvTp').toHex()).toBe(
+      '0'.repeat(40),
     )
   })
 })

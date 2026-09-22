@@ -9,6 +9,7 @@ export declare function BytesToHexFn(bytes: Uint8Array | number[]): string
  * Convert hex to a Uint8Array.
  *
  * @param hex - {string} to convert to a Uint8Array
+ * @throws When `hex` contains non-hex characters or has an odd number of characters.
  */
 export declare function HexToBytesFn(hex: string): Uint8Array
 
