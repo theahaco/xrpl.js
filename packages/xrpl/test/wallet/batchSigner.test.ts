@@ -2,10 +2,10 @@ import { assert } from 'chai'
 
 import {
   Batch,
+  BatchInnerTransaction,
   decode,
   ECDSA,
   encode,
-  SubmittableTransaction,
   ValidationError,
   Wallet,
 } from '../../src'
@@ -50,7 +50,7 @@ describe('Wallet batch operations', function () {
     beforeEach(() => {
       transaction = {
         Account: 'rJCxK2hX9tDMzbnn3cg1GU2g19Kfmhzxkp',
-        Flags: 1,
+        Flags: BatchFlags.tfAllOrNothing,
         RawTransactions: [
           {
             RawTransaction: {
@@ -89,7 +89,7 @@ describe('Wallet batch operations', function () {
             SigningPubKey:
               '02691AC5AE1C4C333AE5DF8A93BDC495F0EEBFC6DB0DA7EB6EF808F3AFC006E3FE',
             TxnSignature:
-              '304502210098890858AA57D6515D7C523FE076FA97BFA87DA666A87B4A7CF44249181DC1DC02201B90E513FE2F45D41FB31850F463C0ECBA8F5126B1AF431B67C4004CA0DD8042',
+              '3045022100AE3647A516C71EEA78C575A2DB00246F2B92D3B48064BC077670FE9F48605E1F02206361AC4270E3E2DD737F471FDFCE4EDD2D1CC2F7999808B0BE4285979012DEA4',
           },
         },
       ]
@@ -109,7 +109,7 @@ describe('Wallet batch operations', function () {
             SigningPubKey:
               'ED3CC3D14FD80C213BC92A98AFE13A405A030F845EDCFD5E395286A6E9E62BA638',
             TxnSignature:
-              '27B496F0C1F2C4789A0E6CF25265069980190C786053CF5D6C066C07E21D632A6EB87C56275109A8542EEDE782FDC5591EA51FAF28C3FCFCF35BCE960F1D8601',
+              '83552BA9599E082E8FCFDF0AEB3026CE0DE1036BFD395AADB724DB0C3369CE9B33A307373F2DA1DBBD1132A15F5675029E7DEAA1AF0370559ECF87EC5EB64708',
           },
         },
       ]
@@ -131,7 +131,7 @@ describe('Wallet batch operations', function () {
             SigningPubKey:
               'ED37D3F048B7F1E680B0A97F70C7843160B9F25D6398D07E68B9A2C83AA8E1B156',
             TxnSignature:
-              '046315C731DF089E08EB6662251F12B22938ED462F66BC561A847A87DF6B3C9AC811D9EC5971EDEC2BA96C959BDE883CD838B7EF6460A47AD9B71518F1A2A00B',
+              '8B10EE2AEF419899A72629A62CE0C742416CCDB441358CAC3377834F7379B23EB67FFA97B95FF874578C1E5E799440CDBE305F4588F6A15106E1C4BE9997280F',
           },
         },
       ]
@@ -158,7 +158,7 @@ describe('Wallet batch operations', function () {
                   SigningPubKey:
                     'ED37D3F048B7F1E680B0A97F70C7843160B9F25D6398D07E68B9A2C83AA8E1B156',
                   TxnSignature:
-                    '8FCA6C1056C2146DC13F4D10BA297335A82F562D837FA3C65D75DCDC87540F61428B7370FCC1DE4D83B6FA1A00A18CD9283E7B08089091ED84CC3E4A8B43F00F',
+                    '6550CB4FF1F132D348D97F76783FB90BD8DE788A3792D53F85A929EC3D3E6EFFAC2246A6FACC477E1233A72ECB95BEF203860F2FBA4436C55CAA4B77953CC80B',
                 },
               },
             ],
@@ -188,7 +188,7 @@ describe('Wallet batch operations', function () {
                   SigningPubKey:
                     'ED37D3F048B7F1E680B0A97F70C7843160B9F25D6398D07E68B9A2C83AA8E1B156',
                   TxnSignature:
-                    'D80D4195BF67D5CB12CA225D04DA4D00AC77250803671E09DF61F1695A831FAD6BF820F335DD2D8CFE16DA55CFC2E64AEC8A1429524E6CDB6C36B7AEA717C700',
+                    '587775DB624191DB128F31D6FD22A19F74EB2F6954B000277FE27A076D2868A3E56DAA28F983246708E7EAD5608B38B49643839AB0203467A9859DC5861A2E04',
                 },
               },
             ],
@@ -304,7 +304,7 @@ describe('Wallet batch operations', function () {
 
     it('removes signer for Batch submitter', function () {
       // add a third inner transaction from the transaction submitter
-      const rawTx3: { RawTransaction: SubmittableTransaction } = {
+      const rawTx3: { RawTransaction: BatchInnerTransaction } = {
         RawTransaction: {
           Account: 'rJCxK2hX9tDMzbnn3cg1GU2g19Kfmhzxkp',
           Amount: '1000000',

@@ -1,4 +1,5 @@
-import { validateBatch } from '../../src/models/transactions/batch'
+import type { Batch } from '../../src'
+import { BatchFlags, validateBatch } from '../../src/models/transactions/batch'
 import { assertTxIsValid, assertTxValidationError } from '../testUtils'
 
 const assertValid = (tx: any): void => assertTxIsValid(tx, validateBatch)
@@ -27,7 +28,7 @@ describe('Batch', function () {
           },
         },
       ],
-      Flags: 1,
+      Flags: BatchFlags.tfAllOrNothing,
       RawTransactions: [
         {
           RawTransaction: {
@@ -67,7 +68,7 @@ describe('Batch', function () {
   it('verifies single-account Batch', function () {
     tx = {
       Account: 'rJCxK2hX9tDMzbnn3cg1GU2g19Kfmhzxkp',
-      Flags: 1,
+      Flags: BatchFlags.tfAllOrNothing,
       RawTransactions: [
         {
           RawTransaction: {
@@ -117,17 +118,94 @@ describe('Batch', function () {
   })
 
   it('throws w/ invalid RawTransactions object', function () {
-    tx.RawTransactions = [0]
+    tx.RawTransactions = [0, tx.RawTransactions[1]]
     assertInvalid(tx, 'Batch: RawTransactions[0] is not object')
   })
 
   it('throws w/ invalid RawTransactions.RawTransaction object', function () {
-    tx.RawTransactions = [{ RawTransaction: 0 }]
+    tx.RawTransactions = [{ RawTransaction: 0 }, tx.RawTransactions[1]]
     assertInvalid(tx, 'Batch: invalid field RawTransactions[0].RawTransaction')
   })
 
+  it('verifies Batch with an object-form mode flag', function () {
+    tx.Flags = { tfOnlyOne: true }
+    assertValid(tx)
+  })
+
+  it('throws w/ no mode flag', function () {
+    delete tx.Flags
+    assertInvalid(
+      tx,
+      'Batch: exactly one of the mode flags (tfAllOrNothing, tfOnlyOne, tfUntilFailure, tfIndependent) must be set in Flags.',
+    )
+  })
+
+  it('throws w/ a non-mode flag only', function () {
+    tx.Flags = 1
+    assertInvalid(
+      tx,
+      'Batch: exactly one of the mode flags (tfAllOrNothing, tfOnlyOne, tfUntilFailure, tfIndependent) must be set in Flags.',
+    )
+  })
+
+  it('throws w/ two mode flags', function () {
+    // eslint-disable-next-line no-bitwise -- combining two mode flags
+    tx.Flags = BatchFlags.tfAllOrNothing | BatchFlags.tfIndependent
+    assertInvalid(
+      tx,
+      'Batch: exactly one of the mode flags (tfAllOrNothing, tfOnlyOne, tfUntilFailure, tfIndependent) must be set in Flags.',
+    )
+  })
+
+  it('throws w/ two object-form mode flags', function () {
+    tx.Flags = { tfAllOrNothing: true, tfUntilFailure: true }
+    assertInvalid(
+      tx,
+      'Batch: exactly one of the mode flags (tfAllOrNothing, tfOnlyOne, tfUntilFailure, tfIndependent) must be set in Flags.',
+    )
+  })
+
+  it('throws w/ zero RawTransactions', function () {
+    tx.RawTransactions = []
+    assertInvalid(
+      tx,
+      'Batch: RawTransactions must contain between 2 and 8 transactions.',
+    )
+  })
+
+  it('throws w/ one RawTransaction', function () {
+    tx.RawTransactions = [tx.RawTransactions[0]]
+    assertInvalid(
+      tx,
+      'Batch: RawTransactions must contain between 2 and 8 transactions.',
+    )
+  })
+
+  it('throws w/ nine RawTransactions', function () {
+    const inner: Record<string, unknown> = tx.RawTransactions[0]
+    tx.RawTransactions = Array.from({ length: 9 }, () => ({ ...inner }))
+    assertInvalid(
+      tx,
+      'Batch: RawTransactions must contain between 2 and 8 transactions.',
+    )
+  })
+
+  it('verifies eight RawTransactions', function () {
+    const inner: Record<string, unknown> = tx.RawTransactions[0]
+    tx.RawTransactions = Array.from({ length: 8 }, () => ({ ...inner }))
+    assertValid(tx)
+  })
+
+  it('throws w/ Delegate on the outer Batch', function () {
+    tx.Delegate = 'rPMh7Pi9ct699iZUTWaytJUoHcJ7cgyziK'
+    assertInvalid(
+      tx,
+      'Batch: Delegate is not allowed. Batch transactions cannot be delegated.',
+    )
+  })
+
   it('throws w/ nested Batch', function () {
-    tx.RawTransactions = [{ RawTransaction: tx }]
+    tx.RawTransactions = [{ RawTransaction: { ...tx } }, tx.RawTransactions[1]]
     assertInvalid(
       tx,
       'Batch: RawTransactions[0] is a Batch transaction. Cannot nest Batch transactions.',
@@ -144,6 +222,42 @@ describe('Batch', function () {
     assertInvalid(
       tx,
       'Batch: RawTransactions[0] must contain the `tfInnerBatchTxn` flag.',
+    )
+  })
+
+  it('types Batch.Flags and the inner transactions', function () {
+    const account = 'rJCxK2hX9tDMzbnn3cg1GU2g19Kfmhzxkp'
+    const inner = {
+      TransactionType: 'AccountSet' as const,
+      Account: account,
+      Flags: 0x40000000,
+    }
+    const typed: Batch = {
+      TransactionType: 'Batch',
+      Account: account,
+      Flags: { tfAllOrNothing: true },
+      RawTransactions: [
+        { RawTransaction: inner },
+        { RawTransaction: { ...inner, Fee: '0', SigningPubKey: '' } },
+      ],
+    }
+    const rejected: Batch = {
+      ...typed,
+      RawTransactions: [
+        // @ts-expect-error -- a Batch cannot be nested
+        { RawTransaction: typed },
+        // @ts-expect-error -- an inner Fee must be '0'
+        { RawTransaction: { ...inner, Fee: '12' } },
+        // @ts-expect-error -- an inner cannot carry a signature
+        { RawTransaction: { ...inner, TxnSignature: 'AB' } },
+        // @ts-expect-error -- an inner cannot carry LastLedgerSequence
+        { RawTransaction: { ...inner, LastLedgerSequence: 5 } },
+      ],
+    }
+    assertValid(typed)
+    assertInvalid(
+      rejected,
+      'Batch: RawTransactions[0] is a Batch transaction. Cannot nest Batch transactions.',
     )
   })
 })

@@ -8,6 +8,7 @@ import {
   SponsorshipSet,
   Transaction,
   Batch,
+  BatchFlags,
   type LoanSet,
 } from '../../src'
 import { ValidationError } from '../../src/errors'
@@ -734,6 +735,106 @@ describe('client.autofill', function () {
     const txResult = await testContext.client.autofill(tx)
     assert.strictEqual(txResult.RawTransactions[0].RawTransaction.Sequence, 24)
     assert.strictEqual(txResult.RawTransactions[1].RawTransaction.Sequence, 23)
+  })
+
+  describe('when autofill Fee of a Batch is missing', function () {
+    const sender1 = 'rGWrZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf'
+    const sender2 = 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn'
+    let batch: Batch
+
+    beforeEach(function () {
+      batch = {
+        TransactionType: 'Batch',
+        Account: sender1,
+        Flags: BatchFlags.tfAllOrNothing,
+        RawTransactions: [
+          {
+            RawTransaction: {
+              TransactionType: 'DepositPreauth',
+              Flags: 0x40000000,
+              Account: sender1,
+              Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+              Sequence: 24,
+            },
+          },
+          {
+            RawTransaction: {
+              TransactionType: 'DepositPreauth',
+              Flags: 0x40000000,
+              Account: sender1,
+              Authorize: 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn',
+              Sequence: 25,
+            },
+          },
+        ],
+        Sequence,
+        LastLedgerSequence,
+      }
+      testContext.mockRippled!.addResponse(
+        'server_info',
+        rippled.server_info.normal,
+      )
+    })
+
+    // base fee 12 drops: 12 × 2 (batch) + 12 + 12 (inners) = 48
+    it('charges no signer fee for a single-account Batch', async function () {
+      const txResult = await testContext.client.autofill(batch)
+      assert.strictEqual(txResult.Fee, '48')
+    })
+
+    it('charges one base fee per co-signing inner account', async function () {
+      batch.RawTransactions[1].RawTransaction.Account = sender2
+      const txResult = await testContext.client.autofill(batch)
+      assert.strictEqual(txResult.Fee, '60')
+    })
+
+    it('counts a co-signing inner Delegate rather than its Account', async function () {
+      batch.RawTransactions[1].RawTransaction.Delegate = sender2
+      const txResult = await testContext.client.autofill(batch)
+      assert.strictEqual(txResult.Fee, '60')
+    })
+
+    it('counts a co-signing account once across inner transactions', async function () {
+      batch.RawTransactions[0].RawTransaction.Account = sender2
+      batch.RawTransactions[1].RawTransaction.Account = sender2
+      const txResult = await testContext.client.autofill(batch)
+      assert.strictEqual(txResult.Fee, '60')
+    })
+
+    it('adds signersCount on top of the co-signer fee', async function () {
+      batch.RawTransactions[1].RawTransaction.Account = sender2
+      const txResult = await testContext.client.autofill(batch, 2)
+      assert.strictEqual(txResult.Fee, '84')
+    })
+
+    it('counts the signatures of BatchSigners when already present', async function () {
+      batch.RawTransactions[1].RawTransaction.Account = sender2
+      batch.BatchSigners = [
+        {
+          BatchSigner: {
+            Account: sender2,
+            Signers: [
+              {
+                Signer: {
+                  Account: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+                  SigningPubKey: '',
+                  TxnSignature: '',
+                },
+              },
+              {
+                Signer: {
+                  Account: 'rPMh7Pi9ct699iZUTWaytJUoHcJ7cgyziK',
+                  SigningPubKey: '',
+                  TxnSignature: '',
+                },
+              },
+            ],
+          },
+        },
+      ]
+      const txResult = await testContext.client.autofill(batch)
+      assert.strictEqual(txResult.Fee, '72')
+    })
   })
 
   it('should autofill LoanSet transaction', async function () {
