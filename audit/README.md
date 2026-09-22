@@ -6,6 +6,9 @@ bans, freeze-on-ban, and a global freeze. The instrument is a runnable project,
 [`mpt-issuer/`](mpt-issuer/), that does all of that against a local standalone rippled using this
 checkout's build of `xrpl`; every rough edge hit on the way is a numbered finding in this directory.
 
+Fix tracking: epic https://github.com/theahaco/xrpl.js/issues/2 and the work breakdown in
+[`PLAN.md`](PLAN.md) (27 PR-sized units, one sub-issue each).
+
 ## Executive summary
 
 - **107 findings**: 2 blockers, 24 major, 60 minor, 21 paper-cuts (table below). Round 1 (building
