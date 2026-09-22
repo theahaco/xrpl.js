@@ -6,6 +6,14 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 
 ### Added
 * Add `LendingProtocolV1_1` support.
+* Add `getTransactionResultCode` and `isTesSuccess` utility functions to make it easier to check whether a transaction succeeded, since `submitAndWait` resolves normally for transactions that reached a validated ledger even when they failed on-ledger (e.g. `tec*` results).
+* Add `TransactionFailedError` (extends `XrplError`) with typed `engineResult`, `engineResultMessage` and `phase` (`'submit'` | `'expired'`) properties. `submitAndWait` now throws it for a terminal preliminary result and when `LastLedgerSequence` passes, instead of a plain `XrplError` with the code embedded in the message.
+
+### Fixed
+* `submitAndWait` no longer reports a transaction as expired when it was validated in its last allowed ledger (`LastLedgerSequence`) but two or more ledgers closed between polls: the transaction is looked up before expiry is declared.
+* `submitAndWait` throws immediately for `tef*` / `tel*` preliminary results (e.g. `tefPAST_SEQ` from concurrent submissions) that rippled does not already know, rather than polling until `LastLedgerSequence` passes. Re-submitting a signed blob that an earlier submission got validated still resolves with the validated transaction.
+* Errors other than `txnNotFound` raised while `submitAndWait` polls for the transaction (`TimeoutError`, `DisconnectedError`, `RippledError` such as `tooBusy`) propagate with their original class and `data` instead of being re-thrown as a plain `Error` whose message starts with `undefined`.
+* `submitAndWait`'s `@throws` documentation now states that validated `tec*` results resolve normally (with the fee charged) and that concurrent submissions from one account collide on `Sequence`.
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES

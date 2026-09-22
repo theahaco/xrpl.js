@@ -6,7 +6,12 @@ import type {
   Transaction,
   Wallet,
 } from '..'
-import { ValidationError, XrplError } from '../errors'
+import {
+  RippledError,
+  TransactionFailedError,
+  ValidationError,
+  XrplError,
+} from '../errors'
 import { Signer } from '../models/common'
 import { TxResponse } from '../models/methods'
 import { BaseTransaction } from '../models/transactions/common'
@@ -67,9 +72,85 @@ export async function submitRequest(
 }
 
 /**
+ * Looks a transaction up by hash, distinguishing "rippled does not know this transaction"
+ * from every other failure.
+ *
+ * @param client - The client to use for the `tx` request.
+ * @param txHash - The hash of the transaction to look up.
+ * @param submissionResult - The preliminary result of the transaction, for the error message.
+ * @returns The `tx` response, or `undefined` if rippled answered `txnNotFound`.
+ * @throws {XrplError} Any other library error (`RippledError`, `TimeoutError`,
+ * `DisconnectedError`, ...) is re-thrown unchanged so callers keep its class and `data`;
+ * anything else is wrapped in an `XrplError` whose `data` is the original error.
+ */
+async function lookupTransaction(
+  client: Client,
+  txHash: string,
+  submissionResult: string,
+): Promise<TxResponse | undefined> {
+  try {
+    return await client.request({ command: 'tx', transaction: txHash })
+  } catch (error: unknown) {
+    if (error instanceof RippledError && isTxnNotFound(error.data)) {
+      return undefined
+    }
+    if (error instanceof XrplError) {
+      throw error
+    }
+    throw new XrplError(
+      `Failed to look up transaction ${txHash} while waiting for its final outcome.\n` +
+        `Preliminary result: ${submissionResult}`,
+      error,
+    )
+  }
+}
+
+function isTxnNotFound(data: unknown): boolean {
+  return (
+    typeof data === 'object' &&
+    data != null &&
+    'error' in data &&
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- narrowed by the `in` check above
+    (data as { error: unknown }).error === 'txnNotFound'
+  )
+}
+
+/**
+ * Whether a preliminary `submit` result means rippled neither applied, queued, nor relayed
+ * the transaction, so this submission can never reach a ledger on its own.
+ *
+ * - `tem*`: malformed.
+ * - `tef*`: failed; cannot be applied to the current ledger or any later one.
+ * - `tel*`: local error; not applied and not relayed.
+ *
+ * `tefALREADY` is the exception: it means the exact transaction is already in the open ledger
+ * (a re-submission), so it is still expected to be validated.
+ *
+ * `tes*`, `tec*` and `ter*` are not terminal: the transaction was applied (charging a fee
+ * for `tec*`) or held for retry (`ter*`, e.g. `terQUEUED`) and may still be validated.
+ *
+ * @param engineResult - The `engine_result` of a `submit` response.
+ * @returns `true` if the submission is terminal.
+ */
+export function isTerminalSubmissionResult(engineResult: string): boolean {
+  if (engineResult === 'tefALREADY') {
+    return false
+  }
+  return (
+    engineResult.startsWith('tem') ||
+    engineResult.startsWith('tef') ||
+    engineResult.startsWith('tel')
+  )
+}
+
+/**
  * Waits for the final outcome of a transaction by polling the ledger until the result can be considered final,
  * meaning it has either been included in a validated ledger, or the transaction's lastLedgerSequence has been
  * surpassed by the latest ledger sequence (meaning it will never be included in a validated ledger).
+ *
+ * Each poll reads the latest validated ledger index *before* looking the transaction up, and only reports
+ * expiry when the transaction is not validated after that lookup. This way a transaction validated in its
+ * last allowed ledger is returned even when several ledgers close between two polls.
  *
  * @template T - The type of the transaction. Defaults to `Transaction`.
  * @param client - The client to use for requesting transaction information.
@@ -78,7 +159,11 @@ export async function submitRequest(
  * @param submissionResult - The preliminary result of the transaction.
  * @returns A promise that resolves with the final transaction response.
  *
- * @throws {XrplError} If the latest ledger sequence surpasses the transaction's lastLedgerSequence.
+ * @throws {TransactionFailedError} With `phase: 'expired'` and `engineResult` set to the preliminary result
+ * if the latest validated ledger sequence surpasses the transaction's lastLedgerSequence without the
+ * transaction being validated.
+ * @throws {XrplError} If a `tx` lookup fails for a reason other than `txnNotFound` (e.g. `TimeoutError`,
+ * `DisconnectedError`, or a `RippledError` such as `tooBusy`); the original error is re-thrown unchanged.
  *
  * @example
  * import { hashes, Client } from "xrpl"
@@ -107,7 +192,7 @@ export async function submitRequest(
  *   response.result.engine_result,
  * )
  */
-// eslint-disable-next-line max-params, max-lines-per-function -- this function needs to display and do with more information.
+// eslint-disable-next-line max-params -- this function needs to display and do with more information.
 export async function waitForFinalTransactionOutcome<
   T extends BaseTransaction = SubmittableTransaction,
 >(
@@ -118,43 +203,24 @@ export async function waitForFinalTransactionOutcome<
 ): Promise<TxResponse<T>> {
   await sleep(LEDGER_CLOSE_TIME)
 
+  // Read the validated ledger index before the lookup: if it is already past `lastLedger`, every ledger
+  // the transaction could have landed in is validated too, so a non-validated lookup result is final.
   const latestLedger = await client.getLedgerIndex()
 
-  if (lastLedger < latestLedger) {
-    throw new XrplError(
-      `The latest ledger sequence ${latestLedger} is greater than the transaction's LastLedgerSequence (${lastLedger}).\n` +
-        `Preliminary result: ${submissionResult}`,
-    )
-  }
+  const txResponse = await lookupTransaction(client, txHash, submissionResult)
 
-  const txResponse = await client
-    .request({
-      command: 'tx',
-      transaction: txHash,
-    })
-    .catch(async (error) => {
-      // error is of an unknown type and hence we assert type to extract the value we need.
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions,@typescript-eslint/no-unsafe-member-access -- ^
-      const message = error?.data?.error as string
-      if (message === 'txnNotFound') {
-        return waitForFinalTransactionOutcome<T>(
-          client,
-          txHash,
-          lastLedger,
-          submissionResult,
-        )
-      }
-      throw new Error(
-        `${message} \n Preliminary result: ${submissionResult}.\nFull error details: ${String(
-          error,
-        )}`,
-      )
-    })
-
-  if (txResponse.result.validated) {
+  if (txResponse?.result.validated) {
     // TODO: resolve the type assertion below
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- we know that txResponse is of type TxResponse
     return txResponse as TxResponse<T>
+  }
+
+  if (lastLedger < latestLedger) {
+    throw new TransactionFailedError(
+      `The latest ledger sequence ${latestLedger} is greater than the transaction's LastLedgerSequence (${lastLedger}).\n` +
+        `Preliminary result: ${submissionResult}`,
+      { engineResult: submissionResult, phase: 'expired' },
+    )
   }
 
   return waitForFinalTransactionOutcome<T>(
@@ -163,6 +229,59 @@ export async function waitForFinalTransactionOutcome<
     lastLedger,
     submissionResult,
   )
+}
+
+/**
+ * Handles a terminal preliminary `submit` result: throws a `TransactionFailedError`, unless an earlier
+ * submission of the same signed blob already got the transaction into a validated ledger, in which case
+ * that validated transaction is returned.
+ *
+ * A `tem*` result is malformed and thrown at once. A `tef*` or `tel*` result means this submission was
+ * neither applied, queued, nor relayed, so polling until `LastLedgerSequence` passes would only delay the
+ * same answer. The one way such a transaction can still be validated is if an earlier submission got it
+ * there (e.g. `tefPAST_SEQ` when re-submitting after a disconnect), so the hash is looked up once. rippled
+ * also keeps rejected transactions in its local cache and reports them as not validated, so only a
+ * `validated` lookup counts.
+ *
+ * @template T - The type of the transaction.
+ * @param client - The client to use for the lookup.
+ * @param response - The `submit` response.
+ * @param txHash - The hash of the submitted transaction.
+ * @returns The validated transaction if it is already on the ledger; `undefined` when the submission is
+ * not terminal and the caller should keep polling.
+ * @throws {TransactionFailedError} With `phase: 'submit'` when the transaction will never reach a ledger.
+ */
+export async function handleTerminalSubmission<
+  T extends BaseTransaction = SubmittableTransaction,
+>(
+  client: Client,
+  response: SubmitResponse,
+  txHash: string,
+): Promise<TxResponse<T> | undefined> {
+  const {
+    engine_result: engineResult,
+    engine_result_message: engineResultMessage,
+  } = response.result
+  if (!isTerminalSubmissionResult(engineResult)) {
+    return undefined
+  }
+
+  const failure = new TransactionFailedError(
+    `Transaction failed, ${engineResult}: ${engineResultMessage}`,
+    { engineResult, engineResultMessage, phase: 'submit' },
+    response.result,
+  )
+
+  if (engineResult.startsWith('tem')) {
+    throw failure
+  }
+
+  const txResponse = await lookupTransaction(client, txHash, engineResult)
+  if (txResponse?.result.validated) {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- we know that txResponse is of type TxResponse
+    return txResponse as TxResponse<T>
+  }
+  throw failure
 }
 
 // checks if the transaction has been signed

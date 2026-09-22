@@ -58,6 +58,7 @@ import {
   submitRequest,
   getSignedTx,
   getLastLedgerSequence,
+  handleTerminalSubmission,
   waitForFinalTransactionOutcome,
 } from '../sugar'
 import {
@@ -843,20 +844,35 @@ class Client extends EventEmitter<EventTypes> {
    * Will also sign the transaction for us before submitting the signed transaction binary blob to the ledger.
    *
    * This is similar to `submit`, which does all of the above, but also waits to see if the transaction has been validated.
+   *
+   * The promise resolves as soon as the transaction is in a validated ledger, **whatever its result**. A transaction
+   * validated with a `tec*` code (e.g. `tecNO_AUTH`, `tecLOCKED`, `tecINSUFFICIENT_FUNDS`, `tecUNFUNDED_PAYMENT`) did
+   * not have its intended effect but did reach the ledger and charged its fee, so it resolves normally: always read
+   * `result.meta.TransactionResult` (see `getTransactionResultCode` and `isTesSuccess`) before treating a resolved
+   * promise as success.
+   *
+   * @remarks `autofill` reads the account's `Sequence` from the server and reserves nothing, so concurrent
+   * `submitAndWait` calls for the same account collide on `Sequence` and all but one fail with `tefPAST_SEQ`.
+   * Submit one transaction at a time per account, or use Tickets (`TicketCreate` + `TicketSequence`) for
+   * parallel submissions.
    * @param transaction - A transaction to autofill, sign & encode, and submit.
    * @param opts - (Optional) Options used to sign and submit a transaction.
    * @param opts.autofill - If true, autofill a transaction.
    * @param opts.failHard - If true, and the transaction fails locally, do not retry or relay the transaction to other servers.
    * @param opts.wallet - A wallet to sign a transaction. It must be provided when submitting an unsigned transaction.
-   * @throws Connection errors: If the `Client` object is unable to establish a connection to the specified WebSocket endpoint,
-   * an error will be thrown.
-   * @throws Transaction errors: If the submitted transaction is invalid or cannot be included in a validated ledger for any
-   * reason, the promise returned by `submitAndWait()` will be rejected with an error. This could include issues with insufficient
-   * balance, invalid transaction fields, or other issues specific to the transaction being submitted.
-   * @throws Ledger errors: If the ledger being used to submit the transaction is undergoing maintenance or otherwise unavailable,
-   * an error will be thrown.
-   * @throws Timeout errors: If the transaction takes longer than the specified timeout period to be included in a validated
-   * ledger, the promise returned by `submitAndWait()` will be rejected with an error.
+   * @throws {ValidationError} If the transaction is unsigned and no wallet is given, or it has no `LastLedgerSequence`.
+   * @throws {TransactionFailedError} With `phase: 'submit'` if the preliminary `submit` result is terminal: `tem*`
+   * (malformed), or `tef*` / `tel*` (neither applied, queued, nor relayed, e.g. `tefPAST_SEQ`). `engineResult`
+   * carries the code. Thrown immediately, without waiting for expiry. Re-submitting a signed blob that an earlier
+   * submission already got validated resolves with that validated transaction instead, and `tefALREADY` (the
+   * transaction is already in the open ledger) keeps waiting for validation.
+   * @throws {TransactionFailedError} With `phase: 'expired'` if `LastLedgerSequence` is passed by the validated ledger
+   * before the transaction is validated (e.g. a `ter*` transaction that was never applied); `engineResult` is the
+   * preliminary result.
+   * @throws {ConnectionError} (`NotConnectedError`, `DisconnectedError`, `TimeoutError`, ...) if the connection fails
+   * while submitting or polling. The transaction may still have been submitted: look it up by hash before
+   * re-submitting.
+   * @throws {RippledError} If a request other than the submission fails on the server (e.g. `tooBusy`) while polling.
    * @returns A promise that contains TxResponse, that will return when the transaction has been validated.
    */
   public async submitAndWait<
@@ -883,13 +899,16 @@ class Client extends EventEmitter<EventTypes> {
 
     const response = await submitRequest(this, signedTx, opts?.failHard)
 
-    if (response.result.engine_result.startsWith('tem')) {
-      throw new XrplError(
-        `Transaction failed, ${response.result.engine_result}: ${response.result.engine_result_message}`,
-      )
+    const txHash = hashes.hashSignedTx(signedTx)
+    const alreadyValidated = await handleTerminalSubmission<T>(
+      this,
+      response,
+      txHash,
+    )
+    if (alreadyValidated) {
+      return alreadyValidated
     }
 
-    const txHash = hashes.hashSignedTx(signedTx)
     return waitForFinalTransactionOutcome(
       this,
       txHash,
