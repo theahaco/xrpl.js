@@ -270,6 +270,18 @@ export type PseudoTransaction = EnableAmendment | SetFee | UNLModify
 export type Transaction = SubmittableTransaction | PseudoTransaction
 
 /**
+ * A transaction that may carry fields the models do not (yet) declare.
+ *
+ * `BaseTransaction` has no index signature, so `keyof`, `Omit`, `Partial` and
+ * excess-property checks work on every transaction type. Use this type at
+ * forward-compatible boundaries instead: decoded blobs, ledger responses, or
+ * literals that must carry a field newer than this library.
+ *
+ * @category Transaction Models
+ */
+export type LenientTransaction = Transaction & Record<string, unknown>
+
+/**
  * @category Transaction Models
  */
 export interface TransactionAndMetadata<
@@ -287,8 +299,10 @@ export interface TransactionAndMetadata<
  * @throws ValidationError When the Transaction is malformed.
  * @category Utilities
  */
-export function validate(transaction: Record<string, unknown>): void {
-  const tx = { ...transaction }
+export function validate(
+  transaction: BaseTransaction | Record<string, unknown>,
+): void {
+  const tx: Record<string, unknown> = { ...transaction }
 
   // should already be done in the tx-specific validation, but doesn't hurt to check again
   validateBaseTransaction(tx)

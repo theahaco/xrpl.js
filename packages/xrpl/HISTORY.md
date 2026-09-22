@@ -4,8 +4,12 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 
 ## Unreleased
 
+### BREAKING CHANGES
+* `BaseTransaction` no longer extends `Record<string, unknown>`, so every transaction interface (`Payment`, `MPTokenIssuanceSet`, ...) is now strict: `keyof` is the literal field union, `Omit`/`Pick`/`Partial` work, and object literals with unknown field names (typos included) fail to compile. Code that assigned arbitrary extra keys to a typed transaction, or read unmodelled fields off a `Transaction`, must now use the new `LenientTransaction` type (`Transaction & Record<string, unknown>`), an explicit `Payment & Record<string, unknown>` style intersection, or a narrowing cast (for example `signAsSponsor(...).tx as Payment`). `validate()` accepts `BaseTransaction | Record<string, unknown>`, so typed transactions can be passed to it without a cast.
+
 ### Added
 * Add `LendingProtocolV1_1` support.
+* Add `LenientTransaction` (`Transaction & Record<string, unknown>`) for forward-compatible boundaries where a transaction may carry fields this library does not model yet.
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES

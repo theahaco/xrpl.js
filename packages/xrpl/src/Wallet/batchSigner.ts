@@ -92,8 +92,7 @@ export function signMultiBatch(
   /*
    * This will throw a more clear error for JS users if the supplied transaction has incorrect formatting
    */
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- validate does not accept Transaction type
-  validate(transaction as unknown as Record<string, unknown>)
+  validate(transaction)
 
   // An account must sign the Batch if it authorizes an inner transaction or is
   // the `Counterparty` of one.
@@ -104,11 +103,12 @@ export function signMultiBatch(
     involvedAccounts.add(
       raw.RawTransaction.Delegate ?? raw.RawTransaction.Account,
     )
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Counterparty only exists on some inner tx types
-    const counterparty = (raw.RawTransaction as Record<string, unknown>)
-      .Counterparty
-    if (typeof counterparty === 'string') {
-      involvedAccounts.add(counterparty)
+    // Counterparty only exists on some inner tx types (e.g. LoanSet)
+    if (
+      'Counterparty' in raw.RawTransaction &&
+      typeof raw.RawTransaction.Counterparty === 'string'
+    ) {
+      involvedAccounts.add(raw.RawTransaction.Counterparty)
     }
   })
   if (!involvedAccounts.has(batchAccount)) {

@@ -7,6 +7,7 @@ export {
 } from './common'
 export {
   validate,
+  LenientTransaction,
   PseudoTransaction,
   SubmittableTransaction,
   TransactionAndMetadata,
