@@ -1,10 +1,6 @@
 import { ValidationError } from '../../errors'
 import { isHex, INTEGER_SANITY_CHECK, isFlagEnabled, hasFlag } from '../utils'
-import {
-  MAX_MPT_META_BYTE_LENGTH,
-  MPT_META_WARNING_HEADER,
-  validateMPTokenMetadata,
-} from '../utils/mptokenMetadata'
+import { MAX_MPT_META_BYTE_LENGTH } from '../utils/mptokenMetadata'
 
 import {
   BaseTransaction,
@@ -372,20 +368,6 @@ export function validateMPTokenIssuanceCreate(
       throw new ValidationError(
         'MPTokenIssuanceCreate: TransferFee cannot be provided together with the tfMPTCanHoldConfidentialBalance flag',
       )
-    }
-  }
-
-  if (tx.MPTokenMetadata != null) {
-    const validationMessages = validateMPTokenMetadata(tx.MPTokenMetadata)
-
-    if (validationMessages.length > 0) {
-      const message = [
-        MPT_META_WARNING_HEADER,
-        ...validationMessages.map((msg) => `- ${msg}`),
-      ].join('\n')
-
-      // eslint-disable-next-line no-console -- Required here.
-      console.warn(message)
     }
   }
 }

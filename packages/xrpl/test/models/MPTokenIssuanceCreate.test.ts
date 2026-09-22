@@ -1,4 +1,5 @@
 import { stringToHex } from '@xrplf/isomorphic/src/utils'
+import { assert } from 'chai'
 
 import { MPTokenIssuanceCreateFlags, MPTokenMetadata } from '../../src'
 import {
@@ -8,7 +9,7 @@ import {
 } from '../../src/models/transactions/MPTokenIssuanceCreate'
 import {
   MAX_MPT_META_BYTE_LENGTH,
-  MPT_META_WARNING_HEADER,
+  validateMPTokenMetadata,
 } from '../../src/models/utils/mptokenMetadata'
 import { assertTxIsValid, assertTxValidationError } from '../testUtils'
 
@@ -264,19 +265,22 @@ describe('MPTokenIssuanceCreate', function () {
 })
 
 /**
- * Test console warning is logged while validating MPTokenIssuanceCreate for MPTokenMetadata field.
+ * Non-XLS-89 metadata is advisory: `validate()` must not write to the console.
+ * The messages are available through `validateMPTokenMetadata`.
  */
-/* eslint-disable no-console -- Require to test console warnings  */
+/* eslint-disable no-console -- asserting that nothing is written to the console */
 describe('MPTokenMetadata warnings', function () {
   beforeEach(() => {
-    jest.spyOn(console, 'warn')
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+    jest.spyOn(console, 'error').mockImplementation(() => undefined)
+    jest.spyOn(console, 'log').mockImplementation(() => undefined)
   })
 
   afterEach(() => {
     jest.restoreAllMocks()
   })
 
-  it(`logs console warning`, function () {
+  it(`does not write to the console for non-XLS-89 metadata`, function () {
     const mptMetaData: MPTokenMetadata = {
       ticker: 'TBILL',
       name: 'T-Bill Token',
@@ -286,22 +290,23 @@ describe('MPTokenMetadata warnings', function () {
       issuer_name: 'Issuer',
       uris: ['apple'],
     } as unknown as MPTokenMetadata
+    const metadataHex = stringToHex(JSON.stringify(mptMetaData))
     const tx = {
       TransactionType: 'MPTokenIssuanceCreate',
       Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
-      MPTokenMetadata: stringToHex(JSON.stringify(mptMetaData)),
+      MPTokenMetadata: metadataHex,
     }
 
     assertValid(tx)
 
-    const expectedMessage = [
-      MPT_META_WARNING_HEADER,
-      '- uris/us: should be an array of objects each with uri/u, category/c, and title/t properties.',
-    ].join('\n')
+    expect(console.warn).not.toHaveBeenCalled()
+    expect(console.error).not.toHaveBeenCalled()
+    expect(console.log).not.toHaveBeenCalled()
 
-    expect(console.warn).toHaveBeenCalledWith(
-      expect.stringContaining(expectedMessage),
-    )
+    // The advisory check is still available to callers who want it.
+    assert.deepStrictEqual(validateMPTokenMetadata(metadataHex), [
+      'uris/us: should be an array of objects each with uri/u, category/c, and title/t properties.',
+    ])
   })
 })
 /* eslint-enable no-console  */

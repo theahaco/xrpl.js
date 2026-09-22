@@ -4,7 +4,7 @@
 import { EventEmitter } from 'eventemitter3'
 
 import {
-  RippledError,
+  NotConnectedError,
   NotFoundError,
   ValidationError,
   XrplError,
@@ -526,6 +526,8 @@ class Client extends EventEmitter<EventTypes> {
    * Get networkID and buildVersion from server_info
    *
    * @returns void
+   * @throws RippledError (or another XrplError) if the `server_info` request fails; `networkID` and
+   * `buildVersion` are left unchanged in that case.
    * @example
    * ```ts
    * const { Client } = require('xrpl')
@@ -536,16 +538,11 @@ class Client extends EventEmitter<EventTypes> {
    * ```
    */
   public async getServerInfo(): Promise<void> {
-    try {
-      const response = await this.request({
-        command: 'server_info',
-      })
-      this.networkID = response.result.info.network_id ?? undefined
-      this.buildVersion = response.result.info.build_version
-    } catch (error) {
-      // eslint-disable-next-line no-console -- Print the error to console but allows client to be connected.
-      console.error(error)
-    }
+    const response = await this.request({
+      command: 'server_info',
+    })
+    this.networkID = response.result.info.network_id ?? undefined
+    this.buildVersion = response.result.info.build_version
   }
 
   /**
@@ -564,6 +561,10 @@ class Client extends EventEmitter<EventTypes> {
    * ```
    * If you open a client connection, be sure to close it with `await client.disconnect()`
    * before exiting your application.
+   *
+   * After the websocket is open the client fetches `server_info` to learn the server's `networkID`
+   * and `buildVersion`. If that request fails the returned promise still resolves, but an `error`
+   * event is emitted with code `'server_info'` and `networkID`/`buildVersion` stay `undefined`.
    * @returns A promise that resolves with a void value when a connection is established.
    * @category Network
    *
@@ -578,7 +579,16 @@ class Client extends EventEmitter<EventTypes> {
    */
   public async connect(): Promise<void> {
     return this.connection.connect().then(async () => {
-      await this.getServerInfo()
+      try {
+        await this.getServerInfo()
+      } catch (error) {
+        // The connection is usable without `server_info`, so stay connected; but
+        // report the failure through the client's `error` event (never the
+        // console) because `networkID`/`buildVersion` stay undefined and
+        // `autofill` will then omit `NetworkID`.
+        const message = error instanceof Error ? error.message : String(error)
+        this.emit('error', 'server_info', message, error)
+      }
       this.emit('connected')
     })
   }
@@ -1218,7 +1228,8 @@ class Client extends EventEmitter<EventTypes> {
    * @param options.amount - A custom amount to fund, if undefined or null, the default amount will be 1000.
    * @returns A Wallet on the Testnet or Devnet that contains some amount of XRP,
    * and that wallet's balance in XRP.
-   * @throws When either Client isn't connected or unable to fund wallet address.
+   * @throws NotConnectedError if the Client isn't connected; XRPLFaucetError if the faucet cannot be
+   * inferred or the wallet cannot be funded.
    */
   public async fundWallet(
     this: Client,
@@ -1229,7 +1240,7 @@ class Client extends EventEmitter<EventTypes> {
     balance: number
   }> {
     if (!this.isConnected()) {
-      throw new RippledError('Client not connected, cannot call faucet')
+      throw new NotConnectedError('Client not connected, cannot call faucet')
     }
     const existingWallet = Boolean(wallet)
 

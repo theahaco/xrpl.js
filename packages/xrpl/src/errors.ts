@@ -64,6 +64,8 @@ class RippledError extends XrplError {}
 /**
  * Error thrown when xrpl.js cannot specify error type.
  *
+ * @deprecated xrpl.js never throws this error; it is kept only so existing imports keep compiling
+ * and will be removed in the next major version. Catch {@link XrplError} instead.
  * @category Errors
  */
 class UnexpectedError extends XrplError {}
@@ -92,6 +94,8 @@ class DisconnectedError extends ConnectionError {}
 /**
  * Error thrown when rippled is not initialized.
  *
+ * @deprecated xrpl.js never throws this error; it is kept only so existing imports keep compiling
+ * and will be removed in the next major version. Catch {@link ConnectionError} instead.
  * @category Errors
  */
 class RippledNotInitializedError extends ConnectionError {}

@@ -4,6 +4,7 @@ import { stringToHex } from '@xrplf/isomorphic/src/utils'
 import { assert } from 'chai'
 
 import {
+  Clawback,
   DepositPreauth,
   OfferCreate,
   OfferCreateFlags,
@@ -14,6 +15,7 @@ import {
   TrustSet,
   TrustSetFlags,
 } from '../../src'
+import { ValidationError } from '../../src/errors'
 import { AuthorizeCredential, MPTokenMetadata } from '../../src/models/common'
 import { AccountRootFlags } from '../../src/models/ledger'
 import {
@@ -421,7 +423,32 @@ describe('Models Utils', function () {
         },
       }
 
-      assert.throws(() => convertTxFlagsToNumber(tx))
+      assert.throws(
+        () => convertTxFlagsToNumber(tx),
+        ValidationError,
+        'PaymentChannelClaim: invalid flag "tfNonExistentFlag". Valid flags: tfRenew, tfClose, tfInnerBatchTxn',
+      )
+    })
+
+    it('names the transaction type for a mismatched flag from another type', function () {
+      const tx: Clawback = {
+        Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+        TransactionType: 'Clawback',
+        Amount: {
+          mpt_issuance_id: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+          value: '1',
+        },
+        Flags: {
+          // @ts-expect-error -- MPTokenIssuanceSet flag, not a Clawback flag
+          tfMPTLock: true,
+        },
+      }
+
+      assert.throws(
+        () => convertTxFlagsToNumber(tx),
+        ValidationError,
+        'Clawback: invalid flag "tfMPTLock". Valid flags: tfInnerBatchTxn',
+      )
     })
 
     it('converts OfferCreateFlags to its numeric value', function () {
@@ -575,7 +602,11 @@ describe('Models Utils', function () {
         },
       }
 
-      assert.throws(() => convertTxFlagsToNumber(tx))
+      assert.throws(
+        () => convertTxFlagsToNumber(tx),
+        ValidationError,
+        'DepositPreauth: invalid flag "tfNonExistent". Valid flags: tfInnerBatchTxn',
+      )
     })
   })
 

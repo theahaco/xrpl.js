@@ -349,6 +349,51 @@ describe('client.autofill', function () {
     await assertRejects(testContext.client.autofill(tx), XrplError)
   })
 
+  it('should name the actual deletion blockers of an MPT issuer/holder', async function () {
+    testContext.mockRippled!.addResponse(
+      'account_info',
+      rippled.account_info.normal,
+    )
+    testContext.mockRippled!.addResponse('ledger', rippled.ledger.normal)
+    testContext.mockRippled!.addResponse(
+      'server_info',
+      rippled.server_info.normal,
+    )
+    const blockers = [
+      { LedgerEntryType: 'MPTokenIssuance', index: '00' },
+      { LedgerEntryType: 'MPToken', index: '01' },
+      { LedgerEntryType: 'MPToken', index: '02' },
+    ]
+    testContext.mockRippled!.addResponse('account_objects', {
+      ...rippled.account_objects.normal,
+      result: {
+        ...rippled.account_objects.normal.result,
+        account_objects: blockers,
+      },
+    })
+
+    const tx: AccountDelete = {
+      Account: 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn',
+      TransactionType: 'AccountDelete',
+      Destination: 'X7AcgcsBL6XDcUb289X4mJ8djcdyKaB5hJDWMArnXr61cqZ',
+      Fee,
+      Sequence,
+      LastLedgerSequence,
+    }
+
+    await assertRejects(
+      testContext.client.autofill(tx),
+      XrplError,
+      'Account rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn cannot be deleted; it still owns deletion-blocking ledger entries: MPTokenIssuance (1), MPToken (2).',
+    )
+    try {
+      await testContext.client.autofill(tx)
+    } catch (error) {
+      assert.instanceOf(error, XrplError)
+      assert.deepStrictEqual(error.data, blockers)
+    }
+  })
+
   it('should throw error if account being deleted has outstanding sponsorship obligations', async function () {
     testContext.mockRippled!.addResponse('account_info', {
       ...rippled.account_info.normal,
@@ -526,6 +571,40 @@ describe('client.autofill', function () {
       assert.strictEqual(txResult.Fee, '2000000')
     })
 
+    it('should reject with XrplError when the owner reserve cannot be fetched', async function () {
+      const tx: AccountDelete = {
+        Account: 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn',
+        TransactionType: 'AccountDelete',
+        Destination: 'X7AcgcsBL6XDcUb289X4mJ8djcdyKaB5hJDWMArnXr61cqZ',
+      }
+      testContext.mockRippled!.addResponse(
+        'account_info',
+        rippled.account_info.normal,
+      )
+      testContext.mockRippled!.addResponse('ledger', rippled.ledger.normal)
+      testContext.mockRippled!.addResponse('server_state', {
+        status: 'success',
+        type: 'response',
+        result: {
+          state: {},
+        },
+      })
+      testContext.mockRippled!.addResponse(
+        'server_info',
+        rippled.server_info.normal,
+      )
+      testContext.mockRippled!.addResponse(
+        'account_objects',
+        rippled.account_objects.empty,
+      )
+
+      await assertRejects(
+        testContext.client.autofill(tx),
+        XrplError,
+        'Could not fetch Owner Reserve: server_state.validated_ledger.reserve_inc is missing.',
+      )
+    })
+
     it('should autofill Fee of an EscrowFinish transaction with signersCount', async function () {
       const tx: EscrowFinish = {
         Account: 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn',
@@ -692,6 +771,78 @@ describe('client.autofill', function () {
       const rawTx = rawTxOuter.RawTransaction
       assert.strictEqual(rawTx.Sequence, 23 + index + 1)
     })
+  })
+
+  it('should reject a Batch inner transaction with a non-zero Fee with a ValidationError', async function () {
+    const sender = 'rGWrZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf'
+    const tx: Batch = {
+      TransactionType: 'Batch',
+      Account: sender,
+      RawTransactions: [
+        {
+          RawTransaction: {
+            TransactionType: 'DepositPreauth',
+            Flags: 0x40000000,
+            Account: sender,
+            Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+            Fee: '12',
+          },
+        },
+      ],
+      Fee,
+      Sequence,
+      LastLedgerSequence,
+    }
+    testContext.mockRippled!.addResponse('account_info', {
+      status: 'success',
+      type: 'response',
+      result: {
+        account_data: {
+          Sequence: 23,
+        },
+      },
+    })
+    await assertRejects(
+      testContext.client.autofill(tx),
+      ValidationError,
+      'Batch: RawTransactions[0].RawTransaction.Fee must be "0" in an inner Batch transaction',
+    )
+  })
+
+  it('should reject a Batch inner transaction with a TxnSignature with a ValidationError', async function () {
+    const sender = 'rGWrZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf'
+    const tx: Batch = {
+      TransactionType: 'Batch',
+      Account: sender,
+      RawTransactions: [
+        {
+          RawTransaction: {
+            TransactionType: 'DepositPreauth',
+            Flags: 0x40000000,
+            Account: sender,
+            Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+            TxnSignature: 'DEADBEEF',
+          },
+        },
+      ],
+      Fee,
+      Sequence,
+      LastLedgerSequence,
+    }
+    testContext.mockRippled!.addResponse('account_info', {
+      status: 'success',
+      type: 'response',
+      result: {
+        account_data: {
+          Sequence: 23,
+        },
+      },
+    })
+    await assertRejects(
+      testContext.client.autofill(tx),
+      ValidationError,
+      'Batch: RawTransactions[0].RawTransaction.TxnSignature must not be set in an inner Batch transaction',
+    )
   })
 
   it('should autofill Batch transaction with multiple accounts', async function () {
