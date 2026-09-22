@@ -257,7 +257,11 @@ class Client extends EventEmitter<EventTypes> {
   /** Default wallet used to sign unsigned transactions. */
   public readonly wallet?: Wallet
 
-  /** Discover modeled server commands and their inferred replies. */
+  /**
+   * Discover modeled server commands and their inferred replies.
+   * Pass api_version explicitly when overriding the client API version:
+   * response inference cannot track mutations to this.apiVersion.
+   */
   public readonly command: Commands = createCommands(this)
 
   /**

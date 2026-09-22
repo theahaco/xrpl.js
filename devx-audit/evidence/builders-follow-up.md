@@ -32,6 +32,8 @@ The local ledger is standalone rippled 3.4.0-rc1, using the previously recorded 
 
 Changing `submitAndWait` from “validated inclusion” to “validated success” is a **breaking proposal**. Existing failure-inspecting callers must handle a `trySubmitAndWait` result or catch `TransactionFailedError` and inspect its response. Low-level `submit`, raw `request` and `command.submit` retain their protocol response behavior. The API-v2 confirmation and TypeScript-5 minimum remain compatibility decisions from the earlier prototype.
 
+One inherited inference gap remains: `Client.request` uses the mutable client API version at runtime, while absent per-request `api_version` is inferred as the default API version. The new command methods share that behavior. When changing the client API version, supply `api_version` explicitly per request (a literal or a correctly typed union). The version checks above cover explicit request values; they do not establish that inference follows mutable client state. This is a source/type observation and release follow-up, not a claim that all version configurations are solved.
+
 The main Node/browser tutorial now uses builders and command methods. All four prototype examples remove redundant result-code comparisons. Published 5.3.0 comparisons retain their required checks. The six-page report and 13-slide deck reflect this contract and include the wallet/discovery step.
 
 The initial Realm preview was inspected earlier. The revised tutorial has source and compilation checks, but no refreshed browser inspection: the browser tool previously could not verify its access policy. The browser build is not a browser-runtime test. A hosted preview and npm release remain outside the completed work.
