@@ -52,8 +52,18 @@ type AmountObject = AmountObjectIOU | AmountObjectMPT
 /**
  * Type guard for AmountObjectIOU
  */
+/**
+ * The own keys of an amount object whose value is not `undefined`; such
+ * members are dropped by JSON serialisation and must not change the shape.
+ */
+function definedKeys(arg: object): string[] {
+  return Object.keys(arg)
+    .filter((key) => arg[key] !== undefined)
+    .sort()
+}
+
 function isAmountObjectIOU(arg): arg is AmountObjectIOU {
-  const keys = Object.keys(arg).sort()
+  const keys = definedKeys(arg)
 
   return (
     keys.length === 3 &&
@@ -67,7 +77,7 @@ function isAmountObjectIOU(arg): arg is AmountObjectIOU {
  * Type guard for AmountObjectMPT
  */
 function isAmountObjectMPT(arg): arg is AmountObjectMPT {
-  const keys = Object.keys(arg).sort()
+  const keys = definedKeys(arg)
 
   return (
     keys.length === 2 && keys[0] === 'mpt_issuance_id' && keys[1] === 'value'

@@ -123,7 +123,7 @@ describe('MPTokenIssuanceCreate', function () {
 
     assertInvalid(
       invalid,
-      'MPTokenIssuanceCreate: TransferFee must be between 0 and 50000',
+      'MPTokenIssuanceCreate: TransferFee must be an integer between 0 and 50000',
     )
 
     invalid = {
@@ -134,7 +134,7 @@ describe('MPTokenIssuanceCreate', function () {
 
     assertInvalid(
       invalid,
-      'MPTokenIssuanceCreate: TransferFee must be between 0 and 50000',
+      'MPTokenIssuanceCreate: TransferFee must be an integer between 0 and 50000',
     )
 
     invalid = {
@@ -260,6 +260,77 @@ describe('MPTokenIssuanceCreate', function () {
     } as any
 
     assertInvalid(invalid, 'MPTokenIssuanceCreate: invalid field DomainID')
+  })
+
+  it(`throws w/ out-of-range or non-integer AssetScale`, function () {
+    for (const scale of [300, -1, 2.5, Number.NaN]) {
+      assertInvalid(
+        {
+          TransactionType: 'MPTokenIssuanceCreate',
+          Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+          AssetScale: scale,
+        } as any,
+        'MPTokenIssuanceCreate: AssetScale must be an integer between 0 and 255',
+      )
+    }
+
+    assertValid({
+      TransactionType: 'MPTokenIssuanceCreate',
+      Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+      AssetScale: 255,
+    } as any)
+  })
+
+  it(`throws w/ non-integer TransferFee`, function () {
+    for (const fee of [12.5, Number.NaN]) {
+      assertInvalid(
+        {
+          TransactionType: 'MPTokenIssuanceCreate',
+          Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+          Flags: MPTokenIssuanceCreateFlags.tfMPTCanTransfer,
+          TransferFee: fee,
+        } as any,
+        'MPTokenIssuanceCreate: TransferFee must be an integer between 0 and 50000',
+      )
+    }
+  })
+
+  it(`throws w/ flag bits outside tfMPTokenIssuanceCreateMask`, function () {
+    // 0x1 is lsfMPTLocked on the ledger object, not a valid tf flag.
+    for (const flags of [
+      0x1,
+      0x100,
+      // eslint-disable-next-line no-bitwise -- required to OR the flags
+      MPTokenIssuanceCreateFlags.tfMPTCanLock | 0x1,
+    ]) {
+      assertInvalid(
+        {
+          TransactionType: 'MPTokenIssuanceCreate',
+          Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+          Flags: flags,
+        } as any,
+        'MPTokenIssuanceCreate: invalid Flags',
+      )
+    }
+
+    // Every defined flag plus the universal bits is valid.
+    assertValid({
+      TransactionType: 'MPTokenIssuanceCreate',
+      Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+      Flags:
+        // tfFullyCanonicalSig + tfInnerBatchTxn (added, not OR-ed, to keep the
+        // number positive).
+        0x80000000 +
+        0x40000000 +
+        // eslint-disable-next-line no-bitwise -- required to OR the flags
+        (MPTokenIssuanceCreateFlags.tfMPTCanLock |
+          MPTokenIssuanceCreateFlags.tfMPTRequireAuth |
+          MPTokenIssuanceCreateFlags.tfMPTCanEscrow |
+          MPTokenIssuanceCreateFlags.tfMPTCanTrade |
+          MPTokenIssuanceCreateFlags.tfMPTCanTransfer |
+          MPTokenIssuanceCreateFlags.tfMPTCanClawback |
+          MPTokenIssuanceCreateFlags.tfMPTCanHoldConfidentialBalance),
+    } as any)
   })
 })
 

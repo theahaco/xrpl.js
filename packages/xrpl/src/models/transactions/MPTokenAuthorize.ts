@@ -1,12 +1,17 @@
+import { ValidationError } from '../../errors'
+
 import {
   BaseTransaction,
-  isString,
   validateBaseTransaction,
   validateRequiredField,
   Account,
   validateOptionalField,
   isAccount,
   GlobalFlagsInterface,
+  isMPTokenIssuanceID,
+  isMPTIssuer,
+  tfUniversal,
+  validateFlagsMask,
 } from './common'
 
 /**
@@ -25,6 +30,17 @@ export enum MPTokenAuthorizeFlags {
    */
   tfMPTUnauthorize = 0x00000001,
 }
+
+/**
+ * Bits that are invalid in `Flags` of an MPTokenAuthorize transaction
+ * (rippled's `tfMPTokenAuthorizeMask`): everything except the universal
+ * flags and `tfMPTUnauthorize`.
+ */
+/* eslint-disable no-bitwise -- Need bitwise operations to replicate rippled behavior */
+export const tfMPTokenAuthorizeMask = ~(
+  tfUniversal | MPTokenAuthorizeFlags.tfMPTUnauthorize
+)
+/* eslint-enable no-bitwise */
 
 /**
  * Map of flags to boolean values representing {@link MPTokenAuthorize} transaction
@@ -62,6 +78,29 @@ export interface MPTokenAuthorize extends BaseTransaction {
  */
 export function validateMPTokenAuthorize(tx: Record<string, unknown>): void {
   validateBaseTransaction(tx)
-  validateRequiredField(tx, 'MPTokenIssuanceID', isString)
+  validateRequiredField(tx, 'MPTokenIssuanceID', isMPTokenIssuanceID)
   validateOptionalField(tx, 'Holder', isAccount)
+  validateFlagsMask(tx, tfMPTokenAuthorizeMask)
+
+  if (tx.Holder != null && tx.Holder === tx.Account) {
+    throw new ValidationError(
+      'MPTokenAuthorize: Holder cannot be the same as the Account.',
+    )
+  }
+
+  // The issuer is encoded in the MPTokenIssuanceID, so which side of the
+  // authorization this is can be decided offline: the issuer (un)authorizes a
+  // Holder; a holder opts in or out of its own MPToken and never names one.
+  // rippled answers both mismatches with tecNO_PERMISSION (a fee-charging tec).
+  const isIssuer = isMPTIssuer(tx.Account, tx.MPTokenIssuanceID)
+  if (isIssuer && tx.Holder == null) {
+    throw new ValidationError(
+      'MPTokenAuthorize: the issuer of the MPTokenIssuanceID must specify Holder',
+    )
+  }
+  if (!isIssuer && tx.Holder != null) {
+    throw new ValidationError(
+      'MPTokenAuthorize: only the issuer of the MPTokenIssuanceID may specify Holder',
+    )
+  }
 }

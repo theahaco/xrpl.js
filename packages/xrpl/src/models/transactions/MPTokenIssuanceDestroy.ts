@@ -1,9 +1,22 @@
+import { ValidationError } from '../../errors'
+
 import {
   BaseTransaction,
-  isString,
   validateBaseTransaction,
   validateRequiredField,
+  isMPTokenIssuanceID,
+  isMPTIssuer,
+  tfUniversal,
+  validateFlagsMask,
 } from './common'
+
+/**
+ * Bits that are invalid in `Flags` of an MPTokenIssuanceDestroy transaction
+ * (rippled's `tfMPTokenIssuanceDestroyMask`): the transaction defines no
+ * flags of its own, so only the universal flags are allowed.
+ */
+// eslint-disable-next-line no-bitwise -- Need bitwise operations to replicate rippled behavior
+export const tfMPTokenIssuanceDestroyMask = ~tfUniversal
 
 /**
  * The MPTokenIssuanceDestroy transaction is used to remove an MPTokenIssuance object
@@ -30,5 +43,13 @@ export function validateMPTokenIssuanceDestroy(
   tx: Record<string, unknown>,
 ): void {
   validateBaseTransaction(tx)
-  validateRequiredField(tx, 'MPTokenIssuanceID', isString)
+  validateRequiredField(tx, 'MPTokenIssuanceID', isMPTokenIssuanceID)
+  validateFlagsMask(tx, tfMPTokenIssuanceDestroyMask)
+
+  // Only the issuer (encoded in the ID) may destroy; rippled: tecNO_PERMISSION.
+  if (!isMPTIssuer(tx.Account, tx.MPTokenIssuanceID)) {
+    throw new ValidationError(
+      'MPTokenIssuanceDestroy: Account must be the issuer of the MPTokenIssuanceID',
+    )
+  }
 }

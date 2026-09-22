@@ -6,6 +6,7 @@
 * `Amount` now rejects MPT `value` strings outside `0` to `2^63 - 1` instead of silently truncating values at or above `2^64` to their low 64 bits (`2^64 + 5` used to encode as `5`).
 * `Amount` now accepts only the canonical decimal form for MPT `value` (`/^(0|[1-9][0-9]*)$/`); `"0x10"`, `"+7"`, `"-0"`, `" 9"`, `"007"` and `"1e2"` are rejected with the codec's own `Error` instead of being reinterpreted or leaking a `SyntaxError`.
 * `UInt32.from(string)` now requires a base 10 integer string within range instead of an unchecked `parseInt`; `UInt64.from(number)` rejects values above `Number.MAX_SAFE_INTEGER` and `UInt64.from(bigint)` rejects values outside `0` to `2^64 - 1` instead of truncating.
+* `Amount.from(object)` ignores keys whose value is `undefined` when deciding whether an object is an IOU or MPT amount, so `{ mpt_issuance_id, value, currency: undefined }` encodes like the two-key form it serialises to.
 
 ## 2.11.0 (2026-09-11)
 
