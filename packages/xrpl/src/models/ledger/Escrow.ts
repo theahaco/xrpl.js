@@ -1,3 +1,5 @@
+import { Amount, MPTAmount } from '../common'
+
 import { BaseLedgerEntry, HasPreviousTxnID } from './BaseLedgerEntry'
 
 /**
@@ -19,9 +21,11 @@ export default interface Escrow extends BaseLedgerEntry, HasPreviousTxnID {
    * successful.
    */
   Destination: string
-  /** The amount to be delivered by the held payment. Can represent XRP, an IOU token, or an MPT.
-   * Must always be a positive value. */
-  Amount: string
+  /**
+   * The amount to be delivered by the held payment. Can represent XRP (a
+   * string of drops), an IOU token, or an MPT. Must always be a positive value.
+   */
+  Amount: Amount | MPTAmount
   /**
    * A PREIMAGE-SHA-256 crypto-condition, as hexadecimal. If present, the
    * EscrowFinish transaction must contain a fulfillment that satisfies this
@@ -70,10 +74,12 @@ export default interface Escrow extends BaseLedgerEntry, HasPreviousTxnID {
   TransferRate?: number
 
   /**
-   * The ledger index of the issuer's directory node associated with the Escrow.
-   * Used when the issuer is neither the source nor destination account.
+   * A hint indicating which page of the issuer's owner directory links to this
+   * object, in case the directory consists of multiple pages. Used when the
+   * issuer is neither the source nor destination account. Serialised as a
+   * UInt64 hex string, like `OwnerNode`.
    */
-  IssuerNode?: number
+  IssuerNode?: string
 
   /**
    * The account sponsoring the reserve for this Escrow. If present, the

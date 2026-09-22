@@ -43,9 +43,11 @@ export interface LedgerDataRequest extends BaseRequest, LookupByLedgerRequest {
   type?: LedgerEntryFilter
 }
 
-export type LedgerDataLabeledLedgerEntry = {
-  ledgerEntryType: string
-} & LedgerEntry
+/**
+ * A ledger entry as returned by `ledger_data` when `binary` is false. This is
+ * the raw ledger object, discriminated by its `LedgerEntryType` field.
+ */
+export type LedgerDataLabeledLedgerEntry = LedgerEntry
 
 export interface LedgerDataBinaryLedgerEntry {
   data: string

@@ -6,6 +6,9 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 
 ### Added
 * Add `LendingProtocolV1_1` support.
+
+### Fixed
+* Fix RPC request/response shapes: `LedgerEntryRequest.credential` now uses `credential_type` (was `credentialType`, which rippled rejects) and gains typed `permissioned_domain`, `vault`, `oracle`, `nft_offer`, `loan`, and `loan_broker` lookups; `ledger_entry` results type `ledger_current_index` as optional and add `ledger_index`/`ledger_hash` for closed/validated lookups; `feature` results expose the `vetoed`, `count`, `validations`, `threshold`, and `majority` fields via the new `FeatureInfo` type; `Escrow.Amount` accepts IOU and MPT amounts and `Escrow.IssuerNode` is a hex string; `LedgerDataLabeledLedgerEntry` no longer requires a phantom `ledgerEntryType` field.
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES
