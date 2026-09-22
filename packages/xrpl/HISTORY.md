@@ -14,6 +14,7 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 * `submitAndWait` throws immediately for `tef*` / `tel*` preliminary results (e.g. `tefPAST_SEQ` from concurrent submissions) that rippled does not already know, rather than polling until `LastLedgerSequence` passes. Re-submitting a signed blob that an earlier submission got validated still resolves with the validated transaction.
 * Errors other than `txnNotFound` raised while `submitAndWait` polls for the transaction (`TimeoutError`, `DisconnectedError`, `RippledError` such as `tooBusy`) propagate with their original class and `data` instead of being re-thrown as a plain `Error` whose message starts with `undefined`.
 * `submitAndWait`'s `@throws` documentation now states that validated `tec*` results resolve normally (with the fee charged) and that concurrent submissions from one account collide on `Sequence`.
+* The integration test harness waits for validation through `submitAndWait` and asserts on the validated result rather than the preliminary `submit` code, `.ci-config/xrpld.cfg` enables every non-retired amendment the CI image supports (including `fixMPTDeliveredAmount`), and setup fails by name when it does not. Integration test documentation now matches what CI runs.
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES

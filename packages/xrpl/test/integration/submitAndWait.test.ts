@@ -29,7 +29,10 @@ describe('client.submitAndWait', function () {
   let testContext: XrplIntegrationTestContext
 
   beforeEach(async () => {
-    testContext = await setupClient(serverUrl)
+    // This suite asserts on exactly which ledger a transaction lands in and on how long
+    // a submission takes to settle, so it closes ledgers itself rather than letting the
+    // background ticker do it.
+    testContext = await setupClient(serverUrl, { closeLedgers: false })
   })
   afterEach(async () => teardownClient(testContext))
 

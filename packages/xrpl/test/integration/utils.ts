@@ -9,12 +9,14 @@ import {
   Wallet,
   AccountInfoRequest,
   type SubmitResponse,
+  type TxResponse,
   TimeoutError,
   NotConnectedError,
   ECDSA,
   AccountLinesRequest,
   IssuedCurrency,
   XRP,
+  getTransactionResultCode,
 } from '../../src'
 import {
   AMMCreate,
@@ -94,35 +96,37 @@ export function subscribeDone(client: Client): void {
 }
 
 /**
- * Checks if a specific amendment is enabled on the server.
+ * Checks whether an amendment is in force on the server the tests are connected to.
+ *
+ * The `feature` RPC cannot answer this on a standalone node. `.ci-config/xrpld.cfg`
+ * enables amendments through its `[features]` stanza, which applies them as rules in
+ * force from the genesis ledger without writing the ledger's `Amendments` object, so
+ * `feature` reports every amendment as `enabled: false` even when it is in effect.
+ * The only reliable check is to ask the server to apply a transaction that is only
+ * valid when the amendment is in force: `temDISABLED` means the amendment is off.
+ *
+ * `simulate` is used rather than `submit` so nothing reaches the ledger, which means
+ * the probe needs no funded account, no sequence and no fee.
  *
  * @param client - The XRPL client.
- * @param amendmentName - The name of the amendment to check (e.g., 'PermissionDelegation').
- * @returns True if the amendment is enabled, false otherwise.
+ * @param probeTransaction - A transaction the server rejects with `temDISABLED` when,
+ *                           and only when, the amendment under test is not in force.
+ *                           It does not have to be otherwise valid: any result other
+ *                           than `temDISABLED` means the amendment is in force.
+ * @returns True if the amendment is in force, false otherwise.
+ *
+ * @example
+ * const enabled = await isAmendmentEnabled(client, {
+ *   TransactionType: 'MPTokenIssuanceCreate',
+ *   Account: wallet.classicAddress,
+ * })
  */
 export async function isAmendmentEnabled(
   client: Client,
-  amendmentName: string,
+  probeTransaction: SubmittableTransaction,
 ): Promise<boolean> {
-  try {
-    const featureResponse = await client.request({
-      command: 'feature',
-    })
-
-    // Search through all features to find the one with the matching name
-    const features = featureResponse.result.features
-    for (const feature of Object.values(features)) {
-      if (feature.name === amendmentName) {
-        return feature.enabled
-      }
-    }
-
-    // Amendment not found
-    return false
-  } catch (error) {
-    // If the feature command fails, assume the amendment is not enabled
-    return false
-  }
+  const response = await client.simulate(probeTransaction)
+  return response.result.engine_result !== 'temDISABLED'
 }
 
 export async function submitTransaction({
@@ -235,6 +239,10 @@ export async function verifySubmittedTransaction(
   }
 
   assert(data.result)
+  assert.isTrue(
+    data.result.validated,
+    `Transaction ${hash} is not in a validated ledger`,
+  )
   assert.deepEqual(
     omit(data.result.tx_json, [
       'ctid',
@@ -255,7 +263,32 @@ export async function verifySubmittedTransaction(
 }
 
 /**
- * Sends a test transaction for integration testing.
+ * The outcome of a transaction sent by {@link testTransaction}.
+ *
+ * The inherited `result.engine_result` is the *preliminary* code the `submit` method
+ * returned, which is only a prediction: a transaction can be submitted with
+ * `tesSUCCESS` and still be validated with a `tec*` code, and vice versa. Read
+ * `finalResult` for the code the network actually recorded.
+ */
+export interface TestTransactionResponse extends SubmitResponse {
+  // The `tx` response for the transaction, from the validated ledger it landed in.
+  // Absent only when the expected `errCode` was a `tem*`, `tef*`, `tel*` or `ter*`
+  // code, none of which ever reach a ledger.
+  validatedResponse?: TxResponse
+  // The engine result code from the validated metadata, e.g. `tesSUCCESS` or
+  // `tecNO_PERMISSION`. This is the outcome that actually happened. Absent for the
+  // same reason as `validatedResponse`.
+  finalResult?: string
+}
+
+/**
+ * Sends a test transaction for integration testing and waits for it to be validated.
+ *
+ * Transactions go out through `submitAndWait`, so this resolves only once the
+ * transaction is in a validated ledger and every assertion is made against the result
+ * recorded there rather than against the preliminary `submit` code. `setupClient`
+ * closes ledgers in the background, which is what lets `submitAndWait` make progress
+ * against a standalone node.
  *
  * @param client - The XRPL client
  * @param transaction - The transaction object to send.
@@ -265,7 +298,8 @@ export async function verifySubmittedTransaction(
  * @param retry.count - How many times the request should be retried.
  * @param retry.delayMs - How long to wait between retries.
  * @param errCode - When this parameter is defined, it signifies the transaction should fail with the expected
- *                  errCode (e.g. tecNO_PERMISSION).
+ *                  errCode (e.g. tecNO_PERMISSION). A `tec*` code is asserted against the validated result; the
+ *                  other classes of failure never reach a ledger, so they are asserted against the `submit` result.
  * @returns The response of the transaction.
  */
 // eslint-disable-next-line max-params -- Test function, many params are needed
@@ -278,9 +312,7 @@ export async function testTransaction(
     delayMs: number
   },
   errCode?: string,
-): Promise<SubmitResponse> {
-  // Accept any un-validated changes.
-
+): Promise<TestTransactionResponse> {
   // sign/submit the transaction
   const response = await submitTransaction({
     client,
@@ -292,33 +324,53 @@ export async function testTransaction(
   // check that the transaction was successful
   assert.equal(response.type, 'response')
 
-  if (errCode) {
-    assert.equal(errCode, response.result.engine_result)
+  // `tem*`, `tef*`, `tel*` and `ter*` transactions are never applied to a ledger, so
+  // the preliminary result is the only outcome there is to assert against.
+  if (errCode != null && !errCode.startsWith('tec')) {
+    assert.equal(response.result.engine_result, errCode)
     return response
   }
 
-  if (response.result.engine_result !== 'tesSUCCESS') {
+  // Close the ledger the transaction went into, then wait for it through
+  // `submitAndWait`. Re-submitting a blob whose transaction is already validated is
+  // what `submitAndWait` is built for: rippled answers `tefPAST_SEQ` and the validated
+  // transaction is returned. Closing the ledger first is what makes that deterministic
+  // - a blob that is still only in the open ledger also draws `tefPAST_SEQ`, which
+  // `submitAndWait` can only report as a failure.
+  await ledgerAccept(client)
+  const validatedResponse = await client.submitAndWait(response.result.tx_blob)
+  const finalResult = getTransactionResultCode(validatedResponse.result.meta)
+  assert.isTrue(
+    validatedResponse.result.validated,
+    `Transaction ${validatedResponse.result.hash} was not validated`,
+  )
+
+  if (errCode != null) {
+    assert.equal(
+      finalResult,
+      errCode,
+      `Expected the validated result to be ${errCode} but got ${finalResult}`,
+    )
+    return { ...response, validatedResponse, finalResult }
+  }
+
+  if (finalResult !== 'tesSUCCESS') {
     // eslint-disable-next-line no-console -- See output
     console.error(
-      `Transaction was not successful. Expected response.result.engine_result to be tesSUCCESS but got ${response.result.engine_result}`,
+      `Transaction was not successful. Expected the validated result to be tesSUCCESS but got ${finalResult}`,
     )
     // eslint-disable-next-line no-console -- See output
     console.error('The transaction was: ', transaction)
     // eslint-disable-next-line no-console -- See output
-    console.error('The response was: ', JSON.stringify(response))
+    console.error('The submit response was: ', JSON.stringify(response))
   }
 
-  assert.equal(
-    response.result.engine_result,
-    'tesSUCCESS',
-    response.result.engine_result_message,
-  )
+  assert.equal(finalResult, 'tesSUCCESS', response.result.engine_result_message)
 
-  // check that the transaction is on the ledger
+  // check that the transaction on the ledger is the one that was signed
   const signedTx = omit(response.result.tx_json, 'hash')
-  await ledgerAccept(client)
   await verifySubmittedTransaction(client, signedTx as Transaction)
-  return response
+  return { ...response, validatedResponse, finalResult }
 }
 
 export async function getXRPBalance(

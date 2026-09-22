@@ -77,7 +77,7 @@ npm run test:integration
 Breaking down the command:
 * `--detach` runs the container in the background so the terminal stays free.
 * `--publish 6006:6006` exposes the admin WebSocket port on the host.
-* `--volume "$PWD/.ci-config:/etc/xrpld/"` mounts the host directory containing `xrpld.cfg` and `validators.txt` into the container. The host path may be relative, but the container path must be absolute; `$PWD` is used so the command works regardless of where it's run from.
+* `--volume "$PWD/.ci-config:/etc/xrpld/"` mounts the host directory containing `xrpld.cfg` into the container. The host path may be relative, but the container path must be absolute; `$PWD` is used so the command works regardless of where it's run from.
 * `--name xrpld-service` names the container — this is the label shown by `docker ps` / `docker stats`.
 * `rippleci/xrpld:develop` is the image, regularly rebuilt from the `develop` branch of `rippled`. Omitting the tag resolves to `:latest`.
 * `--standalone` is passed to the image's entrypoint (`xrpld`) to start the node in standalone mode.
@@ -220,16 +220,30 @@ npm uninstall abbrev -w xrpl
 ## Updating the Docker container for CI
 
 In order to test the library, we need to enable the latest amendments in the docker container.
-This requires updating the `/.ci-config/rippled.cfg` file with the hashes and names of new amendments.
+This requires listing them by name in the `[features]` stanza of `.ci-config/xrpld.cfg`.
 
-In order to update the list, follow these steps from the top level of the library:
-1. Run `node ./.ci-config/getNewAmendments.js`
-2. If there are any new amendment hashes, add a comment to the end of `/.ci-config/rippled.cfg` with the date
-   - `Ex. "# Added August 9th, 2023"`
-3. For each hash printed out by the script, add the hash and name to the config file.
-   - Ex. `B2A4DB846F0891BF2C76AB2F2ACC8F5B4EC64437135C6E56F3F859DE5FFD5856 ExpandedSignerList`
-   - You can look up the name by searching for the hash on https://xrpl.org/known-amendments.html
-4. Push your changes
+In standalone mode that stanza is honoured as a set of rules in force from the genesis
+ledger; it does not write an on-ledger `Amendments` object, so the `feature` RPC still
+reports every amendment as `enabled: false` on a standalone node. Integration tests must
+therefore probe behaviour rather than read `feature` (see `isAmendmentEnabled` in
+`packages/xrpl/test/integration/utils.ts`).
+
+Because the tests run against whatever image CI starts, `setupClient` asserts that every
+non-retired amendment that node supports is listed in `xrpld.cfg` and fails with the
+missing names if any are not. To update the list, follow these steps from the top level of
+the library, with the standalone container from [Integration Tests](#integration-tests)
+running:
+
+1. Run `npm run build`, then `node ./.ci-config/getNewAmendments.js`. It asks the running
+   node for its supported amendments and prints, by name, the ones missing from
+   `.ci-config/xrpld.cfg`. Amendments the node reports as `vetoed: "Obsolete"` are retired,
+   permanently in force, and cannot be listed, so the script skips them.
+   - The script talks to `ws://localhost:6006` by default; override it with
+     `XRPLD_WS_URL`, e.g. `XRPLD_WS_URL=ws://localhost:6124`.
+2. Add each printed name to the end of the `[features]` stanza in `.ci-config/xrpld.cfg`,
+   under a comment naming the release it came from — `# 3.5.0 Amendments`, for example.
+3. Re-run the script; it should print `No new amendments to add!`.
+4. Run `npm run test:integration` against the container, then push your changes.
 
 Note: The same updated config can be used to update xrpl-py's CI as well.
 
