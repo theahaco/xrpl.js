@@ -1,4 +1,8 @@
 export { Client, ClientOptions } from './client'
+export {
+  type BatchInnerResult,
+  BATCH_INNER_NOT_APPLIED,
+} from './sugar/getBatchResults'
 
 export * from './models'
 

@@ -51,7 +51,7 @@ import type {
   EventTypes,
   OnEventToListenerMap,
 } from '../models/methods/subscribe'
-import type { SubmittableTransaction } from '../models/transactions'
+import type { Batch, SubmittableTransaction } from '../models/transactions'
 import { convertTxFlagsToNumber } from '../models/utils/flags'
 import {
   ensureClassicAddress,
@@ -71,6 +71,9 @@ import {
   getTransactionFee,
 } from '../sugar/autofill'
 import { formatBalances } from '../sugar/balances'
+import getBatchResults, {
+  type BatchInnerResult,
+} from '../sugar/getBatchResults'
 import {
   validateOrderbookOptions,
   createBookOffersRequest,
@@ -763,6 +766,9 @@ class Client extends EventEmitter<EventTypes> {
    *    2. Sign & Encode.
    *    3. Submit.
    *
+   * For a `Batch`, the `engine_result` describes the outer transaction only; see
+   * {@link Batch} for what it does and does not say about the inner transactions.
+   *
    * @category Core
    *
    * @param transaction - A transaction to autofill, sign & encode, and submit.
@@ -846,6 +852,13 @@ class Client extends EventEmitter<EventTypes> {
    * Will also sign the transaction for us before submitting the signed transaction binary blob to the ledger.
    *
    * This is similar to `submit`, which does all of the above, but also waits to see if the transaction has been validated.
+   *
+   * @remarks
+   * For a `Batch`, the resolved `meta.TransactionResult` is the outcome of the outer transaction only. It is
+   * `tesSUCCESS` whenever the batch was processed, including when every inner transaction was reverted
+   * (`tfAllOrNothing`) or skipped (`tfUntilFailure`, `tfOnlyOne`). Nothing in the response says whether the
+   * inner transactions took effect: call {@link getBatchResults} with `result.hash` to find out. See {@link Batch}.
+   *
    * @param transaction - A transaction to autofill, sign & encode, and submit.
    * @param opts - (Optional) Options used to sign and submit a transaction.
    * @param opts.autofill - If true, autofill a transaction.
@@ -899,6 +912,45 @@ class Client extends EventEmitter<EventTypes> {
       lastLedger,
       response.result.engine_result,
     )
+  }
+
+  /**
+   * Looks up the outcome of every inner transaction of a validated `Batch`.
+   *
+   * The outer `Batch` resolves `tesSUCCESS` from {@link submitAndWait} whenever it was processed, even when none of
+   * its inner transactions took effect. This method hashes each inner transaction (see `getBatchInnerHashes`) and
+   * looks it up with the `tx` method: an inner transaction that was applied is its own validated transaction (its
+   * `meta.ParentBatchID` is the outer hash) and is reported with its `meta.TransactionResult`; one the ledger does
+   * not know (`txnNotFound`) is reported as `'not-applied'`. Under `tfAllOrNothing` a single failing inner
+   * transaction makes every one of them `'not-applied'`.
+   *
+   * Call it once the outer `Batch` is validated (for instance after `submitAndWait` resolves): the inner transactions
+   * are recorded in the same ledger as the outer one, so looking them up earlier reports `'not-applied'` for all.
+   *
+   * @category Abstraction
+   *
+   * @param batch - The hash of the validated outer `Batch`, or the `Batch` exactly as it was submitted (after
+   * `autofill`), from which the inner hashes are computed without fetching the outer transaction.
+   * @returns One entry per inner transaction, in `RawTransactions` order.
+   * @throws ValidationError if `batch` is a hash that resolves to a transaction other than a `Batch`, or an inner
+   * transaction is found but has no metadata yet.
+   * @throws RippledError if the outer `Batch` cannot be found, or an inner `tx` lookup fails for a reason other than
+   * `txnNotFound`.
+   *
+   * @example
+   * ```ts
+   * const response = await client.submitAndWait(batch, { wallet })
+   * // response.result.meta.TransactionResult === 'tesSUCCESS' says only that the batch was processed
+   * const inner = await client.getBatchResults(response.result.hash)
+   * if (inner.some((entry) => entry.result !== 'tesSUCCESS')) {
+   *   console.log('some inner transactions did not take effect', inner)
+   * }
+   * ```
+   */
+  public async getBatchResults(
+    batch: Batch | string,
+  ): Promise<BatchInnerResult[]> {
+    return getBatchResults(this, batch)
   }
 
   /**
