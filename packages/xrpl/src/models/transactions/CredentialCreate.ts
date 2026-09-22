@@ -3,9 +3,10 @@ import { HEX_REGEX } from '@xrplf/isomorphic/utils'
 import { ValidationError } from '../../errors'
 
 import {
+  Account,
   BaseTransaction,
+  isAccount,
   isNumber,
-  isString,
   validateBaseTransaction,
   validateCredentialType,
   validateOptionalField,
@@ -23,10 +24,10 @@ export interface CredentialCreate extends BaseTransaction {
   TransactionType: 'CredentialCreate'
 
   /** The issuer of the credential. */
-  Account: string
+  Account: Account
 
   /** The subject of the credential. */
-  Subject: string
+  Subject: Account
 
   /** A hex-encoded value to identify the type of credential from the issuer. */
   CredentialType: string
@@ -47,9 +48,7 @@ export interface CredentialCreate extends BaseTransaction {
 export function validateCredentialCreate(tx: Record<string, unknown>): void {
   validateBaseTransaction(tx)
 
-  validateRequiredField(tx, 'Account', isString)
-
-  validateRequiredField(tx, 'Subject', isString)
+  validateRequiredField(tx, 'Subject', isAccount)
 
   validateCredentialType(tx)
 

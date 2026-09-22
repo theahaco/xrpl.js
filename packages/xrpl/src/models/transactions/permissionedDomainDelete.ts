@@ -1,6 +1,6 @@
 import {
   BaseTransaction,
-  isString,
+  isDomainID,
   validateBaseTransaction,
   validateRequiredField,
 } from './common'
@@ -24,5 +24,5 @@ export function validatePermissionedDomainDelete(
 ): void {
   validateBaseTransaction(tx)
 
-  validateRequiredField(tx, 'DomainID', isString)
+  validateRequiredField(tx, 'DomainID', isDomainID)
 }

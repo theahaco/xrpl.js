@@ -81,4 +81,15 @@ describe('CredentialAccept', function () {
       'CredentialAccept: CredentialType must be encoded in hex'
     assertInvalid(credentialAccept, errorMessage)
   })
+
+  it(`throws w/ Issuer not an address`, function () {
+    credentialAccept.Issuer = 'nope'
+    const errorMessage = 'CredentialAccept: invalid field Issuer'
+    assertInvalid(credentialAccept, errorMessage)
+  })
+
+  it(`verifies X-address Issuer`, function () {
+    credentialAccept.Issuer = 'X7TviWU5CBaTMzaWiPKt1KE3qKFdzANQk8JNXYAjL8fVZsP'
+    assertValid(credentialAccept)
+  })
 })

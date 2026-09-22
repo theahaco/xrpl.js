@@ -257,4 +257,158 @@ describe('Payment', function () {
       'Payment: Credentials cannot contain duplicate elements'
     assertInvalid(payment, errorMessage)
   })
+
+  it(`throws w/ malformed CredentialIDs`, function () {
+    payment.CredentialIDs = ['zz']
+
+    const errorMessage = 'Payment: Invalid Credentials ID list format'
+    assertInvalid(payment, errorMessage)
+  })
+
+  it(`throws w/ case-variant duplicate CredentialIDs`, function () {
+    payment.CredentialIDs = [
+      'EA85602C1B41F6F1F5E83C0E6B87142FB8957BD209469E4CC347BA2D0C26F662',
+      'ea85602c1b41f6f1f5e83c0e6b87142fb8957bd209469e4cc347ba2d0c26f662',
+    ]
+
+    const errorMessage =
+      'Payment: Credentials cannot contain duplicate elements'
+    assertInvalid(payment, errorMessage)
+  })
+
+  it(`throws w/ invalid Account address`, function () {
+    payment.Account = 'not-an-address'
+    assertInvalid(payment, 'Payment: invalid field Account')
+  })
+
+  it(`verifies DeliverMax without Amount`, function () {
+    payment.DeliverMax = payment.Amount
+    delete payment.Amount
+    assertValid(payment)
+  })
+
+  it(`throws when DeliverMax is invalid`, function () {
+    payment.DeliverMax = { value: '1' }
+    assertInvalid(payment, 'PaymentTransaction: invalid DeliverMax')
+  })
+
+  it(`throws when Amount and DeliverMax differ`, function () {
+    payment.DeliverMax = '6789'
+    assertInvalid(
+      payment,
+      'PaymentTransaction: Amount and DeliverMax fields must be identical when both are provided',
+    )
+  })
+
+  it(`verifies structurally equal MPT Amount and DeliverMax`, function () {
+    delete payment.Paths
+    delete payment.SendMax
+    payment.Amount = {
+      mpt_issuance_id: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+      value: '100',
+    }
+    payment.DeliverMax = {
+      mpt_issuance_id: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+      value: '100',
+    }
+    assertValid(payment)
+  })
+
+  it(`throws when Account and Destination are the same`, function () {
+    delete payment.Paths
+    delete payment.SendMax
+    payment.Destination = payment.Account
+    assertInvalid(
+      payment,
+      'PaymentTransaction: Account and Destination cannot be the same unless SendMax or Paths make it a currency conversion',
+    )
+  })
+
+  it(`throws when Destination is the X-address of Account`, function () {
+    delete payment.Paths
+    delete payment.SendMax
+    payment.Destination = 'XVnCM7Vnvc3i6oHUXpMz5zEXZYhoUqGrr5WK95vVVAY4n8q'
+    assertInvalid(
+      payment,
+      'PaymentTransaction: Account and Destination cannot be the same unless SendMax or Paths make it a currency conversion',
+    )
+  })
+
+  it(`verifies self-payment that converts currencies`, function () {
+    payment.Destination = payment.Account
+    payment.Amount = {
+      currency: 'USD',
+      issuer: 'rfkE1aSy9G8Upk4JssnwBxhEv5p4mn2KTy',
+      value: '10',
+    }
+    assertValid(payment)
+  })
+
+  it(`throws w/ MPT Amount and Paths`, function () {
+    delete payment.SendMax
+    payment.Amount = {
+      mpt_issuance_id: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+      value: '100',
+    }
+    assertInvalid(
+      payment,
+      'PaymentTransaction: Paths are not allowed for MPT payments',
+    )
+  })
+
+  it(`throws w/ MPT Amount and XRP SendMax`, function () {
+    delete payment.Paths
+    payment.Amount = {
+      mpt_issuance_id: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+      value: '100',
+    }
+    assertInvalid(
+      payment,
+      'PaymentTransaction: SendMax must be the same MPT as Amount',
+    )
+  })
+
+  it(`verifies MPT Amount with the same MPT SendMax`, function () {
+    delete payment.Paths
+    payment.Amount = {
+      mpt_issuance_id: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+      value: '100',
+    }
+    payment.SendMax = {
+      mpt_issuance_id: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+      value: '101',
+    }
+    assertValid(payment)
+  })
+
+  it(`throws w/ MPT Amount and a different MPT DeliverMin`, function () {
+    delete payment.Paths
+    delete payment.SendMax
+    payment.Amount = {
+      mpt_issuance_id: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+      value: '100',
+    }
+    payment.DeliverMin = {
+      mpt_issuance_id: '000004C563C52827307480341125DA0577DEFC38405B0E3E',
+      value: '1',
+    }
+    payment.Flags = PaymentFlags.tfPartialPayment
+    assertInvalid(
+      payment,
+      'PaymentTransaction: DeliverMin must be the same MPT as Amount',
+    )
+  })
+
+  it(`throws w/ zero MPT Amount`, function () {
+    delete payment.Paths
+    delete payment.SendMax
+    payment.Amount = {
+      mpt_issuance_id: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+      value: '0',
+    }
+    assertInvalid(
+      payment,
+      'PaymentTransaction: MPT Amount must be greater than zero',
+    )
+  })
 })

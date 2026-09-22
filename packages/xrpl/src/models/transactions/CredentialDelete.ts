@@ -1,12 +1,12 @@
 import { ValidationError } from '../../errors'
 
 import {
+  Account,
   BaseTransaction,
-  isString,
+  isAccount,
   validateBaseTransaction,
   validateCredentialType,
   validateOptionalField,
-  validateRequiredField,
 } from './common'
 
 /**
@@ -18,16 +18,16 @@ export interface CredentialDelete extends BaseTransaction {
   TransactionType: 'CredentialDelete'
 
   /** The transaction submitter. */
-  Account: string
+  Account: Account
 
   /** A hex-encoded value to identify the type of credential from the issuer. */
   CredentialType: string
 
   /** The person that the credential is for. If omitted, Account is assumed to be the subject. */
-  Subject?: string
+  Subject?: Account
 
   /** The issuer of the credential. If omitted, Account is assumed to be the issuer. */
-  Issuer?: string
+  Issuer?: Account
 }
 
 /**
@@ -45,11 +45,9 @@ export function validateCredentialDelete(tx: Record<string, unknown>): void {
     )
   }
 
-  validateRequiredField(tx, 'Account', isString)
-
   validateCredentialType(tx)
 
-  validateOptionalField(tx, 'Subject', isString)
+  validateOptionalField(tx, 'Subject', isAccount)
 
-  validateOptionalField(tx, 'Issuer', isString)
+  validateOptionalField(tx, 'Issuer', isAccount)
 }

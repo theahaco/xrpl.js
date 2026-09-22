@@ -1,4 +1,5 @@
 import { ValidationError } from '../../errors'
+import { isHex } from '../utils'
 
 import {
   Account,
@@ -26,12 +27,13 @@ export interface EscrowFinish extends BaseTransaction {
   OfferSequence: number | string
   /**
    * Hex value matching the previously-supplied PREIMAGE-SHA-256.
-   * crypto-condition of the held payment.
+   * crypto-condition of the held payment. Must be supplied together with
+   * Fulfillment.
    */
   Condition?: string
   /**
    * Hex value of the PREIMAGE-SHA-256 crypto-condition fulfillment matching.
-   * the held payment's Condition.
+   * the held payment's Condition. Must be supplied together with Condition.
    */
   Fulfillment?: string
   /** Credentials associated with the sender of this transaction.
@@ -76,5 +78,21 @@ export function validateEscrowFinish(tx: Record<string, unknown>): void {
 
   if (tx.Fulfillment !== undefined && typeof tx.Fulfillment !== 'string') {
     throw new ValidationError('EscrowFinish: Fulfillment must be a string')
+  }
+
+  if ((tx.Condition === undefined) !== (tx.Fulfillment === undefined)) {
+    throw new ValidationError(
+      'EscrowFinish: Condition and Fulfillment must be provided together',
+    )
+  }
+
+  if (typeof tx.Condition === 'string' && !isHex(tx.Condition)) {
+    throw new ValidationError('EscrowFinish: Condition must be encoded in hex')
+  }
+
+  if (typeof tx.Fulfillment === 'string' && !isHex(tx.Fulfillment)) {
+    throw new ValidationError(
+      'EscrowFinish: Fulfillment must be encoded in hex',
+    )
   }
 }

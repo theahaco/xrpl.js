@@ -1,8 +1,10 @@
 export {
+  amountsEqual,
   BaseTransaction,
   GlobalFlags,
   GlobalFlagsInterface,
   isMPTAmount,
+  isSameAsset,
   SponsorFlags,
 } from './common'
 export {
@@ -54,7 +56,12 @@ export { CredentialCreate } from './CredentialCreate'
 export { CredentialDelete } from './CredentialDelete'
 export { DIDDelete } from './DIDDelete'
 export { DIDSet } from './DIDSet'
-export { DelegateSet, Permission } from './delegateSet'
+export {
+  DelegateSet,
+  GranularPermission,
+  Permission,
+  PermissionValue,
+} from './delegateSet'
 export { DepositPreauth } from './depositPreauth'
 export { EscrowCancel } from './escrowCancel'
 export { EscrowCreate } from './escrowCreate'

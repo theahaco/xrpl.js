@@ -1,3 +1,5 @@
+import { classicAddressToXAddress } from 'ripple-address-codec'
+
 import {
   AMMClawbackFlags,
   validateAMMClawback,
@@ -115,6 +117,25 @@ describe('AMMClawback', function () {
   it(`throws w/ Amount.issuer must match Amount.issuer`, function () {
     ammClawback.Amount.issuer = 'rnYgaEtpqpNRt3wxE39demVpDAA817rQEY'
     const errorMessage = 'AMMClawback: Amount.issuer must match Amount.issuer'
+    assertInvalid(ammClawback, errorMessage)
+  })
+
+  it(`verifies Account as the X-address of Asset.issuer`, function () {
+    ammClawback.Account = classicAddressToXAddress(
+      ammClawback.Asset.issuer,
+      false,
+      false,
+    )
+    assertValid(ammClawback)
+  })
+
+  it(`throws w/ Holder as the X-address of Asset.issuer`, function () {
+    ammClawback.Holder = classicAddressToXAddress(
+      ammClawback.Asset.issuer,
+      false,
+      false,
+    )
+    const errorMessage = 'AMMClawback: Holder and Asset.issuer must be distinct'
     assertInvalid(ammClawback, errorMessage)
   })
 })

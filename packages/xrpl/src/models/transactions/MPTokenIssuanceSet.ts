@@ -9,6 +9,7 @@ import {
 } from '../utils/mptokenMetadata'
 
 import {
+  areAddressesEqual,
   BaseTransaction,
   isString,
   validateBaseTransaction,
@@ -242,7 +243,11 @@ export function validateMPTokenIssuanceSet(tx: Record<string, unknown>): void {
     throw new ValidationError('MPTokenIssuanceSet: flag conflict')
   }
 
-  if (tx.Holder != null && tx.Holder === tx.Account) {
+  if (
+    isString(tx.Holder) &&
+    isString(tx.Account) &&
+    areAddressesEqual(tx.Holder, tx.Account)
+  ) {
     throw new ValidationError(
       'MPTokenIssuanceSet: Holder cannot be the same as the Account.',
     )

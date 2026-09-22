@@ -1,6 +1,7 @@
 import {
+  Account,
   BaseTransaction,
-  isString,
+  isAccount,
   validateBaseTransaction,
   validateCredentialType,
   validateRequiredField,
@@ -18,10 +19,10 @@ export interface CredentialAccept extends BaseTransaction {
   TransactionType: 'CredentialAccept'
 
   /** The subject of the credential. */
-  Account: string
+  Account: Account
 
   /** The issuer of the credential. */
-  Issuer: string
+  Issuer: Account
 
   /** A hex-encoded value to identify the type of credential from the issuer. */
   CredentialType: string
@@ -36,9 +37,7 @@ export interface CredentialAccept extends BaseTransaction {
 export function validateCredentialAccept(tx: Record<string, unknown>): void {
   validateBaseTransaction(tx)
 
-  validateRequiredField(tx, 'Account', isString)
-
-  validateRequiredField(tx, 'Issuer', isString)
+  validateRequiredField(tx, 'Issuer', isAccount)
 
   validateCredentialType(tx)
 }

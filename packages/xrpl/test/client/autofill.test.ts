@@ -3,6 +3,8 @@ import { assert } from 'chai'
 import {
   XrplError,
   AccountDelete,
+  Clawback,
+  CredentialDelete,
   EscrowFinish,
   Payment,
   SponsorshipSet,
@@ -105,6 +107,86 @@ describe('client.autofill', function () {
     paymentTx.Amount = '1234'
 
     await assertRejects(testContext.client.autofill(paymentTx), ValidationError)
+  })
+
+  it('Validate Payment transaction API v2: Payment Transaction: structurally equal MPT DeliverMax and Amount', async function () {
+    const mptAmount = {
+      mpt_issuance_id: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+      value: '100',
+    }
+    delete paymentTx.Paths
+    delete paymentTx.SendMax
+    paymentTx.Amount = { ...mptAmount }
+    paymentTx.DeliverMax = { ...mptAmount }
+
+    const txResult = await testContext.client.autofill(paymentTx)
+
+    assert.deepEqual(txResult.Amount, mptAmount)
+    assert.strictEqual('DeliverMax' in txResult, false)
+  })
+
+  it('Validate Payment transaction API v2: Payment Transaction: differing MPT DeliverMax and Amount', async function () {
+    delete paymentTx.Paths
+    delete paymentTx.SendMax
+    paymentTx.Amount = {
+      mpt_issuance_id: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+      value: '100',
+    }
+    paymentTx.DeliverMax = {
+      mpt_issuance_id: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+      value: '101',
+    }
+
+    await assertRejects(testContext.client.autofill(paymentTx), ValidationError)
+  })
+
+  it('converts an X-address Holder to a classic address', async function () {
+    const tx: Clawback = {
+      TransactionType: 'Clawback',
+      Account: 'rUn84CUYbNjRoTQ6mSW7BVJPSVJNLb1QLo',
+      Amount: {
+        mpt_issuance_id: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+        value: '100',
+      },
+      Holder: 'X7AcgcsBL6XDcUb289X4mJ8djcdyKaB5hJDWMArnXr61cqZ',
+    }
+    testContext.mockRippled!.addResponse(
+      'account_info',
+      rippled.account_info.normal,
+    )
+    testContext.mockRippled!.addResponse(
+      'server_info',
+      rippled.server_info.normal,
+    )
+    testContext.mockRippled!.addResponse('ledger', rippled.ledger.normal)
+
+    const txResult = await testContext.client.autofill(tx)
+
+    assert.strictEqual(txResult.Holder, 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59')
+  })
+
+  it('converts X-address Subject and Issuer to classic addresses', async function () {
+    const tx: CredentialDelete = {
+      TransactionType: 'CredentialDelete',
+      Account: 'rUn84CUYbNjRoTQ6mSW7BVJPSVJNLb1QLo',
+      Subject: 'X7AcgcsBL6XDcUb289X4mJ8djcdyKaB5hJDWMArnXr61cqZ',
+      Issuer: 'X7TviWU5CBaTMzaWiPKt1KE3qKFdzANQk8JNXYAjL8fVZsP',
+      CredentialType: 'AB',
+    }
+    testContext.mockRippled!.addResponse(
+      'account_info',
+      rippled.account_info.normal,
+    )
+    testContext.mockRippled!.addResponse(
+      'server_info',
+      rippled.server_info.normal,
+    )
+    testContext.mockRippled!.addResponse('ledger', rippled.ledger.normal)
+
+    const txResult = await testContext.client.autofill(tx)
+
+    assert.strictEqual(txResult.Subject, 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59')
+    assert.strictEqual(txResult.Issuer, 'rfmDuhDyLGgx94qiwf3YF8BUV5j6KSvE8')
   })
 
   it('should not autofill if fields are present', async function () {

@@ -6,6 +6,20 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 
 ### Added
 * Add `LendingProtocolV1_1` support.
+* Export `GranularPermission` enum and `PermissionValue` type for `DelegateSet` (includes the MPT `MPTokenIssuanceLock`/`MPTokenIssuanceUnlock` permissions).
+* Export `amountsEqual` and `isSameAsset` helpers for comparing `Amount`/`MPTAmount` values structurally.
+
+### Fixed
+* `validate()` now rejects an `Account` that is not a valid address instead of leaking a `checksum_invalid`/`Unknown letter` error from the address codec at sign time.
+* `Payment` validation now catches `temREDUNDANT` self-payments and the MPT rules rippled enforces (`Paths`, a `SendMax`/`DeliverMin` in a different asset, zero value); `DeliverMax` is accepted without `Amount` and must equal `Amount` when both are present.
+* `autofill` compares `Amount` and `DeliverMax` structurally, so two equal MPT or IOU amount objects no longer throw, and normalizes X-addresses in `Holder`, `Subject`, `Issuer` and `Delegate`.
+* Same-account checks on `Clawback`, `AMMClawback`, `MPTokenIssuanceSet` and `DelegateSet` compare addresses after X-address normalization.
+* `EscrowCreate` rejects `CancelAfter <= FinishAfter`, a non-positive `Amount` and a non-hex `Condition`; `EscrowFinish` requires `Condition` and `Fulfillment` together and hex-encoded.
+* `PermissionedDomainSet`/`PermissionedDomainDelete` validate `DomainID` as a non-zero 256-bit hash; credential `Issuer`/`Subject` fields must be addresses, `CredentialType` must be 1-64 bytes of even-length hex, `CredentialIDs` must be 64-character hashes, and duplicate detection is case- and X-address-insensitive.
+* `DelegateSet` rejects a `PermissionValue` that is neither a transaction type nor a granular permission.
+
+### BREAKING CHANGES
+* `Permission.PermissionValue` is typed as `PermissionValue` (`Transaction['TransactionType'] | GranularPermission`) instead of `string`. Values read from untyped sources need a cast or a runtime check against `GranularPermission`/`TRANSACTION_TYPES`.
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES

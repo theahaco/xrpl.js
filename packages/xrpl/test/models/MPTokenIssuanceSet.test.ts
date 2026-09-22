@@ -1,5 +1,6 @@
 /* eslint-disable max-statements -- many validation cases in one describe block */
 import { stringToHex } from '@xrplf/isomorphic/utils'
+import { classicAddressToXAddress } from 'ripple-address-codec'
 
 import { MPTokenIssuanceSetFlags } from '../../src'
 import {
@@ -478,6 +479,25 @@ describe('MPTokenIssuanceSet', function () {
         MPTokenMetadata: stringToHex('updated metadata'),
       } as any,
       'MPTokenIssuanceSet: Can not lock/unlock while mutating MPTokenIssuance.',
+    )
+  })
+
+  it(`throws w/ Holder as the X-address of Account`, function () {
+    const invalid = {
+      TransactionType: 'MPTokenIssuanceSet',
+      Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+      MPTokenIssuanceID: TOKEN_ID,
+      Holder: classicAddressToXAddress(
+        'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+        false,
+        false,
+      ),
+      Flags: MPTokenIssuanceSetFlags.tfMPTLock,
+    } as any
+
+    assertInvalid(
+      invalid,
+      'MPTokenIssuanceSet: Holder cannot be the same as the Account.',
     )
   })
 })

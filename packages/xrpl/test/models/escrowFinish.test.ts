@@ -127,4 +127,40 @@ describe('EscrowFinish', function () {
 
     assertInvalid(escrow, errorMessage)
   })
+
+  it(`throws w/ Condition without Fulfillment`, function () {
+    delete escrow.Fulfillment
+
+    assertInvalid(
+      escrow,
+      'EscrowFinish: Condition and Fulfillment must be provided together',
+    )
+  })
+
+  it(`throws w/ Fulfillment without Condition`, function () {
+    delete escrow.Condition
+
+    assertInvalid(
+      escrow,
+      'EscrowFinish: Condition and Fulfillment must be provided together',
+    )
+  })
+
+  it(`throws w/ non-hex Condition`, function () {
+    escrow.Condition = 'zz'
+
+    assertInvalid(escrow, 'EscrowFinish: Condition must be encoded in hex')
+  })
+
+  it(`throws w/ non-hex Fulfillment`, function () {
+    escrow.Fulfillment = 'zz'
+
+    assertInvalid(escrow, 'EscrowFinish: Fulfillment must be encoded in hex')
+  })
+
+  it(`throws w/ malformed CredentialIDs`, function () {
+    escrow.CredentialIDs = ['zz']
+
+    assertInvalid(escrow, 'EscrowFinish: Invalid Credentials ID list format')
+  })
 })

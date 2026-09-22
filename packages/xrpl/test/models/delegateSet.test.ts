@@ -1,3 +1,6 @@
+import { classicAddressToXAddress } from 'ripple-address-codec'
+
+import { GranularPermission } from '../../src'
 import { validateDelegateSet } from '../../src/models/transactions/delegateSet'
 import { assertTxIsValid, assertTxValidationError } from '../testUtils'
 
@@ -112,6 +115,47 @@ describe('DelegateSet', function () {
     ]
     const errorMessage =
       'DelegateSet: Permissions array cannot contain duplicate values'
+    assertInvalid(tx, errorMessage)
+  })
+
+  it(`verifies MPT granular permissions`, function () {
+    tx.Permissions = [
+      {
+        Permission: { PermissionValue: GranularPermission.MPTokenIssuanceLock },
+      },
+      {
+        Permission: {
+          PermissionValue: GranularPermission.MPTokenIssuanceUnlock,
+        },
+      },
+    ]
+    assertValid(tx)
+  })
+
+  it(`verifies every GranularPermission value`, function () {
+    Object.values(GranularPermission).forEach((value) => {
+      tx.Permissions = [{ Permission: { PermissionValue: value } }]
+      assertValid(tx)
+    })
+  })
+
+  it(`throws w/ unknown PermissionValue`, function () {
+    tx.Permissions = [{ Permission: { PermissionValue: 'MPTokenIssuanceLok' } }]
+    const errorMessage =
+      'DelegateSet: PermissionValue MPTokenIssuanceLok is not a transaction type or granular permission'
+    assertInvalid(tx, errorMessage)
+  })
+
+  it(`throws w/ PermissionValue in the wrong case`, function () {
+    tx.Permissions = [{ Permission: { PermissionValue: 'MPTokenIssuanceset' } }]
+    const errorMessage =
+      'DelegateSet: PermissionValue MPTokenIssuanceset is not a transaction type or granular permission'
+    assertInvalid(tx, errorMessage)
+  })
+
+  it(`throws w/ Authorize as the X-address of Account`, function () {
+    tx.Authorize = classicAddressToXAddress(tx.Account, false, false)
+    const errorMessage = 'DelegateSet: Authorize and Account must be different.'
     assertInvalid(tx, errorMessage)
   })
 })

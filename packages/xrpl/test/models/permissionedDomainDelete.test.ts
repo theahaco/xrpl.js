@@ -38,4 +38,16 @@ describe('PermissionedDomainDelete', function () {
     const errorMessage = 'PermissionedDomainDelete: invalid field DomainID'
     assertInvalid(tx, errorMessage)
   })
+
+  it(`throws w/ zero DomainID`, function () {
+    tx.DomainID = '0'.repeat(64)
+    const errorMessage = 'PermissionedDomainDelete: invalid field DomainID'
+    assertInvalid(tx, errorMessage)
+  })
+
+  it(`throws w/ short DomainID`, function () {
+    tx.DomainID = 'abc'
+    const errorMessage = 'PermissionedDomainDelete: invalid field DomainID'
+    assertInvalid(tx, errorMessage)
+  })
 })

@@ -1,3 +1,5 @@
+import { classicAddressToXAddress } from 'ripple-address-codec'
+
 import { validateClawback } from '../../src/models/transactions/clawback'
 import { assertTxIsValid, assertTxValidationError } from '../testUtils'
 
@@ -120,5 +122,41 @@ describe('Clawback', function () {
     } as any
 
     assertInvalid(invalidAccount, 'Clawback: cannot have Holder for currency')
+  })
+
+  it(`throws w/ Holder as the X-address of Account`, function () {
+    const invalidAccount = {
+      TransactionType: 'Clawback',
+      Amount: {
+        mpt_issuance_id: '000004C463C52827307480341125DA0577DEFC38405B0E3E',
+        value: '10',
+      },
+      Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+      Holder: classicAddressToXAddress(
+        'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+        false,
+        false,
+      ),
+    } as any
+
+    assertInvalid(invalidAccount, 'Clawback: invalid holder Account')
+  })
+
+  it(`throws w/ Account as the X-address of the currency issuer`, function () {
+    const invalidAccount = {
+      TransactionType: 'Clawback',
+      Amount: {
+        currency: 'DSH',
+        issuer: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+        value: '43.11584856965009',
+      },
+      Account: classicAddressToXAddress(
+        'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
+        false,
+        false,
+      ),
+    } as any
+
+    assertInvalid(invalidAccount, 'Clawback: invalid holder Account')
   })
 })

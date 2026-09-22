@@ -1,5 +1,6 @@
 /* eslint-disable max-lines -- common utility file */
 import { bytesToHex, HEX_REGEX } from '@xrplf/isomorphic/utils'
+import BigNumber from 'bignumber.js'
 import {
   decodeAccountID,
   isValidClassicAddress,
@@ -321,8 +322,24 @@ export function isAuthorizeCredential(
     isRecord(input) &&
     isRecord(input.Credential) &&
     Object.keys(input).length === AUTHORIZE_CREDENTIAL_SIZE &&
-    typeof input.Credential.CredentialType === 'string' &&
-    typeof input.Credential.Issuer === 'string'
+    isCredentialType(input.Credential.CredentialType) &&
+    isAccount(input.Credential.Issuer)
+  )
+}
+
+/**
+ * Verify a CredentialType value at runtime: hex encoding 1 to 64 bytes.
+ *
+ * @param input - The value to check.
+ * @returns Whether the input is a well-formed CredentialType.
+ */
+export function isCredentialType(input: unknown): input is string {
+  return (
+    isString(input) &&
+    input.length > 0 &&
+    input.length <= MAX_CREDENTIAL_TYPE_LENGTH &&
+    input.length % 2 === 0 &&
+    HEX_REGEX.test(input)
   )
 }
 
@@ -433,6 +450,55 @@ export function isTokenAmount(
   amount: unknown,
 ): amount is IssuedCurrencyAmount | MPTAmount {
   return isIssuedCurrencyAmount(amount) || isMPTAmount(amount)
+}
+
+/**
+ * Check whether two amounts denominate the same asset: both XRP, the same
+ * currency/issuer pair, or the same MPT issuance. Values are ignored.
+ *
+ * @param amt1 - The first amount.
+ * @param amt2 - The second amount.
+ * @returns True if both amounts are in the same asset.
+ */
+export function isSameAsset(
+  amt1: Amount | MPTAmount,
+  amt2: Amount | MPTAmount,
+): boolean {
+  if (typeof amt1 === 'string' || typeof amt2 === 'string') {
+    return typeof amt1 === 'string' && typeof amt2 === 'string'
+  }
+  if (isMPTAmount(amt1) || isMPTAmount(amt2)) {
+    return (
+      isMPTAmount(amt1) &&
+      isMPTAmount(amt2) &&
+      amt1.mpt_issuance_id === amt2.mpt_issuance_id
+    )
+  }
+  return (
+    amt1.currency === amt2.currency &&
+    areAddressesEqual(amt1.issuer, amt2.issuer)
+  )
+}
+
+/**
+ * Compare two amounts structurally: same asset (see {@link isSameAsset}) and
+ * numerically equal value. Two distinct objects describing the same MPT or
+ * IOU amount are equal.
+ *
+ * @param amt1 - The first amount.
+ * @param amt2 - The second amount.
+ * @returns True if the amounts are equal.
+ */
+export function amountsEqual(
+  amt1: Amount | MPTAmount,
+  amt2: Amount | MPTAmount,
+): boolean {
+  if (!isSameAsset(amt1, amt2)) {
+    return false
+  }
+  const value1 = typeof amt1 === 'string' ? amt1 : amt1.value
+  const value2 = typeof amt2 === 'string' ? amt2 : amt2.value
+  return new BigNumber(value1).isEqualTo(new BigNumber(value2))
 }
 
 /**
@@ -984,7 +1050,7 @@ export function validateBaseTransaction(
     )
   }
 
-  validateRequiredField(common, 'Account', isString)
+  validateRequiredField(common, 'Account', isAccount)
 
   validateOptionalField(common, 'Fee', isString)
 
@@ -1090,6 +1156,12 @@ export function validateCredentialType<
       `${tx.TransactionType}: CredentialType must be encoded in hex`,
     )
   }
+
+  if (tx.CredentialType.length % 2 !== 0) {
+    throw new ValidationError(
+      `${tx.TransactionType}: CredentialType must have an even number of hex characters`,
+    )
+  }
 }
 
 /**
@@ -1128,7 +1200,7 @@ export function validateCredentialsList(
   }
   credentials.forEach((credential) => {
     if (isStringID) {
-      if (!isString(credential)) {
+      if (!isLedgerEntryId(credential)) {
         throw new ValidationError(
           `${transactionType}: Invalid Credentials ID list format`,
         )
@@ -1164,18 +1236,24 @@ function isAuthorizeCredentialArray(
 export function containsDuplicates(
   objectList: AuthorizeCredential[] | string[],
 ): boolean {
-  // Case-1: Process a list of string-IDs
+  // Case-1: Process a list of string-IDs (hex is case-insensitive)
   if (typeof objectList[0] === 'string') {
-    const objSet = new Set(objectList.map((obj) => JSON.stringify(obj)))
+    const objSet = new Set(
+      objectList.map((obj) => JSON.stringify(obj).toUpperCase()),
+    )
     return objSet.size !== objectList.length
   }
 
-  // Case-2: Process a list of nested objects
+  // Case-2: Process a list of nested objects. Two credentials are the same
+  // when they decode to the same bytes: compare the issuer as a classic
+  // address and the type as case-insensitive hex.
   const seen = new Set<string>()
 
   if (isAuthorizeCredentialArray(objectList)) {
     for (const item of objectList) {
-      const key = `${item.Credential.Issuer}-${item.Credential.CredentialType}`
+      const key = `${toClassicAddress(
+        item.Credential.Issuer,
+      )}-${item.Credential.CredentialType.toUpperCase()}`
       if (seen.has(key)) {
         return true
       }
