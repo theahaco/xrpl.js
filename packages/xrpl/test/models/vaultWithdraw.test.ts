@@ -57,7 +57,6 @@ describe('VaultWithdraw', function () {
 
   it('verifies valid VaultWithdraw with Destination', function () {
     tx.Destination = 'rfmDuhDyLGgx94qiwf3YF8BUV5j6KSvE8'
-    assert.doesNotThrow(() => validateVaultWithdraw(tx))
     assert.doesNotThrow(() => validate(tx))
     assertValid(tx)
   })

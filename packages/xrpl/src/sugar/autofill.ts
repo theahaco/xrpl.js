@@ -11,7 +11,7 @@ import {
   AccountObjectsRequest,
   LedgerEntryRequest,
 } from '../models/methods'
-import { Batch, Payment, Transaction } from '../models/transactions'
+import { Batch, LoanSet, Payment, Transaction } from '../models/transactions'
 import { Account, areAddressesEqual } from '../models/transactions/common'
 import { xrpToDrops } from '../utils'
 
@@ -223,11 +223,12 @@ function getClassicAccountAndTag(
  * @param fieldName - The name of the field to convert.export
  */
 function convertToClassicAddress(tx: Transaction, fieldName: string): void {
-  const account = tx[fieldName]
+  // The address field is only present on some transaction types.
+  const record = tx as unknown as Record<string, unknown>
+  const account = record[fieldName]
   if (typeof account === 'string') {
     const { classicAccount } = getClassicAccountAndTag(account)
-    // eslint-disable-next-line no-param-reassign -- param reassign is safe
-    tx[fieldName] = classicAccount
+    record[fieldName] = classicAccount
   }
 }
 
@@ -289,11 +290,12 @@ async function fetchOwnerReserveFee(client: Client): Promise<BigNumber> {
  */
 async function fetchCounterPartySignersCount(
   client: Client,
-  tx: Transaction,
+  tx: LoanSet,
 ): Promise<number> {
-  let counterParty: Account | undefined = tx.Counterparty as Account | undefined
+  let counterParty: Account | undefined = tx.Counterparty
   // Loan Borrower initiated the transaction, Loan Broker is the counterparty.
   if (counterParty == null) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defends against JS callers omitting the field
     if (tx.LoanBrokerID == null) {
       throw new ValidationError(
         'LoanBrokerID is required for LoanSet transaction',

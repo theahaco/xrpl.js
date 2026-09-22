@@ -93,10 +93,8 @@ describe('sponsorSigner', function () {
     }, /Transaction Sponsor field .* does not match the signing wallet address/u)
 
     // Test successful single signature
-    const { tx: sponsorSignedTx } = signAsSponsor(
-      sponsorWallet,
-      signedPayment as Payment,
-    )
+    const { tx } = signAsSponsor(sponsorWallet, signedPayment as Payment)
+    const sponsorSignedTx = tx as Payment
 
     // Verify structure and key fields. Signatures are deterministic
     // (Ed25519), so the sponsor signature is pinned exactly below to catch any
@@ -237,10 +235,8 @@ describe('sponsorSigner', function () {
     }, 'Sponsor transactions are not the same.')
 
     // Test successful combination
-    const { tx: combinedTx } = combineSponsorSigners([
-      tx1 as Payment,
-      tx2 as Payment,
-    ])
+    const { tx } = combineSponsorSigners([tx1 as Payment, tx2 as Payment])
+    const combinedTx = tx as Payment
 
     // Verify structure. Signatures are deterministic (Ed25519), so each
     // sponsor signer's signature is pinned exactly below to catch any
@@ -320,7 +316,11 @@ describe('sponsorSigner', function () {
       const sponsorAddress = 'rBJMcbqnAaxcUeEPF7WiaoHCtFiTmga7un'
       const sponsorFlags = SponsorFlags.spfSponsorFee
 
-      const result = addPreFundedSponsor(payment, sponsorAddress, sponsorFlags)
+      const result = addPreFundedSponsor(
+        payment,
+        sponsorAddress,
+        sponsorFlags,
+      ) as Payment
 
       assert.equal(result.Sponsor, sponsorAddress)
       assert.equal(result.SponsorFlags, sponsorFlags)
