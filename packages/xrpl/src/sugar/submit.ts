@@ -13,7 +13,7 @@ import {
   XrplError,
 } from '../errors'
 import { Signer } from '../models/common'
-import { TxResponse } from '../models/methods'
+import { TxResponse, ValidatedTxResponse } from '../models/methods'
 import { BaseTransaction } from '../models/transactions/common'
 import { decode, encode } from '../utils'
 
@@ -103,6 +103,32 @@ async function lookupTransaction(
       error,
     )
   }
+}
+
+/**
+ * Narrows a `tx` lookup to the validated, JSON-metadata shape `submitAndWait` promises.
+ *
+ * A validated `tx` response always carries decoded metadata — the lookups here never set
+ * `binary` — but the general `TxResponse` type has to allow a pending transaction (`meta`
+ * absent) and a hex blob (`binary: true`), so both are checked rather than asserted away.
+ *
+ * @template T - The transaction type the caller submitted.
+ * @param response - A `tx` lookup result, or `undefined` if the transaction was not found.
+ * @returns The validated response, or `undefined` if it is not validated yet.
+ */
+function asValidatedTxResponse<T extends BaseTransaction>(
+  response: TxResponse | undefined,
+): ValidatedTxResponse<T> | undefined {
+  if (!response?.result.validated || typeof response.result.meta !== 'object') {
+    return undefined
+  }
+  /*
+   * The `tx` command types its result as the whole transaction union; `T` is the type the caller
+   * submitted, which no runtime check here can confirm. Everything else the type claims —
+   * `validated: true` and decoded `meta` — was just verified above.
+   */
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- see above
+  return response as unknown as ValidatedTxResponse<T>
 }
 
 function isTxnNotFound(data: unknown): boolean {
@@ -200,7 +226,7 @@ export async function waitForFinalTransactionOutcome<
   txHash: string,
   lastLedger: number,
   submissionResult: string,
-): Promise<TxResponse<T>> {
+): Promise<ValidatedTxResponse<T>> {
   await sleep(LEDGER_CLOSE_TIME)
 
   // Read the validated ledger index before the lookup: if it is already past `lastLedger`, every ledger
@@ -209,10 +235,9 @@ export async function waitForFinalTransactionOutcome<
 
   const txResponse = await lookupTransaction(client, txHash, submissionResult)
 
-  if (txResponse?.result.validated) {
-    // TODO: resolve the type assertion below
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- we know that txResponse is of type TxResponse
-    return txResponse as TxResponse<T>
+  const validated = asValidatedTxResponse<T>(txResponse)
+  if (validated) {
+    return validated
   }
 
   if (lastLedger < latestLedger) {
@@ -257,7 +282,7 @@ export async function handleTerminalSubmission<
   client: Client,
   response: SubmitResponse,
   txHash: string,
-): Promise<TxResponse<T> | undefined> {
+): Promise<ValidatedTxResponse<T> | undefined> {
   const {
     engine_result: engineResult,
     engine_result_message: engineResultMessage,
@@ -277,9 +302,9 @@ export async function handleTerminalSubmission<
   }
 
   const txResponse = await lookupTransaction(client, txHash, engineResult)
-  if (txResponse?.result.validated) {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- we know that txResponse is of type TxResponse
-    return txResponse as TxResponse<T>
+  const validated = asValidatedTxResponse<T>(txResponse)
+  if (validated) {
+    return validated
   }
   throw failure
 }

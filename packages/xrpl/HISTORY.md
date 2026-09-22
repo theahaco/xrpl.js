@@ -8,12 +8,14 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 * Add `LendingProtocolV1_1` support.
 * Add `getTransactionResultCode` and `isTesSuccess` utility functions to make it easier to check whether a transaction succeeded, since `submitAndWait` resolves normally for transactions that reached a validated ledger even when they failed on-ledger (e.g. `tec*` results).
 * Add `TransactionFailedError` (extends `XrplError`) with typed `engineResult`, `engineResultMessage` and `phase` (`'submit'` | `'expired'`) properties. `submitAndWait` now throws it for a terminal preliminary result and when `LastLedgerSequence` passes, instead of a plain `XrplError` with the code embedded in the message.
+* Add `ValidatedTxResponse<T>`, `SignedBlob<T>` and `Autofilled<T>` so the submit path keeps the transaction type: `submitAndWait` resolves with `ValidatedTxResponse<T>` (`result.meta` is decoded, transaction-specific metadata, never `string | undefined`, and `result.validated` is `true`), `Wallet.sign` returns a `tx_blob` branded with the transaction type it signed (still a plain string at runtime) that `submitAndWait` and `simulate` infer `T` from, and `autofill` returns `Autofilled<T>`, whose `Sequence`, `Fee` and `LastLedgerSequence` are no longer optional and whose `Flags` is a number.
 
 ### Fixed
 * `submitAndWait` no longer reports a transaction as expired when it was validated in its last allowed ledger (`LastLedgerSequence`) but two or more ledgers closed between polls: the transaction is looked up before expiry is declared.
 * `submitAndWait` throws immediately for `tef*` / `tel*` preliminary results (e.g. `tefPAST_SEQ` from concurrent submissions) that rippled does not already know, rather than polling until `LastLedgerSequence` passes. Re-submitting a signed blob that an earlier submission got validated still resolves with the validated transaction.
 * Errors other than `txnNotFound` raised while `submitAndWait` polls for the transaction (`TimeoutError`, `DisconnectedError`, `RippledError` such as `tooBusy`) propagate with their original class and `data` instead of being re-thrown as a plain `Error` whose message starts with `undefined`.
 * `submitAndWait`'s `@throws` documentation now states that validated `tec*` results resolve normally (with the fee charged) and that concurrent submissions from one account collide on `Sequence`.
+* `Client.simulate` threads the transaction type through to `result.tx_json` and `result.meta` instead of widening them to the whole `Transaction` union, and normalises the transaction the way `autofill` does before sending it: `Flags` given in interface form is converted to a number (rippled answered `Field 'tx_json.Flags' has bad type.`) and a Payment's `DeliverMax` is folded into `Amount` (`Field 'tx_json.DeliverMax' is unknown.`). The caller's transaction object is not modified.
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES

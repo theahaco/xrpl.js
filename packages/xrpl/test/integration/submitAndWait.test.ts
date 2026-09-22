@@ -203,7 +203,7 @@ describe('client.submitAndWait', function () {
       }
       const autofilled = await testContext.client.autofill(accountSet)
       const stale = await signAccountSet({
-        Sequence: (autofilled.Sequence ?? 1) - 1,
+        Sequence: autofilled.Sequence - 1,
       })
 
       const started = Date.now()

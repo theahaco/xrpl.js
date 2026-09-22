@@ -55,6 +55,7 @@ export interface TxRequest extends BaseRequest {
 interface BaseTxResult<
   Version extends APIVersion = typeof DEFAULT_API_VERSION,
   T extends BaseTransaction = Transaction,
+  Binary extends boolean = boolean,
 > {
   /** The SHA-512 hash of the transaction. */
   hash: string
@@ -71,8 +72,10 @@ interface BaseTxResult<
     ? TransactionMetadata<T> | string
     : never
   /** Transaction metadata, which describes the results of the transaction.
-   *  Can be undefined if a transaction has not been validated yet. */
-  meta?: TransactionMetadata<T> | string
+   *  Can be undefined if a transaction has not been validated yet. It is a hex string
+   *  when the request set `binary: true`, and decoded metadata otherwise. `Binary` defaults
+   *  to `boolean`, which keeps both shapes for callers that do not pin it down. */
+  meta?: Binary extends true ? string : TransactionMetadata<T>
   /**
    * If true, this data comes from a validated ledger version; if omitted or.
    * Set to false, this data is not final.
@@ -95,8 +98,9 @@ interface BaseTxResult<
  */
 export interface TxResponse<
   T extends BaseTransaction = Transaction,
+  Binary extends boolean = boolean,
 > extends BaseResponse {
-  result: BaseTxResult<typeof RIPPLED_API_V2, T> & { tx_json: T }
+  result: BaseTxResult<typeof RIPPLED_API_V2, T, Binary> & { tx_json: T }
   /**
    * If true, the server was able to search all of the specified ledger
    * versions, and the transaction was in none of them. If false, the server did
@@ -123,6 +127,21 @@ export interface TxV1Response<
    */
   searched_all?: boolean
 }
+
+/**
+ * The shape a `tx` lookup has once the transaction is known to be in a validated ledger and the
+ * metadata was requested as JSON: `meta` is present and decoded, and `validated` is `true`.
+ *
+ * This is what {@link Client.submitAndWait} resolves with. Neither `undefined` (the transaction is
+ * validated) nor `string` (the sugar never sets `binary`) can occur on that path, so callers can
+ * read `result.meta.TransactionResult` without a guard or a cast.
+ *
+ * @category Responses
+ */
+export type ValidatedTxResponse<T extends BaseTransaction = Transaction> =
+  TxResponse<T, false> & {
+    result: { meta: TransactionMetadata<T>; validated: true }
+  }
 
 /**
  * Type to map between the API version and the response type.

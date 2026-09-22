@@ -32,7 +32,7 @@ import {
   // ledger methods
   LedgerDataRequest,
   LedgerDataResponse,
-  TxResponse,
+  ValidatedTxResponse,
 } from '../models/methods'
 import type {
   RequestResponseMap,
@@ -51,7 +51,7 @@ import type {
   EventTypes,
   OnEventToListenerMap,
 } from '../models/methods/subscribe'
-import type { SubmittableTransaction } from '../models/transactions'
+import type { Autofilled, SubmittableTransaction } from '../models/transactions'
 import { convertTxFlagsToNumber } from '../models/utils/flags'
 import {
   ensureClassicAddress,
@@ -70,6 +70,7 @@ import {
   autofillBatchTxn,
   handleDeliverMax,
   getTransactionFee,
+  normalizeForSimulate,
 } from '../sugar/autofill'
 import { formatBalances } from '../sugar/balances'
 import {
@@ -83,7 +84,7 @@ import {
   sortAndLimitOffers,
 } from '../sugar/getOrderbook'
 import { dropsToXrp, hashes, isValidClassicAddress } from '../utils'
-import { Wallet } from '../Wallet'
+import { SignedBlob, Wallet } from '../Wallet'
 import {
   type FaucetRequestBody,
   FundingOptions,
@@ -687,7 +688,7 @@ class Client extends EventEmitter<EventTypes> {
     transaction: T,
     signersCount?: number,
     sponsorSignersCount?: number,
-  ): Promise<T> {
+  ): Promise<Autofilled<T>> {
     const tx = { ...transaction }
 
     setValidAddresses(tx)
@@ -716,41 +717,58 @@ class Client extends EventEmitter<EventTypes> {
       handleDeliverMax(tx)
     }
 
-    return Promise.all(promises).then(() => tx)
+    /*
+     * Every field `Autofilled` adds is either already present on `tx` or set by one of the
+     * promises above, but TypeScript cannot see that through the mutating helpers.
+     */
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- see above
+    return Promise.all(promises).then(() => tx as Autofilled<T>)
   }
 
   /**
-   * Simulates an unsigned transaction.
-   * Steps performed on a transaction:
-   *    1. Autofill.
-   *    2. Sign & Encode.
-   *    3. Submit.
+   * Simulates a transaction against the current open ledger without submitting it, reporting the
+   * result and the metadata it would produce. The transaction is neither signed nor applied.
+   *
+   * The transaction is normalised the way `autofill` would normalise it before being sent:
+   * `Flags` given in interface form (`{ tfPartialPayment: true }`) is converted to its numeric
+   * form, and a Payment's `DeliverMax` is folded into `Amount`. rippled rejects both SDK-level
+   * conveniences outright, so without this a transaction `submitAndWait` accepts could not be
+   * simulated. Nothing that needs the network (`Sequence`, `Fee`, `LastLedgerSequence`) is filled
+   * in: `simulate` does not require those fields.
    *
    * @category Core
    *
-   * @param transaction - A transaction to autofill, sign & encode, and submit.
-   * @param opts - (Optional) Options used to sign and submit a transaction.
-   * @param opts.binary - If true, return the metadata in a binary encoding.
+   * @param transaction - The transaction to simulate, as JSON or as an encoded blob.
+   * @param opts - (Optional) Options for the simulation.
+   * @param opts.binary - If true, return the transaction and metadata in a binary encoding.
    *
    * @returns A promise that contains SimulateResponse.
    * @throws RippledError if the simulate request fails.
+   * @throws ValidationError if `Flags` is given in interface form and contains an unknown flag.
    */
 
-  public async simulate<Binary extends boolean = false>(
-    transaction: SubmittableTransaction | string,
+  public async simulate<
+    T extends SubmittableTransaction = SubmittableTransaction,
+    Binary extends boolean = false,
+  >(
+    transaction: T | SignedBlob<T> | string,
     opts?: {
       // If true, return the binary-encoded representation of the results.
       binary?: Binary
     },
   ): Promise<
-    Binary extends true ? SimulateBinaryResponse : SimulateJsonResponse
+    Binary extends true ? SimulateBinaryResponse : SimulateJsonResponse<T>
   > {
     // send request
     const binary = opts?.binary ?? false
     const request: SimulateRequest =
       typeof transaction === 'string'
         ? { command: 'simulate', tx_blob: transaction, binary }
-        : { command: 'simulate', tx_json: transaction, binary }
+        : {
+            command: 'simulate',
+            tx_json: normalizeForSimulate(transaction),
+            binary,
+          }
     return this.request(request)
   }
 
@@ -873,12 +891,13 @@ class Client extends EventEmitter<EventTypes> {
    * while submitting or polling. The transaction may still have been submitted: look it up by hash before
    * re-submitting.
    * @throws {RippledError} If a request other than the submission fails on the server (e.g. `tooBusy`) while polling.
-   * @returns A promise that contains TxResponse, that will return when the transaction has been validated.
+   * @returns A promise that resolves with the validated transaction: `result.meta` is decoded
+   * metadata (never a hex string, never `undefined`) and `result.validated` is `true`.
    */
   public async submitAndWait<
     T extends SubmittableTransaction = SubmittableTransaction,
   >(
-    transaction: T | string,
+    transaction: T | SignedBlob<T> | string,
     opts?: {
       // If true, autofill a transaction.
       autofill?: boolean
@@ -887,7 +906,7 @@ class Client extends EventEmitter<EventTypes> {
       // A wallet to sign a transaction. It must be provided when submitting an unsigned transaction.
       wallet?: Wallet
     },
-  ): Promise<TxResponse<T>> {
+  ): Promise<ValidatedTxResponse<T>> {
     const signedTx = await getSignedTx(this, transaction, opts)
 
     const lastLedger = getLastLedgerSequence(signedTx)

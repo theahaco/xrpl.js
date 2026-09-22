@@ -270,6 +270,27 @@ export type PseudoTransaction = EnableAmendment | SetFee | UNLModify
 export type Transaction = SubmittableTransaction | PseudoTransaction
 
 /**
+ * A transaction that has been through {@link Client.autofill}.
+ *
+ * `autofill` fills `Sequence`, `Fee` and `LastLedgerSequence` when they are absent and converts
+ * `Flags` from its interface form to a number, so after the call those fields are no longer
+ * optional (and `Flags` is no longer a union). Accounts submitting with a Ticket keep
+ * `Sequence: 0`, which still satisfies `number`.
+ *
+ * The intersection is assignable to `T`, so this widens nothing for existing callers.
+ *
+ * @category Transaction Models
+ */
+export type Autofilled<
+  T extends SubmittableTransaction = SubmittableTransaction,
+> = T & {
+  Sequence: number
+  Fee: string
+  LastLedgerSequence: number
+  Flags?: number
+}
+
+/**
  * @category Transaction Models
  */
 export interface TransactionAndMetadata<

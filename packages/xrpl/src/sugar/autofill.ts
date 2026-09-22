@@ -11,8 +11,14 @@ import {
   AccountObjectsRequest,
   LedgerEntryRequest,
 } from '../models/methods'
-import { Batch, Payment, Transaction } from '../models/transactions'
+import {
+  Batch,
+  Payment,
+  SubmittableTransaction,
+  Transaction,
+} from '../models/transactions'
 import { Account, areAddressesEqual } from '../models/transactions/common'
+import { convertTxFlagsToNumber } from '../models/utils/flags'
 import { xrpToDrops } from '../utils'
 
 import getFeeXrp from './getFeeXrp'
@@ -598,6 +604,30 @@ export function handleDeliverMax(tx: Payment): void {
     // eslint-disable-next-line no-param-reassign -- needed here
     delete tx.DeliverMax
   }
+}
+
+/**
+ * Applies the normalisations `autofill` performs that do not need the network, so a transaction the
+ * SDK would happily submit can also be simulated.
+ *
+ * rippled rejects both of the SDK-level conveniences this removes: `Flags` in interface form
+ * (`Field 'tx_json.Flags' has bad type.`) and a Payment's `DeliverMax`, which is an RPC alias the
+ * `simulate` command does not accept (`Field 'tx_json.DeliverMax' is unknown.`).
+ *
+ * @param transaction - The transaction to normalise. It is not modified; a copy is returned.
+ * @returns A copy of the transaction with numeric `Flags` and no `DeliverMax`.
+ * @throws ValidationError if `Flags` is in interface form and names a flag the transaction type
+ * does not have, or if a Payment sets both `Amount` and `DeliverMax` to different values.
+ */
+export function normalizeForSimulate<T extends SubmittableTransaction>(
+  transaction: T,
+): T {
+  const tx = { ...transaction }
+  tx.Flags = convertTxFlagsToNumber(tx)
+  if (tx.TransactionType === 'Payment' && tx.DeliverMax != null) {
+    handleDeliverMax(tx)
+  }
+  return tx
 }
 
 /**
