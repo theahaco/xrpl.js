@@ -12,6 +12,7 @@ export {
   TransactionAndMetadata,
   Transaction,
 } from './transaction'
+export { tx, TransactionOf } from './transactionFactory'
 export * from './metadata'
 export {
   AccountSetAsfFlags,
@@ -79,11 +80,13 @@ export {
   MPTokenAuthorizeFlagsInterface,
 } from './MPTokenAuthorize'
 export {
+  MAX_TRANSFER_FEE,
   MPTokenIssuanceCreate,
   MPTokenIssuanceCreateFlags,
   MPTokenIssuanceCreateFlagsInterface,
   MPTokenIssuanceCreateImmutableFlags,
   MPTokenIssuanceCreateImmutableFlagsInterface,
+  MPTokenIssuanceCreateMetadata,
 } from './MPTokenIssuanceCreate'
 export { MPTokenIssuanceDestroy } from './MPTokenIssuanceDestroy'
 export {

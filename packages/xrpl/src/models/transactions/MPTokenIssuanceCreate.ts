@@ -19,6 +19,12 @@ import type { TransactionMetadataBase } from './metadata'
 
 // 2^63 - 1
 const MAX_AMT = '9223372036854775807'
+/**
+ * The maximum {@link MPTokenIssuanceCreate.TransferFee}: 50000, i.e. 50%,
+ * since the field is denominated in increments of 0.001%.
+ *
+ * @category Transaction Models
+ */
 export const MAX_TRANSFER_FEE = 50000
 
 /**
@@ -240,6 +246,10 @@ export interface MPTokenIssuanceCreate extends BaseTransaction {
    * if such sales are allowed. Valid values for this field are between 0 and 50,000 inclusive,
    * allowing transfer rates of between 0.000% and 50.000% in increments of 0.001.
    * The field must NOT be present if the `tfMPTCanTransfer` flag is not set.
+   *
+   * This is *not* the "billionths" `TransferRate` an `AccountSet` takes: use
+   * `percentToMPTTransferFee` to build it and `mptTransferFeeToPercent` to read
+   * it back, not `percentToTransferRate`.
    */
   TransferFee?: number
 
@@ -268,7 +278,22 @@ export interface MPTokenIssuanceCreate extends BaseTransaction {
   DomainID?: string
 }
 
+/**
+ * The metadata of an `MPTokenIssuanceCreate`, with the synthetic
+ * `mpt_issuance_id` rippled's RPC layer adds.
+ *
+ * @category Transaction Models
+ */
 export interface MPTokenIssuanceCreateMetadata extends TransactionMetadataBase {
+  /**
+   * The MPTokenIssuanceID of the issuance this transaction created.
+   *
+   * Present only when `TransactionResult` is `tesSUCCESS` *and* the metadata
+   * came from rippled as JSON — the field is synthetic, so it is absent from
+   * metadata decoded from its binary form. Prefer `getMPTokenIssuanceID`, which
+   * derives the same ID from the issuer and the sequence the transaction
+   * consumed and so works before submission and on binary metadata alike.
+   */
   mpt_issuance_id?: string
 }
 

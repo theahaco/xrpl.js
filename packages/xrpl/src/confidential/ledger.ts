@@ -6,9 +6,17 @@ import { XrplError } from '../errors'
 import { LedgerIndex } from '../models/common'
 import { MPToken, MPTokenIssuance } from '../models/ledger'
 import { MAX_MPT_AMOUNT } from '../models/transactions/common'
+import { fetchMPToken, fetchMPTokenIssuance } from '../utils/mptLedgerEntries'
 
 import { loadMptCrypto } from './loader'
 import type { ConfidentialSpendingState } from './types'
+
+/*
+ * The MPT state reads these builders are written against are useful on their
+ * own, so they live in `utils` and are re-exported here for the confidential
+ * call sites (and for anyone already importing them from this module).
+ */
+export { fetchMPToken, fetchMPTokenIssuance }
 
 /**
  * Guard a public MPT amount before it reaches the WASM crypto layer. The crypto
@@ -111,58 +119,6 @@ export async function resolveLedgerIndex(
   ledgerIndex?: LedgerIndex,
 ): Promise<LedgerIndex> {
   return ledgerIndex ?? (await client.getLedgerIndex())
-}
-
-/**
- * Fetch a single MPToken ledger object for a (holder, issuance) pair.
- *
- * @param client - A connected Client.
- * @param account - The classic XRPL address of the token holder.
- * @param mptIssuanceID - The 24-byte hex MPTokenIssuanceID.
- * @param ledgerIndex - Ledger to read at (see {@link resolveLedgerIndex}); the
- *   server default (current) when omitted.
- * @returns The holder's MPToken ledger entry.
- * @throws {RippledError} If the MPToken does not exist.
- */
-// eslint-disable-next-line max-params -- a connected client plus the (account, issuance) lookup and its ledger
-export async function fetchMPToken(
-  client: Client,
-  account: string,
-  mptIssuanceID: string,
-  ledgerIndex?: LedgerIndex,
-): Promise<MPToken> {
-  const response = await client.request({
-    command: 'ledger_entry',
-    mptoken: { mpt_issuance_id: mptIssuanceID, account },
-    ledger_index: ledgerIndex,
-  })
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- ledger_entry returns the requested entry type
-  return response.result.node as unknown as MPToken
-}
-
-/**
- * Fetch the MPTokenIssuance ledger object, which carries the registered issuer
- * and (optional) auditor encryption keys.
- *
- * @param client - A connected Client.
- * @param mptIssuanceID - The 24-byte hex MPTokenIssuanceID.
- * @param ledgerIndex - Ledger to read at (see {@link resolveLedgerIndex}); the
- *   server default (current) when omitted.
- * @returns The MPTokenIssuance ledger entry.
- * @throws {RippledError} If the MPTokenIssuance does not exist.
- */
-export async function fetchMPTokenIssuance(
-  client: Client,
-  mptIssuanceID: string,
-  ledgerIndex?: LedgerIndex,
-): Promise<MPTokenIssuance> {
-  const response = await client.request({
-    command: 'ledger_entry',
-    mpt_issuance: mptIssuanceID,
-    ledger_index: ledgerIndex,
-  })
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- ledger_entry returns the requested entry type
-  return response.result.node as unknown as MPTokenIssuance
 }
 
 /**

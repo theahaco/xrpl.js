@@ -233,4 +233,88 @@ export function hashLoan(loanBrokerId: string, loanSequence: number): string {
   )
 }
 
+/**
+ * Compute the ledger index of an MPTokenIssuance entry.
+ *
+ * The index is the SHA-512Half of the MPTokenIssuance space key (0x007E)
+ * followed by the 24-byte MPTokenIssuanceID. Derive the ID itself with
+ * {@link getMPTokenIssuanceID}.
+ *
+ * @param mptIssuanceID - The 24-byte hex MPTokenIssuanceID (sequence + issuer).
+ * @returns The ledger index of the MPTokenIssuance entry.
+ * @category Utilities
+ */
+export function hashMPTokenIssuance(mptIssuanceID: string): string {
+  return sha512Half(ledgerSpaceHex('mptIssuance') + mptIssuanceID.toUpperCase())
+}
+
+/**
+ * Compute the ledger index of a holder's MPToken entry.
+ *
+ * The index is the SHA-512Half of the MPToken space key (0x0074), the
+ * 32-byte ledger index of the MPTokenIssuance (not the 24-byte ID; see
+ * {@link hashMPTokenIssuance}) and the holder's AccountID, mirroring rippled's
+ * `keylet::mptoken`.
+ *
+ * @param mptIssuanceID - The 24-byte hex MPTokenIssuanceID.
+ * @param holder - The classic address of the token holder.
+ * @returns The ledger index of the holder's MPToken entry.
+ * @category Utilities
+ */
+export function hashMPToken(mptIssuanceID: string, holder: string): string {
+  return sha512Half(
+    ledgerSpaceHex('mptoken') +
+      hashMPTokenIssuance(mptIssuanceID) +
+      addressToHex(holder),
+  )
+}
+
+/**
+ * Compute the ledger index of a PermissionedDomain entry, which is also the
+ * `DomainID` that `PermissionedDomainSet`, `PermissionedDomainDelete` and
+ * the MPT issuance transactions take.
+ *
+ * @param owner - The classic address of the domain owner (the account that
+ *   submitted the creating `PermissionedDomainSet`).
+ * @param sequence - The sequence the creating transaction consumed: its
+ *   `Sequence`, or its `TicketSequence` when a ticket was used.
+ * @returns The ledger index (DomainID) of the PermissionedDomain entry.
+ * @category Utilities
+ */
+export function hashPermissionedDomain(
+  owner: string,
+  sequence: number,
+): string {
+  return sha512Half(
+    ledgerSpaceHex('permissionedDomain') +
+      addressToHex(owner) +
+      sequence.toString(HEX).padStart(BYTE_LENGTH * 2, '0'),
+  )
+}
+
+/**
+ * Compute the ledger index of a Credential entry, which is also the
+ * `CredentialID` that `CredentialDelete`, `DepositPreauth` and the
+ * permissioned-domain transactions take.
+ *
+ * @param subject - The classic address of the credential subject.
+ * @param issuer - The classic address of the credential issuer.
+ * @param credentialType - The `CredentialType`, as the hex string used on the
+ *   transaction and ledger entry.
+ * @returns The ledger index (CredentialID) of the Credential entry.
+ * @category Utilities
+ */
+export function hashCredential(
+  subject: string,
+  issuer: string,
+  credentialType: string,
+): string {
+  return sha512Half(
+    ledgerSpaceHex('credential') +
+      addressToHex(subject) +
+      addressToHex(issuer) +
+      credentialType.toUpperCase(),
+  )
+}
+
 export { hashLedgerHeader, hashSignedTx, hashLedger, hashStateTree, hashTxTree }

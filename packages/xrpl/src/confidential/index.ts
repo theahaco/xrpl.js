@@ -15,10 +15,13 @@ export type { MptCryptoModule } from './loader'
 
 export { deriveConfidentialKeypair } from './keys'
 
+/*
+ * `fetchMPToken` and `fetchMPTokenIssuance` are general MPT reads, so they live
+ * in `utils` and are exported from the package root there; `./ledger` still
+ * re-exports them for existing deep imports of this module.
+ */
 export {
   accountIdHex,
-  fetchMPToken,
-  fetchMPTokenIssuance,
   getAccountSequence,
   getConfidentialBalance,
 } from './ledger'

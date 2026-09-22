@@ -18,6 +18,7 @@ See the full reference documentation for all classes, methods, and utilities.
 3. Sending requests to observe the ledger ([`Client.request(...)`](https://js.xrpl.org/classes/Client.html#request) using [public API methods](https://xrpl.org/public-api-methods.html))
 4. Subscribing to changes in the ledger ([Ex. ledger, transactions, & more...](https://xrpl.org/subscribe.html))
 5. Parsing ledger data into more convenient formats ([`xrpToDrops`](https://js.xrpl.org/functions/xrpToDrops.html) and [`rippleTimeToISOTime`](https://js.xrpl.org/functions/rippleTimeToISOTime.html))
+6. Working with Multi-Purpose Tokens ([`getMPTokenIssuanceID`](https://js.xrpl.org/functions/getMPTokenIssuanceID.html) for an issuance's ID, [`fetchMPTokenIssuance`](https://js.xrpl.org/functions/fetchMPTokenIssuance.html) and [`fetchMPToken`](https://js.xrpl.org/functions/fetchMPToken.html) to read the issuance and a holder's balance, and [`mptToUnits`](https://js.xrpl.org/functions/mptToUnits.html)/[`unitsToMpt`](https://js.xrpl.org/functions/unitsToMpt.html) for `AssetScale` conversion)
 
 All of which works in Node.js (tested for v20+) & web browsers (tested for Chrome).
 

@@ -24,6 +24,10 @@ import {
   hashVault,
   hashLoanBroker,
   hashLoan,
+  hashMPTokenIssuance,
+  hashMPToken,
+  hashCredential,
+  hashPermissionedDomain,
 } from '../../src/utils/hashes'
 import fixtures from '../fixtures/rippled'
 import { assertResultMatch } from '../testUtils'
@@ -181,6 +185,45 @@ describe('Hashes', function () {
     const actualEntryHash = hashLoan(loanBrokerId, loanSequence)
 
     assert.equal(actualEntryHash, expectedEntryHash)
+  })
+
+  it('hashMPTokenIssuance', function () {
+    const mptIssuanceID = '00000003D1478D4517822D2618230F4D55C1F40656D40D60'
+    const expectedEntryHash =
+      '59C03A8F20A18499FE82A119148CDADD5F06B9A9F0327451575D09FCFE6E509B'
+
+    assert.equal(hashMPTokenIssuance(mptIssuanceID), expectedEntryHash)
+  })
+
+  it('hashMPToken', function () {
+    const mptIssuanceID = '00000003D1478D4517822D2618230F4D55C1F40656D40D60'
+    const holder = 'rD72zF1wfr5irhyaMF9kyET7bxRgsvpLB'
+    const expectedEntryHash =
+      '012762421FC3C75701D01B7AE327A11B07EB44531409CAC1719F0DEED3DD4510'
+
+    assert.equal(hashMPToken(mptIssuanceID, holder), expectedEntryHash)
+  })
+
+  it('hashCredential', function () {
+    const subject = 'rD72zF1wfr5irhyaMF9kyET7bxRgsvpLB'
+    const issuer = 'rLnZAb1b9e1w9BfmuPUqyWjhWtWTbMEVUu'
+    const credentialType = '4B5943'
+    const expectedEntryHash =
+      '76FD14B3C709222C6F41876669B6D9593094ABFB0FC266EE8BBB21E11B92E456'
+
+    assert.equal(
+      hashCredential(subject, issuer, credentialType),
+      expectedEntryHash,
+    )
+  })
+
+  it('hashPermissionedDomain', function () {
+    const owner = 'rLnZAb1b9e1w9BfmuPUqyWjhWtWTbMEVUu'
+    const sequence = 7
+    const expectedEntryHash =
+      'A8B4C3F210EE8DFF53484376A2E749E5E6B8BC2B65E6326C614002994AF03B27'
+
+    assert.equal(hashPermissionedDomain(owner, sequence), expectedEntryHash)
   })
 
   it('Hash a signed transaction correctly', function () {

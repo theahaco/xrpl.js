@@ -1,10 +1,16 @@
 import BigNumber from 'bignumber.js'
 
 import { ValidationError } from '../errors'
+import { MAX_TRANSFER_FEE } from '../models/transactions/MPTokenIssuanceCreate'
 
 const BASE_TEN = 10
 const ONE_BILLION = '1000000000'
 const TWO_BILLION = '2000000000'
+// An MPT TransferFee is in increments of 0.001%, so one whole percent is 1000
+// of them and the decimal 1 (i.e. 100%) is 100000 of them.
+const MPT_TRANSFER_FEE_PER_PERCENT = 1000
+const MPT_TRANSFER_FEE_PER_DECIMAL = 100000
+const MAX_MPT_PERCENT = 50
 
 function percentToDecimal(percent: string): string {
   if (!percent.endsWith('%')) {
@@ -172,4 +178,94 @@ export function transferRateToDecimal(rate: number): string {
  */
 export function percentToQuality(percent: string): number {
   return decimalToQuality(percentToDecimal(percent))
+}
+
+/**
+ * The maximum `TransferFee` an `MPTokenIssuanceCreate` accepts: 50000, i.e.
+ * 50%. Re-exported from the transaction model so the MPT fee helpers and the
+ * value they are bounded by live together.
+ *
+ * @category Utilities
+ */
+export const MAX_MPT_TRANSFER_FEE = MAX_TRANSFER_FEE
+
+/**
+ * Converts a string percent to the units an MPT `TransferFee` is denominated
+ * in: increments of 0.001%, between 0 and {@link MAX_MPT_TRANSFER_FEE} (50%).
+ *
+ * MPT's `TransferFee` is *not* the "billionths" `TransferRate` an `AccountSet`
+ * takes, so {@link percentToTransferRate} must not be used for it — this is the
+ * MPT counterpart.
+ *
+ * @example
+ * ```ts
+ * percentToMPTTransferFee('1%') // 1000
+ * percentToMPTTransferFee('0.5%') // 500
+ * ```
+ *
+ * @param percent - A string percent between 0% and 50% (i.e. '0.75%'), with at
+ * most three decimal places.
+ * @returns A number of 0.001% increments, for `MPTokenIssuanceCreate.TransferFee`.
+ * @throws ValidationError when the percent parameter is not convertible to an
+ * MPT transfer fee.
+ * @category Utilities
+ */
+export function percentToMPTTransferFee(percent: string): number {
+  let fee: BigNumber
+  try {
+    fee = new BigNumber(percentToDecimal(percent)).times(
+      MPT_TRANSFER_FEE_PER_DECIMAL,
+    )
+  } catch (_err) {
+    throw new ValidationError(`Value is not a number`)
+  }
+
+  if (!fee.isFinite()) {
+    throw new ValidationError(`Value is not a number`)
+  }
+
+  if (fee.isLessThan(0) || fee.isGreaterThan(MAX_MPT_TRANSFER_FEE)) {
+    throw new ValidationError(
+      `Percent value must be between 0% and ${MAX_MPT_PERCENT}%.`,
+    )
+  }
+
+  if (!fee.isInteger()) {
+    throw new ValidationError(`Decimal exceeds maximum precision.`)
+  }
+
+  return fee.toNumber()
+}
+
+/**
+ * Converts an MPT `TransferFee` (increments of 0.001%) to the percent it
+ * charges, as a decimal string without a `%` sign.
+ *
+ * @example
+ * ```ts
+ * mptTransferFeeToPercent(1000) // '1'
+ * mptTransferFeeToPercent(500) // '0.5'
+ * ```
+ *
+ * @param transferFee - An MPT `TransferFee`, between 0 and
+ * {@link MAX_MPT_TRANSFER_FEE}.
+ * @returns The percent the fee charges, i.e. '0.5' for 500.
+ * @throws ValidationError when the transfer fee is not a valid MPT
+ * `TransferFee`.
+ * @category Utilities
+ */
+export function mptTransferFeeToPercent(transferFee: number): string {
+  if (!Number.isInteger(transferFee)) {
+    throw new ValidationError('MPT TransferFee must be an integer')
+  }
+
+  if (transferFee < 0 || transferFee > MAX_MPT_TRANSFER_FEE) {
+    throw new ValidationError(
+      `MPT TransferFee must be between 0 and ${MAX_MPT_TRANSFER_FEE}`,
+    )
+  }
+
+  return new BigNumber(transferFee)
+    .dividedBy(MPT_TRANSFER_FEE_PER_PERCENT)
+    .toString(BASE_TEN)
 }
