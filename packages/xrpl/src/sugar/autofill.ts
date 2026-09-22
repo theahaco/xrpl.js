@@ -11,7 +11,12 @@ import {
   AccountObjectsRequest,
   LedgerEntryRequest,
 } from '../models/methods'
-import { Batch, Payment, Transaction } from '../models/transactions'
+import {
+  Batch,
+  Payment,
+  SubmittableTransaction,
+  Transaction,
+} from '../models/transactions'
 import { Account, areAddressesEqual } from '../models/transactions/common'
 import { xrpToDrops } from '../utils'
 
@@ -354,11 +359,58 @@ function calculateSponsorFee(
 }
 
 /**
+ * Counts the signatures a Batch's `BatchSigners` contribute to its fee.
+ *
+ * rippled charges one base fee per signature in `BatchSigners`: a single-signed
+ * `BatchSigner` counts one, a multisigned one counts its `Signers`. When the field
+ * is already present (the co-signers signed before autofill) it is counted as is.
+ * Otherwise every account rippled requires as a batch signer -- the authorizer of
+ * each inner (its `Delegate`, else its `Account`), an inner's `Counterparty`, and an
+ * inner's `Sponsor` when the inner carries a `SponsorSignature` -- other than the
+ * outer `Account` is assumed to add one single-signed `BatchSigner`. Additional
+ * signatures (a multisigned `BatchSigner`) must be passed via `signersCount`.
+ *
+ * @param tx - The Batch transaction.
+ * @returns The number of batch signatures the fee must cover.
+ */
+function countBatchSignatures(tx: Batch): number {
+  if (tx.BatchSigners != null) {
+    return tx.BatchSigners.reduce((count, { BatchSigner }) => {
+      if (BatchSigner.TxnSignature != null) {
+        return count + 1
+      }
+      return count + (BatchSigner.Signers?.length ?? 0)
+    }, 0)
+  }
+
+  const requiredSigners = new Set<string>()
+  for (const { RawTransaction } of tx.RawTransactions) {
+    requiredSigners.add(RawTransaction.Delegate ?? RawTransaction.Account)
+    // Counterparty only exists on some inner tx types
+    const counterparty = (RawTransaction as Record<string, unknown>)
+      .Counterparty
+    if (typeof counterparty === 'string') {
+      requiredSigners.add(counterparty)
+    }
+    if (
+      RawTransaction.Sponsor != null &&
+      RawTransaction.SponsorSignature != null
+    ) {
+      requiredSigners.add(RawTransaction.Sponsor)
+    }
+  }
+  requiredSigners.delete(tx.Account)
+  return requiredSigners.size
+}
+
+/**
  * Calculates the fee per transaction type.
  *
  * @param client - The client object.
  * @param tx - The transaction object.
- * @param [signersCount=0] - The number of signers (default is 0). Only used for multisigning.
+ * @param [signersCount=0] - The number of signers (default is 0). Only used for multisigning
+ * the transaction itself; a Batch's co-signers are counted from the transaction (see
+ * {@link countBatchSignatures}).
  * @param [sponsorSignersCount=0] - The expected number of signers for the sponsor's
  * multisigned SponsorSignature (default is 0). Only used for a multisigned sponsor; a
  * single sponsor signature adds no fee.
@@ -403,7 +455,15 @@ async function calculateFeePerTransactionType(
       },
       Promise.resolve(new BigNumber(0)),
     )
-    baseFee = BigNumber.sum(baseFee.times(2), rawTxFees)
+    /*
+     * Batch Transaction
+     * BaseFee × 2 + Σ inner base fees + BaseFee × (number of BatchSigner signatures)
+     */
+    baseFee = BigNumber.sum(
+      baseFee.times(2),
+      rawTxFees,
+      scaleValue(netFeeDrops, countBatchSignatures(tx)),
+    )
   } else if (CONFIDENTIAL_MPT_TRANSACTION_TYPES.includes(tx.TransactionType)) {
     /*
      * Confidential MPT Transaction
@@ -461,7 +521,8 @@ async function calculateFeePerTransactionType(
  *
  * @param client - The client object.
  * @param tx - The transaction object.
- * @param [signersCount=0] - The number of signers (default is 0). Only used for multisigning.
+ * @param [signersCount=0] - The number of signers (default is 0). Only used for multisigning
+ * the transaction itself; a Batch's co-signers are counted from the transaction.
  * @param [sponsorSignersCount=0] - The expected number of signers for the sponsor's
  * multisigned SponsorSignature (default is 0). Only used for a multisigned sponsor; a
  * single sponsor signature adds no fee.
@@ -615,7 +676,9 @@ export async function autofillBatchTxn(
   const accountSequences: Record<string, number> = {}
 
   for (const rawTxn of tx.RawTransactions) {
-    const txn = rawTxn.RawTransaction
+    // Widened from BatchInnerTransaction: the checks below guard JS callers, for whom
+    // the inner type's `Fee: '0'` / no-signature rules are not enforced at compile time.
+    const txn: SubmittableTransaction = rawTxn.RawTransaction
 
     // Sequence processing
     if (txn.Sequence == null && txn.TicketSequence == null) {

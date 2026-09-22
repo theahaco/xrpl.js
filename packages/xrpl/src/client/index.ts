@@ -673,8 +673,12 @@ class Client extends EventEmitter<EventTypes> {
    *
    * @template T
    * @param transaction - A {@link SubmittableTransaction} in JSON format
-   * @param signersCount - The expected number of signers for this transaction.
-   * Only used for multisigned transactions.
+   * @param signersCount - The expected number of signers for this transaction's own
+   * multisignature (`Signers`). For a `Batch`, the fee already includes one base fee per
+   * co-signing account (every inner `Account`/`Delegate`/`Counterparty` other than the outer
+   * account, each of which must add a `BatchSigner`), or, when `BatchSigners` is already
+   * present, one per signature it carries; pass here only additional signatures, such as
+   * the extra signers of a multisigned `BatchSigner`.
    * @param sponsorSignersCount - The expected number of signers for the sponsor's multisigned
    * SponsorSignature. Only used for a multisigned sponsor; a single sponsor signature adds no
    * fee. Mirrors `signersCount`: this cannot be reliably inferred at autofill time (the
@@ -732,7 +736,9 @@ class Client extends EventEmitter<EventTypes> {
    * @param opts.binary - If true, return the metadata in a binary encoding.
    *
    * @returns A promise that contains SimulateResponse.
-   * @throws RippledError if the simulate request fails.
+   * @throws RippledError if the simulate request fails. rippled does not support `Batch`
+   * transactions in `simulate` (the request fails with `Not implemented`); a Batch can only
+   * be checked offline with `validate` before it is submitted.
    */
 
   public async simulate<Binary extends boolean = false>(

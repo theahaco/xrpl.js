@@ -4,6 +4,7 @@ import { XrplError } from '../errors'
 import {
   Batch,
   BatchFlags,
+  BatchInnerTransaction,
   ConfidentialMPTSend,
   SubmittableTransaction,
 } from '../models/transactions'
@@ -152,13 +153,21 @@ function readBalance(value: string | undefined, what: string): string {
  * @param tx - The transaction to shape.
  * @returns The shaped inner transaction.
  */
-function shapeInner(tx: SubmittableTransaction): SubmittableTransaction {
+function shapeInner(tx: SubmittableTransaction): BatchInnerTransaction {
   // Merge the inner-batch flag with any flags the inner already carries (confidential
   // builders set none; a plain inner may set its own), normalizing object-form flags
   // to a number rather than silently dropping them.
   const flags = convertTxFlagsToNumber(tx)
-  // eslint-disable-next-line no-bitwise -- combine the inner-batch flag with caller flags
-  return { ...tx, Flags: flags | TF_INNER_BATCH_TXN, Fee: '0' }
+  // A ready-made inner is accepted as any SubmittableTransaction; the remaining inner
+  // rules (no nested Batch, no TxnSignature/Signers/LastLedgerSequence) are enforced at
+  // runtime by `autofill` and `validate` on the assembled Batch, hence the assertion.
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- see above
+  return {
+    ...tx,
+    // eslint-disable-next-line no-bitwise -- combine the inner-batch flag with caller flags
+    Flags: flags | TF_INNER_BATCH_TXN,
+    Fee: '0',
+  } as BatchInnerTransaction
 }
 
 /**
@@ -511,7 +520,7 @@ interface AssembleContext {
 
 /** A built inner plus the state updates it implies, keyed by state key. */
 interface BuiltInner {
-  tx: SubmittableTransaction
+  tx: BatchInnerTransaction
   updates: Array<[string, TokenState]>
 }
 
@@ -678,9 +687,10 @@ async function buildConfidentialInner(
  * be built with the final value — `autofill` cannot fix a proof afterward), threads
  * predicted balance state through repeated same-`(account, token)` operations (each
  * proof binds the balance the previous inner leaves behind), shapes every inner
- * (`tfInnerBatchTxn`, `Fee: '0'`), and autofills the outer fee — pass `signersCount`/
- * `sponsorSignersCount` for a multisigned or multi-account Batch so that fee also
- * covers the extra signatures (see {@link ConfidentialBatchParams}). Signing stays
+ * (`tfInnerBatchTxn`, `Fee: '0'`), and autofills the outer fee — `autofill` already
+ * charges one base fee per co-signing account; pass `signersCount`/`sponsorSignersCount`
+ * for a multisigned outer account, multisigned co-signer, or multisigned sponsor so that
+ * fee also covers the extra signatures (see {@link ConfidentialBatchParams}). Signing stays
  * with the caller: `signMultiBatch` for each non-outer participant, then the outer
  * account signs.
  *
@@ -730,7 +740,7 @@ export async function prepareConfidentialBatch(
     ledgerIndex,
   }
 
-  const rawTransactions: Array<{ RawTransaction: SubmittableTransaction }> = []
+  const rawTransactions: Array<{ RawTransaction: BatchInnerTransaction }> = []
   for (const inner of inners) {
     const acct = innerAccount(inner)
     if (isConfidentialOperation(inner)) {

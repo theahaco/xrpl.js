@@ -55,15 +55,61 @@ export interface BatchSigner {
 }
 
 /**
+ * A transaction wrapped inside a {@link Batch}. Mirrors rippled's inner-transaction
+ * rules: a Batch cannot be nested, the inner `Fee` must be `'0'`, `SigningPubKey` must
+ * be empty, and the inner carries no signature, `Signers`, or `LastLedgerSequence`
+ * (the outer Batch is what gets signed and expires). Inner transactions must also set
+ * the `tfInnerBatchTxn` flag, which `validate` checks at runtime.
+ *
+ * @category Transaction Models
+ */
+export type BatchInnerTransaction = Exclude<SubmittableTransaction, Batch> & {
+  Fee?: '0'
+  SigningPubKey?: ''
+  TxnSignature?: never
+  Signers?: never
+  LastLedgerSequence?: never
+}
+
+/**
+ * Minimum number of inner transactions rippled accepts in a Batch.
+ */
+const MIN_RAW_TRANSACTIONS = 2
+
+/**
+ * Maximum number of inner transactions rippled accepts in a Batch.
+ */
+const MAX_RAW_TRANSACTIONS = 8
+
+/**
+ * The mutually exclusive Batch mode flags; rippled requires exactly one.
+ */
+const BATCH_MODE_FLAGS: ReadonlyArray<[keyof typeof BatchFlags, BatchFlags]> = [
+  ['tfAllOrNothing', BatchFlags.tfAllOrNothing],
+  ['tfOnlyOne', BatchFlags.tfOnlyOne],
+  ['tfUntilFailure', BatchFlags.tfUntilFailure],
+  ['tfIndependent', BatchFlags.tfIndependent],
+]
+
+/**
  * @category Transaction Models
  */
 export interface Batch extends BaseTransaction {
   TransactionType: 'Batch'
 
+  /**
+   * Exactly one of the {@link BatchFlags} mode flags (`tfAllOrNothing`,
+   * `tfOnlyOne`, `tfUntilFailure`, `tfIndependent`) must be set.
+   */
+  Flags?: number | BatchFlagsInterface
+
   BatchSigners?: BatchSigner[]
 
+  /**
+   * Between 2 and 8 inner transactions.
+   */
   RawTransactions: Array<{
-    RawTransaction: SubmittableTransaction
+    RawTransaction: BatchInnerTransaction
   }>
 }
 
@@ -115,7 +161,31 @@ function validateBatchInnerTransaction(
 export function validateBatch(tx: Record<string, unknown>): void {
   validateBaseTransaction(tx)
 
+  const modeFlagCount = BATCH_MODE_FLAGS.filter(([name, value]) =>
+    hasFlag(tx, value, name),
+  ).length
+  if (modeFlagCount !== 1) {
+    throw new ValidationError(
+      'Batch: exactly one of the mode flags (tfAllOrNothing, tfOnlyOne, tfUntilFailure, tfIndependent) must be set in Flags.',
+    )
+  }
+
+  if (tx.Delegate != null) {
+    throw new ValidationError(
+      'Batch: Delegate is not allowed. Batch transactions cannot be delegated.',
+    )
+  }
+
   validateRequiredField(tx, 'RawTransactions', isArray)
+
+  if (
+    tx.RawTransactions.length < MIN_RAW_TRANSACTIONS ||
+    tx.RawTransactions.length > MAX_RAW_TRANSACTIONS
+  ) {
+    throw new ValidationError(
+      `Batch: RawTransactions must contain between ${MIN_RAW_TRANSACTIONS} and ${MAX_RAW_TRANSACTIONS} transactions.`,
+    )
+  }
 
   tx.RawTransactions.forEach((rawTxObj, index) => {
     if (!isRecord(rawTxObj)) {

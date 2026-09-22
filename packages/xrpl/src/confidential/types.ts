@@ -236,9 +236,11 @@ export interface ConfidentialBatchParams {
   batchFlags?: number
   /**
    * Extra signatures the outer fee must cover, forwarded to `client.autofill`: the
-   * outer account's own multisign signers, plus one for each co-signing participant
-   * (or that participant's signer count when multisigned). Omit for a
-   * single-signed, single-account Batch.
+   * outer account's own multisign signers, plus, for a co-signing participant that
+   * signs its `BatchSigner` with a multisignature, its signer count minus one.
+   * `autofill` already charges one base fee per co-signing participant (each inner
+   * account other than the outer account), so omit this for a single-signed outer
+   * account with single-signed participants.
    */
   signersCount?: number
   /**

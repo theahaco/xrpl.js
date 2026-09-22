@@ -6,6 +6,11 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 
 ### Added
 * Add `LendingProtocolV1_1` support.
+
+### Fixed
+* `validate` now enforces rippled's Batch-level preflight rules: exactly one mode flag (`tfAllOrNothing`, `tfOnlyOne`, `tfUntilFailure`, `tfIndependent`), between 2 and 8 inner transactions, and no `Delegate` on the outer Batch.
+* `Batch.Flags` accepts `BatchFlagsInterface`, and the new `BatchInnerTransaction` type rejects nested Batches and inner `Fee` (other than `'0'`), `TxnSignature`, `Signers`, and `LastLedgerSequence` at compile time.
+* `autofill` charges one base fee per Batch co-signer (each inner account other than the outer account, or the signatures in `BatchSigners` when already present), so `signersCount` is only needed for extra multisign signatures.
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES

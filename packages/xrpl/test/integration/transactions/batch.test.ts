@@ -1,4 +1,4 @@
-import { Batch, Payment, Wallet } from '../../../src'
+import { Batch, BatchInnerTransaction, Wallet } from '../../../src'
 import { BatchFlags } from '../../../src/models/transactions/batch'
 import { signMultiBatch } from '../../../src/Wallet/batchSigner'
 import serverUrl from '../serverUrl'
@@ -49,7 +49,7 @@ describe('Batch', function () {
   it(
     'base',
     async () => {
-      const payment: Payment = {
+      const payment: BatchInnerTransaction = {
         TransactionType: 'Payment',
         Flags: 0x40000000,
         Account: testContext.wallet.classicAddress,
@@ -75,14 +75,17 @@ describe('Batch', function () {
   it(
     'batch multisign',
     async () => {
-      const payment: Payment = {
+      const payment: BatchInnerTransaction = {
         TransactionType: 'Payment',
         Flags: 0x40000000,
         Account: testContext.wallet.classicAddress,
         Destination: destination.classicAddress,
         Amount: '10000000',
       }
-      const payment2: Payment = { ...payment, Account: wallet2.classicAddress }
+      const payment2: BatchInnerTransaction = {
+        ...payment,
+        Account: wallet2.classicAddress,
+      }
       const tx: Batch = {
         TransactionType: 'Batch',
         Account: testContext.wallet.classicAddress,
@@ -91,7 +94,8 @@ describe('Batch', function () {
           RawTransaction: rawTx,
         })),
       }
-      const autofilled = await testContext.client.autofill(tx, 1)
+      // No signersCount: autofill charges one base fee per co-signing account.
+      const autofilled = await testContext.client.autofill(tx)
       signMultiBatch(wallet2, autofilled)
       await testBatchTransaction(autofilled, testContext.wallet)
     },
