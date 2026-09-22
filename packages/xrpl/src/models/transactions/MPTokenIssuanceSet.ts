@@ -212,8 +212,14 @@ export interface MPTokenIssuanceSet extends BaseTransaction {
    * The address of a single holder whose MPToken to lock or unlock. Only valid
    * together with `tfMPTLock` or `tfMPTUnlock`, and must differ from `Account`.
    * If omitted, the lock/unlock applies to the issuance as a whole (every
-   * holder). Fails with `tecOBJECT_NOT_FOUND` if the holder has not opted in
-   * via MPTokenAuthorize. Cannot be combined with any other kind of change.
+   * holder). Cannot be combined with any other kind of change.
+   *
+   * @remarks The holder's MPToken must already exist: locking an address that
+   * has not opted in via MPTokenAuthorize fails with `tecOBJECT_NOT_FOUND`, so
+   * a lock cannot be placed pre-emptively. A lock does work on a zero-balance,
+   * unauthorized entry and survives a later authorization, which makes
+   * "lock on arrival" the closest thing to a persistent per-address ban. See
+   * the "Compliance controls" section on {@link MPTokenAuthorize}.
    */
   Holder?: Account
   /**
@@ -256,7 +262,11 @@ export interface MPTokenIssuanceSet extends BaseTransaction {
    * The PermissionedDomain object ID that gates who may hold this MPT (XLS-80).
    * Requires `lsfMPTRequireAuth` on the issuance (`tecNO_PERMISSION` otherwise);
    * the zero hash clears an existing domain. Cannot be set together with the
-   * `Holder` field.
+   * `Holder` field. Admission by credential replaces per-holder
+   * MPTokenAuthorize; revoking a holder's credential blocks its sends and
+   * receives (including redemption) but does not lock or claw back, and there
+   * is no per-address deny-list inside a domain. See the "Compliance controls"
+   * section on {@link MPTokenAuthorize}.
    */
   DomainID?: string
 }

@@ -34,7 +34,12 @@ export enum MPTokenIssuanceCreateFlags {
   tfMPTCanLock = 0x00000002,
   /**
    * If set, indicates that individual holders must be authorized.
-   * This enables issuers to limit who can hold their assets.
+   * This enables issuers to limit who can hold their assets. It is an
+   * allow-list, not a deny-list: an address that is never authorized cannot
+   * receive the token, but nothing can be recorded on-ledger about an address
+   * before it opts in, and opting in cannot be prevented. See the "Compliance
+   * controls" section on {@link MPTokenAuthorize} for how this combines with
+   * per-holder locks and permissioned domains.
    */
   tfMPTRequireAuth = 0x00000004,
   /**

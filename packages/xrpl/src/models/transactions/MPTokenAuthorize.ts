@@ -65,6 +65,43 @@ export interface MPTokenAuthorizeFlagsInterface extends GlobalFlagsInterface {
  * bits: a holder that is both authorized and locked is still locked (`tecLOCKED`).
  * The issuer submitting without `Holder`, or a non-issuer submitting with `Holder`,
  * fails with `tecNO_PERMISSION`.
+ *
+ * ## Compliance controls: banning and freezing holders
+ *
+ * XLS-33 has no deny-list, and nothing can be written on-ledger about an
+ * address before that address has opted in. "Ban this address before it ever
+ * holds the token" therefore has no single on-ledger representation; the ledger
+ * offers three partial mechanisms:
+ *
+ * | Goal | Mechanism |
+ * | --- | --- |
+ * | Never let an address receive | `lsfMPTRequireAuth` and never authorize that address |
+ * | Freeze an address once it has opted in | `MPTokenIssuanceSet` with `Holder` and `tfMPTLock` |
+ * | Admit by credential instead | `DomainID` on the issuance (XLS-80) plus credentials (XLS-70) |
+ *
+ * Their limits:
+ * - Allow-listing is the only pre-emptive guarantee, and it is implicit: no
+ *   ledger entry records the decision, so the issuer needs an off-ledger
+ *   registry and a guard in front of every `MPTokenAuthorize` with `Holder`.
+ * - Opt-in cannot be prevented: any funded account can create an MPToken for
+ *   any issuance. Under `lsfMPTRequireAuth` that entry is inert (`tecNO_AUTH`
+ *   on every payment), but it exists and it counts toward the holder's reserve.
+ * - A per-holder lock needs the holder's MPToken to exist (`tecOBJECT_NOT_FOUND`
+ *   before). It is the closest thing to a persistent ban: it works on a
+ *   zero-balance, unauthorized entry, survives a later (mistaken) authorization
+ *   because `tecLOCKED` takes precedence over `tecNO_AUTH`, and blocks payments
+ *   between holders in both directions. Payments to and from the issuer and
+ *   `Clawback` still succeed, and the locked holder can never delete its entry.
+ * - Revoking a credential (`CredentialDelete`) blocks the holder's sends and
+ *   receives, including redemption, but does not lock or claw back. The route
+ *   is not pre-emptive either (a never-issued credential is the same implicit
+ *   state as never authorizing), there is no per-address deny-list inside a
+ *   domain, and `DomainID` cannot be combined with `Holder`.
+ * - rippled cannot enumerate an issuance's holders (`mpt_holders` is served by
+ *   Clio only), so "lock on arrival" means polling `ledger_entry` for the
+ *   `mptoken` of each banned address and locking it once it appears.
+ * - To ban a current holder, lock its MPToken and then `Clawback` the balance;
+ *   both work while the holder is locked, unauthorized, or globally locked.
  */
 export interface MPTokenAuthorize extends BaseTransaction {
   TransactionType: 'MPTokenAuthorize'
@@ -77,6 +114,11 @@ export interface MPTokenAuthorize extends BaseTransaction {
    * existing MPToken entry to authorize (or, with `tfMPTUnauthorize`,
    * unauthorize). Must differ from `Account`. Omit it when a holder is opting in
    * to or out of the token on its own behalf.
+   *
+   * @remarks The holder's MPToken must already exist: authorizing an address that
+   * has not opted in fails with `tecOBJECT_NOT_FOUND`, so an address cannot be
+   * pre-approved (or pre-banned) on-ledger. See the "Compliance controls" section
+   * on {@link MPTokenAuthorize}.
    */
   Holder?: Account
   Flags?: number | MPTokenAuthorizeFlagsInterface
