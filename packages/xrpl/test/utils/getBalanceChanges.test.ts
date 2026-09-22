@@ -1,6 +1,15 @@
 import { assert } from 'chai'
 
 import { getBalanceChanges } from '../../src/utils'
+import mptAuthorizeCreate from '../fixtures/utils/mptAuthorizeCreate.json'
+import mptAuthorizeDelete from '../fixtures/utils/mptAuthorizeDelete.json'
+import mptClawback from '../fixtures/utils/mptClawback.json'
+import mptClawbackFullBalance from '../fixtures/utils/mptClawbackFullBalance.json'
+import mptIssuanceCreate from '../fixtures/utils/mptIssuanceCreate.json'
+import mptIssuanceSetLockHolder from '../fixtures/utils/mptIssuanceSetLockHolder.json'
+import mptPaymentHolderToHolder from '../fixtures/utils/mptPaymentHolderToHolder.json'
+import mptPaymentHolderToIssuer from '../fixtures/utils/mptPaymentHolderToIssuer.json'
+import mptPaymentIssuerToHolder from '../fixtures/utils/mptPaymentIssuerToHolder.json'
 import paymentToken from '../fixtures/utils/paymentToken.json'
 import paymentTokenDestinationNoBalance from '../fixtures/utils/paymentTokenDestinationNoBalance.json'
 import paymentTokenMultipath from '../fixtures/utils/paymentTokenMultipath.json'
@@ -450,5 +459,88 @@ describe('getBalanceChanges', function () {
       },
     ]
     assert.deepStrictEqual(result, expected)
+  })
+
+  describe('MPT', function () {
+    const issuer = 'rPwRoK1JBVdHuJcfuch8u7kkysS9GHNS4B'
+    const holder = 'r327rgjyTDWxvoyS7u89Uwk8KnDmqemLxi'
+    const holder2 = 'rNB82s1SDgtEFfP1R4VdJQwhtehQp2C3Sm'
+    const mptIssuanceId = '00000003F31B3639EF0D2EB4647C7722C5E92519042CC9B2'
+    const fee = { currency: 'XRP', value: '-0.00024' }
+
+    function mpt(value: string): {
+      mpt_issuance_id: string
+      currency: string
+      value: string
+    } {
+      return { mpt_issuance_id: mptIssuanceId, currency: 'MPT', value }
+    }
+
+    it('MPTokenIssuanceCreate only pays the fee', function () {
+      const result = getBalanceChanges(mptIssuanceCreate.metadata)
+      assert.deepStrictEqual(result, [{ account: issuer, balances: [fee] }])
+    })
+
+    it('MPTokenAuthorize creating an empty MPToken only pays the fee', function () {
+      const result = getBalanceChanges(mptAuthorizeCreate.metadata)
+      assert.deepStrictEqual(result, [{ account: holder, balances: [fee] }])
+    })
+
+    it('MPT payment from the issuer to a holder with no MPTAmount yet', function () {
+      // The holder's MPToken existed with no `MPTAmount` (zero), so the
+      // ModifiedNode carries an empty `PreviousFields`.
+      const result = getBalanceChanges(mptPaymentIssuerToHolder.metadata)
+      const expected = [
+        { account: issuer, balances: [mpt('-100'), fee] },
+        { account: holder, balances: [mpt('100')] },
+      ]
+      assert.deepStrictEqual(result, expected)
+    })
+
+    it('MPT payment between two holders has no issuer row', function () {
+      const result = getBalanceChanges(mptPaymentHolderToHolder.metadata)
+      const expected = [
+        { account: holder, balances: [fee, mpt('-10')] },
+        { account: holder2, balances: [mpt('10')] },
+      ]
+      assert.deepStrictEqual(result, expected)
+    })
+
+    it('MPT payment from a holder back to the issuer', function () {
+      const result = getBalanceChanges(mptPaymentHolderToIssuer.metadata)
+      const expected = [
+        { account: issuer, balances: [mpt('10')] },
+        { account: holder, balances: [fee, mpt('-10')] },
+      ]
+      assert.deepStrictEqual(result, expected)
+    })
+
+    it('MPT clawback', function () {
+      const result = getBalanceChanges(mptClawback.metadata)
+      const expected = [
+        { account: issuer, balances: [mpt('5'), fee] },
+        { account: holder, balances: [mpt('-5')] },
+      ]
+      assert.deepStrictEqual(result, expected)
+    })
+
+    it('MPT clawback of the full balance drops MPTAmount from FinalFields', function () {
+      const result = getBalanceChanges(mptClawbackFullBalance.metadata)
+      const expected = [
+        { account: issuer, balances: [mpt('10'), fee] },
+        { account: holder2, balances: [mpt('-10')] },
+      ]
+      assert.deepStrictEqual(result, expected)
+    })
+
+    it('MPTokenIssuanceSet locking a holder with a balance changes nothing', function () {
+      const result = getBalanceChanges(mptIssuanceSetLockHolder.metadata)
+      assert.deepStrictEqual(result, [{ account: issuer, balances: [fee] }])
+    })
+
+    it('MPTokenAuthorize deleting an empty MPToken only pays the fee', function () {
+      const result = getBalanceChanges(mptAuthorizeDelete.metadata)
+      assert.deepStrictEqual(result, [{ account: holder2, balances: [fee] }])
+    })
   })
 })

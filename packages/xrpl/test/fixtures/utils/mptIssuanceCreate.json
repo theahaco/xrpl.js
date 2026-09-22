@@ -1,0 +1,68 @@
+{
+  "hash": "992C70481363709003E9E180D5C5BC0B9AD9FDE021CE0C5BBD05A31515C631DB",
+  "ledger_index": 6,
+  "validated": true,
+  "tx_json": {
+    "Account": "rPwRoK1JBVdHuJcfuch8u7kkysS9GHNS4B",
+    "AssetScale": 2,
+    "Fee": "240",
+    "Flags": 102,
+    "LastLedgerSequence": 25,
+    "Sequence": 3,
+    "SigningPubKey": "EDDC49FFD03CF2970F44D1C572221D4365F666A51756FC38A16E66188E37A18722",
+    "TransactionType": "MPTokenIssuanceCreate",
+    "TxnSignature": "8B5CCEBE335BABD2E9FD08F42FE7ED22369D1F246A7AFABA6509F33D8824E9E46A058973931D3C3E860DEE25CD37EA12199563CC24F74EC8FFA71770CCDF0404",
+    "ctid": "C000000600000000",
+    "date": 843404893,
+    "ledger_index": 6
+  },
+  "metadata": {
+    "AffectedNodes": [
+      {
+        "CreatedNode": {
+          "LedgerEntryType": "MPTokenIssuance",
+          "LedgerIndex": "28A67458AEAF436306280FD1B93DB845648EF4C00BB231AE5BA112E279EBB263",
+          "NewFields": {
+            "AssetScale": 2,
+            "Flags": 102,
+            "Issuer": "rPwRoK1JBVdHuJcfuch8u7kkysS9GHNS4B",
+            "Sequence": 3
+          }
+        }
+      },
+      {
+        "CreatedNode": {
+          "LedgerEntryType": "DirectoryNode",
+          "LedgerIndex": "CB3040A18B2A0EB1ECCF04A69A1A260642E0A2E4CBA0E8E654CD96D7EC326B26",
+          "NewFields": {
+            "Owner": "rPwRoK1JBVdHuJcfuch8u7kkysS9GHNS4B",
+            "RootIndex": "CB3040A18B2A0EB1ECCF04A69A1A260642E0A2E4CBA0E8E654CD96D7EC326B26"
+          }
+        }
+      },
+      {
+        "ModifiedNode": {
+          "FinalFields": {
+            "Account": "rPwRoK1JBVdHuJcfuch8u7kkysS9GHNS4B",
+            "Balance": "399999760",
+            "Flags": 0,
+            "OwnerCount": 1,
+            "Sequence": 4
+          },
+          "LedgerEntryType": "AccountRoot",
+          "LedgerIndex": "F69F366FF8DE96C76F25AE56685031E7544D3958B847A41B604CE0B600E4B17A",
+          "PreviousFields": {
+            "Balance": "400000000",
+            "OwnerCount": 0,
+            "Sequence": 3
+          },
+          "PreviousTxnID": "DB92D854BE5FA9EB5E7E1B279F88BA7794458557142E9B3B842911F45FBE4744",
+          "PreviousTxnLgrSeq": 3
+        }
+      }
+    ],
+    "TransactionIndex": 0,
+    "TransactionResult": "tesSUCCESS",
+    "mpt_issuance_id": "00000003F31B3639EF0D2EB4647C7722C5E92519042CC9B2"
+  }
+}

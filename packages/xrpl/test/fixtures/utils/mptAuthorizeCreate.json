@@ -1,0 +1,65 @@
+{
+  "hash": "CAC8C47E945C846534F5D6D928BB5A4B661E8E0BE8DC8519C199F3909593528A",
+  "ledger_index": 7,
+  "validated": true,
+  "tx_json": {
+    "Account": "r327rgjyTDWxvoyS7u89Uwk8KnDmqemLxi",
+    "Fee": "240",
+    "Flags": 0,
+    "LastLedgerSequence": 26,
+    "MPTokenIssuanceID": "00000003F31B3639EF0D2EB4647C7722C5E92519042CC9B2",
+    "Sequence": 4,
+    "SigningPubKey": "EDB55FF42F45F20D5524D4D11A52EEF5C90F2A1ACF8DFBCCD0D5E0FB2BCFE5399A",
+    "TransactionType": "MPTokenAuthorize",
+    "TxnSignature": "61FC436122A847EBFBCE9FED93569A0F49647051EADD1B4EA8BEA5278F0A62AAB1252FD8568C94BEB01FF3D315E4E760C00E49FFE653D35CFDE187C536083C0C",
+    "ctid": "C000000700000000",
+    "date": 843404894,
+    "ledger_index": 7
+  },
+  "metadata": {
+    "AffectedNodes": [
+      {
+        "ModifiedNode": {
+          "FinalFields": {
+            "Account": "r327rgjyTDWxvoyS7u89Uwk8KnDmqemLxi",
+            "Balance": "399999760",
+            "Flags": 0,
+            "OwnerCount": 1,
+            "Sequence": 5
+          },
+          "LedgerEntryType": "AccountRoot",
+          "LedgerIndex": "917CAAEB644E51EFDCACB721044496381D65DB244E52C9EB8487ADFF3CFA75CE",
+          "PreviousFields": {
+            "Balance": "400000000",
+            "OwnerCount": 0,
+            "Sequence": 4
+          },
+          "PreviousTxnID": "A741F6037D08A040892B334753D94CE6E12EDA9124B23333E2316D35B9C7D60D",
+          "PreviousTxnLgrSeq": 4
+        }
+      },
+      {
+        "CreatedNode": {
+          "LedgerEntryType": "DirectoryNode",
+          "LedgerIndex": "A059E17A0A365753C9154E56B1DEAD6AEB0162838313A0DD59A1AD3BABC8A3A8",
+          "NewFields": {
+            "Owner": "r327rgjyTDWxvoyS7u89Uwk8KnDmqemLxi",
+            "RootIndex": "A059E17A0A365753C9154E56B1DEAD6AEB0162838313A0DD59A1AD3BABC8A3A8"
+          }
+        }
+      },
+      {
+        "CreatedNode": {
+          "LedgerEntryType": "MPToken",
+          "LedgerIndex": "F5BB1522AAA887620D186C6F203AE92355AB80303F0B856F7B47322AB9D632D5",
+          "NewFields": {
+            "Account": "r327rgjyTDWxvoyS7u89Uwk8KnDmqemLxi",
+            "MPTokenIssuanceID": "00000003F31B3639EF0D2EB4647C7722C5E92519042CC9B2"
+          }
+        }
+      }
+    ],
+    "TransactionIndex": 0,
+    "TransactionResult": "tesSUCCESS"
+  }
+}

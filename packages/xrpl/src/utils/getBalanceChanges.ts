@@ -1,4 +1,6 @@
+import { bytesToHex } from '@xrplf/isomorphic/utils'
 import BigNumber from 'bignumber.js'
+import { decodeAccountID } from 'ripple-address-codec'
 
 import {
   Amount,
@@ -11,6 +13,10 @@ import {
 import { groupBy } from './collections'
 import { dropsToXrp } from './xrpConversion'
 
+const HEX_RADIX = 16
+/** Hex characters of the 32-bit issuer sequence that starts an MPTokenIssuanceID. */
+const MPT_ISSUANCE_ID_SEQUENCE_HEX_LENGTH = 8
+
 interface BalanceChange {
   account: string
   balance: Balance
@@ -20,6 +26,11 @@ interface Fields {
   Balance?: Amount
   LowLimit?: IssuedCurrencyAmount
   HighLimit?: IssuedCurrencyAmount
+  MPTokenIssuanceID?: string
+  MPTAmount?: string
+  Issuer?: string
+  Sequence?: number
+  OutstandingAmount?: string
   // eslint-disable-next-line @typescript-eslint/member-ordering -- okay here, just some of the fields are typed to make it easier
   [field: string]: unknown
 }
@@ -150,9 +161,137 @@ function getTrustlineQuantity(node: NormalizedNode): BalanceChange[] | null {
   return [result, flipTrustlinePerspective(result)]
 }
 
+type MPTAmountField = 'MPTAmount' | 'OutstandingAmount'
+
+/**
+ * Reads the value an integer amount field (`MPTAmount`, `OutstandingAmount`)
+ * of an MPT ledger entry node had before the transaction. Such fields are
+ * omitted by rippled when their value is zero.
+ *
+ * Disambiguating "the field did not change" from "the field was absent (zero)
+ * before" in a `ModifiedNode` relies on how rippled builds `PreviousFields`:
+ * it lists every original field the final node no longer matches, and an
+ * absent original field is listed as an empty placeholder. So a
+ * `PreviousFields` that is present but has no keys means a field went from
+ * absent to present in this transaction, i.e. the amount was zero before.
+ *
+ * @param node - The normalized affected node.
+ * @param field - Which integer amount field to read.
+ * @returns The amount before the transaction.
+ */
+function getPreviousMPTAmount(
+  node: NormalizedNode,
+  field: MPTAmountField,
+): BigNumber {
+  if (node.NodeType === 'CreatedNode') {
+    return new BigNumber(0)
+  }
+  const previous = node.PreviousFields?.[field]
+  if (previous != null) {
+    return new BigNumber(previous)
+  }
+  if (
+    node.PreviousFields != null &&
+    Object.keys(node.PreviousFields).length === 0
+  ) {
+    // A field went from absent to present, and this is the only such field.
+    return new BigNumber(0)
+  }
+  // Something else changed (e.g. `Flags`); the amount did not.
+  return new BigNumber(node.FinalFields?.[field] ?? '0')
+}
+
+/**
+ * Computes how an integer amount field of an MPT ledger entry node changed
+ * as a result of the transaction.
+ *
+ * @param node - The normalized affected node.
+ * @param field - Which integer amount field to diff.
+ * @returns The signed change, or null when the amount did not change.
+ */
+function computeMPTAmountChange(
+  node: NormalizedNode,
+  field: MPTAmountField,
+): BigNumber | null {
+  const after =
+    node.NodeType === 'DeletedNode'
+      ? new BigNumber(0)
+      : new BigNumber(
+          node.FinalFields?.[field] ?? node.NewFields?.[field] ?? '0',
+        )
+  const value = after.minus(getPreviousMPTAmount(node, field))
+  return value.isZero() ? null : value
+}
+
+function getMPTokenQuantity(node: NormalizedNode): BalanceChange | null {
+  const value = computeMPTAmountChange(node, 'MPTAmount')
+  if (value === null) {
+    return null
+  }
+  const fields = node.FinalFields ?? node.NewFields
+  return {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- an MPToken always has an Account
+    account: fields?.Account as string,
+    balance: {
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- an MPToken always has an MPTokenIssuanceID
+      mpt_issuance_id: fields?.MPTokenIssuanceID as string,
+      currency: 'MPT',
+      value: value.toString(),
+    },
+  }
+}
+
+/**
+ * The issuer's side of an MPT balance change. An `MPTokenIssuance` entry
+ * tracks the total held by all holders in `OutstandingAmount`; from the
+ * issuer's perspective that total is a liability, so its change is negated
+ * (issuing 100 units is `-100` for the issuer, clawing back 5 is `+5`).
+ * Holder-to-holder transfers leave `OutstandingAmount` untouched, so they
+ * produce no issuer row.
+ *
+ * The MPTokenIssuanceID is not a field of the entry; it is rebuilt from the
+ * issuer's `Sequence` and AccountID, matching the `mpt_issuance_id` rippled
+ * synthesizes in `ledger_entry` and `account_objects` views.
+ *
+ * @param node - The normalized affected node.
+ * @returns The issuer's balance change, or null when nothing was issued or
+ * redeemed.
+ */
+function getMPTokenIssuanceQuantity(
+  node: NormalizedNode,
+): BalanceChange | null {
+  const value = computeMPTAmountChange(node, 'OutstandingAmount')
+  if (value === null) {
+    return null
+  }
+  const fields = node.FinalFields ?? node.NewFields
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- an MPTokenIssuance always has an Issuer
+  const issuer = fields?.Issuer as string
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- an MPTokenIssuance always has a Sequence
+  const sequence = fields?.Sequence as number
+  const sequenceHex = sequence
+    .toString(HEX_RADIX)
+    .padStart(MPT_ISSUANCE_ID_SEQUENCE_HEX_LENGTH, '0')
+    .toUpperCase()
+  return {
+    account: issuer,
+    balance: {
+      mpt_issuance_id: sequenceHex + bytesToHex(decodeAccountID(issuer)),
+      currency: 'MPT',
+      value: value.negated().toString(),
+    },
+  }
+}
+
 /**
  * Computes the complete list of every balance that changed in the ledger
- * as a result of the given transaction.
+ * as a result of the given transaction: XRP (`AccountRoot`), issued
+ * currencies (`RippleState`, from both the holder's and the issuer's
+ * perspective) and Multi-Purpose Tokens (`MPToken` for holders,
+ * `MPTokenIssuance` for the issuer).
+ *
+ * MPT rows have `currency: 'MPT'` and an `mpt_issuance_id`; their `value` is
+ * in the issuance's fractional units (not scaled by `AssetScale`).
  *
  * @param metadata - Transaction metadata.
  * @returns Parsed balance changes.
@@ -178,6 +317,20 @@ export default function getBalanceChanges(
         return []
       }
       return trustlineQuantity
+    }
+    if (node.LedgerEntryType === 'MPToken') {
+      const mptokenQuantity = getMPTokenQuantity(node)
+      if (mptokenQuantity == null) {
+        return []
+      }
+      return [mptokenQuantity]
+    }
+    if (node.LedgerEntryType === 'MPTokenIssuance') {
+      const issuanceQuantity = getMPTokenIssuanceQuantity(node)
+      if (issuanceQuantity == null) {
+        return []
+      }
+      return [issuanceQuantity]
     }
     return []
   })
