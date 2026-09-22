@@ -10,6 +10,7 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
 
 ### Fixed
 * Fix the `MPToken` ledger type to match rippled: add the required `Account` field, make `MPTAmount` optional (rippled omits it when the balance is zero) and `OwnerNode` required. Add the synthetic `mpt_issuance_id` rippled returns on every `MPTokenIssuance` JSON view. Type `Credential.Flags` as a `number` (the ledger never returns a flags object).
+* Narrow response types by request: `ledger_entry` types `result.node` as the entry the lookup field implies (`mpt_issuance` → `MPTokenIssuance`, `mptoken` → `MPToken`, `account_root` → `AccountRoot`, ...; `index` and mixed lookups keep the `LedgerEntry` union); `account_objects` with a `type` filter (also via `requestAll`/`requestNextPage`) types `account_objects` as that entry type; `TransactionStream<T>` and `AccountTxTransaction<Version, T>` take the transaction type so `meta` is `TransactionMetadata<T>` (e.g. `meta.mpt_issuance_id` on an `MPTokenIssuanceCreate` event); `client.request` infers the response version from a literal `api_version: 1` on the request, so v1 responses are no longer typed as v2 (`BaseRequest.api_version` is now typed `APIVersion`, i.e. `1 | 2`).
 ## 5.2.0 (2026-09-11)
 
 ### BREAKING CHANGES

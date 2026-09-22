@@ -3,7 +3,6 @@ import { assert } from 'chai'
 import {
   decodeMPTokenMetadata,
   encodeMPTokenMetadata,
-  MPTokenIssuance,
   MPTokenIssuanceCreate,
   MPTokenIssuanceCreateFlags,
   MPTokenIssuanceCreateImmutableFlags,
@@ -84,7 +83,6 @@ describe('MPTokenIssuanceCreate', function () {
         'Should be exactly one issuance on the ledger',
       )
       const issuance = accountObjectsResponse.result.account_objects[0]
-      assert(issuance.LedgerEntryType === 'MPTokenIssuance')
       assert.equal(issuance.MaximumAmount, `9223372036854775807`)
 
       assert(issuance.MPTokenMetadata != null)
@@ -131,7 +129,7 @@ describe('MPTokenIssuanceCreate', function () {
       const issuance = accountObjectsResponse.result.account_objects.find(
         (node) =>
           (node as { mpt_issuance_id?: string }).mpt_issuance_id === issuanceId,
-      ) as MPTokenIssuance | undefined
+      )
       assert.exists(issuance, 'Created MPTokenIssuance not found')
 
       const lsf = parseMPTokenIssuanceFlags(issuance.Flags)

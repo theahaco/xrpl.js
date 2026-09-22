@@ -8,7 +8,6 @@ import {
   AccountSet,
   AccountSetAsfFlags,
 } from '../../../src'
-import { Vault } from '../../../src/models/ledger'
 import serverUrl from '../serverUrl'
 import {
   setupClient,
@@ -50,7 +49,7 @@ describe('Single Asset Vault', function () {
       1,
       'Should find one vault',
     )
-    const vaultObj = result.result.account_objects[0] as Vault
+    const vaultObj = result.result.account_objects[0]
     const vaultId = vaultObj.index
 
     // Fetch vault_info using vault_id
@@ -179,14 +178,14 @@ describe('Single Asset Vault', function () {
       type: 'vault',
     })
     const vaultObj = result.result.account_objects.find((obj) => {
-      const vault = obj as Vault
+      const vault = obj
       const asset = vault.Asset as unknown as Record<string, unknown>
       return (
         asset.currency === 'USD' &&
         asset.issuer === testContext.wallet.classicAddress
       )
-    }) as Vault
-    assert.isDefined(vaultObj, 'Should find IOU vault')
+    })
+    assert(vaultObj != null, 'Should find IOU vault')
 
     // Fetch vault_info using vault_id
     const vaultInfoRes: VaultInfoResponse = await testContext.client.request({

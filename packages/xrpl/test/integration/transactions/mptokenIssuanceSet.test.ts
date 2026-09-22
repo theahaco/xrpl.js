@@ -14,7 +14,6 @@ import {
   parseMPTokenIssuanceFlags,
   parseMPTokenIssuanceImmutableFlags,
 } from '../../../src'
-import type PermissionedDomain from '../../../src/models/ledger/PermissionedDomain'
 import serverUrl from '../serverUrl'
 import {
   setupClient,
@@ -470,12 +469,10 @@ async function readMPTokenIssuance(
     type: 'mpt_issuance',
   })
   const issuanceNode = accountObjectsResponse.result.account_objects.find(
-    (node) =>
-      node.LedgerEntryType === 'MPTokenIssuance' &&
-      node.mpt_issuance_id === issuanceId,
+    (node) => node.mpt_issuance_id === issuanceId,
   )
   assert(
-    issuanceNode?.LedgerEntryType === 'MPTokenIssuance',
+    issuanceNode != null,
     `MPTokenIssuance with id ${issuanceId} not found in account_objects`,
   )
   return issuanceNode
@@ -524,8 +521,9 @@ async function createPermissionedDomain(
     account: testContext.wallet.classicAddress,
     type: 'permissioned_domain',
   })
-  const newestDomain = accountObjects.result.account_objects[
-    accountObjects.result.account_objects.length - 1
-  ] as PermissionedDomain
+  const newestDomain =
+    accountObjects.result.account_objects[
+      accountObjects.result.account_objects.length - 1
+    ]
   return newestDomain.index
 }

@@ -11,6 +11,7 @@ import type {
 } from '../common'
 import { Offer } from '../ledger'
 import { OfferCreate, Transaction } from '../transactions'
+import { BaseTransaction } from '../transactions/common'
 import { TransactionMetadata } from '../transactions/metadata'
 
 import type { BaseRequest, BaseResponse } from './baseMethod'
@@ -283,12 +284,16 @@ export interface ValidationStream extends BaseStream {
 }
 
 /**
- * Many subscriptions result in messages about transactions.
+ * Many subscriptions result in messages about transactions. `T` is the
+ * transaction type carried in `tx_json` (or `transaction` under API version
+ * 1); `meta` is the metadata type for that same transaction, so narrowing an
+ * event to `TransactionStream<MPTokenIssuanceCreate>` also narrows `meta`.
  *
  * @category Streams
  */
 interface TransactionStreamBase<
   Version extends APIVersion = typeof DEFAULT_API_VERSION,
+  T extends BaseTransaction = Transaction,
 > extends BaseStream {
   status: string
   type: 'transaction'
@@ -320,14 +325,14 @@ interface TransactionStreamBase<
    * The transaction metadata, which shows the exact outcome of the transaction
    * in detail.
    */
-  meta?: TransactionMetadata
+  meta?: TransactionMetadata<T>
   /** JSON object defining the transaction. */
   tx_json?: Version extends typeof RIPPLED_API_V2
-    ? Transaction & ResponseOnlyTxInfo
+    ? T & ResponseOnlyTxInfo
     : never
   /** JSON object defining the transaction in rippled API v1. */
   transaction?: Version extends typeof RIPPLED_API_V1
-    ? Transaction & ResponseOnlyTxInfo
+    ? T & ResponseOnlyTxInfo
     : never
   /**
    * If true, this transaction is included in a validated ledger and its
@@ -339,18 +344,22 @@ interface TransactionStreamBase<
 }
 
 /**
- * Expected response from an {@link AccountTxRequest}.
+ * A `transaction` stream event. Pass the transaction type as `T` to correlate
+ * `tx_json` and `meta`, for example in a type predicate:
+ * `ev is TransactionStream<MPTokenIssuanceCreate>`.
  *
  * @category Streams
  */
-export type TransactionStream = TransactionStreamBase
+export type TransactionStream<T extends BaseTransaction = Transaction> =
+  TransactionStreamBase<typeof DEFAULT_API_VERSION, T>
 
 /**
- * Expected response from an {@link AccountTxRequest} with `api_version` set to 1.
+ * A `transaction` stream event with `api_version` set to 1.
  *
  * @category Streams
  */
-export type TransactionV1Stream = TransactionStreamBase<typeof RIPPLED_API_V1>
+export type TransactionV1Stream<T extends BaseTransaction = Transaction> =
+  TransactionStreamBase<typeof RIPPLED_API_V1, T>
 
 /**
  * The admin-only `peer_status` stream reports a large amount of information on

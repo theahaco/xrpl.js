@@ -33,8 +33,10 @@ import {
 } from './accountNFTs'
 import {
   AccountObject,
+  AccountObjectByFilter,
   AccountObjectsRequest,
   AccountObjectsResponse,
+  AccountObjectsResponseMap,
   AccountObjectType,
 } from './accountObjects'
 import {
@@ -115,6 +117,8 @@ import {
 import {
   LedgerEntryBinaryRequest,
   LedgerEntryJsonRequest,
+  LedgerEntryLookupMap,
+  LedgerEntryNode,
   LedgerEntryRequest,
   LedgerEntryBinaryResponse,
   LedgerEntryJsonResponse,
@@ -340,7 +344,7 @@ export type RequestResponseMap<
   : T extends AccountNFTsRequest
   ? AccountNFTsResponse
   : T extends AccountObjectsRequest
-  ? AccountObjectsResponse
+  ? AccountObjectsResponseMap<T>
   : T extends AccountOffersRequest
   ? AccountOffersResponse
   : T extends AccountSponsoringRequest
@@ -430,9 +434,9 @@ export type RequestResponseMap<
   : T extends LedgerEntryBinaryRequest
   ? LedgerEntryBinaryResponse
   : T extends LedgerEntryJsonRequest
-  ? LedgerEntryJsonResponse
+  ? LedgerEntryJsonResponse<LedgerEntryNode<T>>
   : T extends LedgerEntryRequest
-  ? LedgerEntryJsonResponse
+  ? LedgerEntryJsonResponse<LedgerEntryNode<T>>
   : T extends SimulateBinaryRequest
   ? SimulateBinaryResponse
   : T extends SimulateJsonRequest
@@ -493,6 +497,16 @@ export type RequestResponseMap<
   ? VaultInfoResponse
   : Response<Version>
 
+/**
+ * The API version a request pins through its `api_version` field, or
+ * {@link DEFAULT_API_VERSION} when it leaves the field unset.
+ */
+export type RequestAPIVersion<T> = T extends {
+  api_version: infer V extends APIVersion
+}
+  ? V
+  : typeof DEFAULT_API_VERSION
+
 export type MarkerRequest = Request & {
   limit?: number
   marker?: unknown
@@ -514,7 +528,7 @@ export type RequestAllResponseMap<
   : T extends AccountLinesRequest
   ? AccountLinesResponse
   : T extends AccountObjectsRequest
-  ? AccountObjectsResponse
+  ? AccountObjectsResponseMap<T>
   : T extends AccountOffersRequest
   ? AccountOffersResponse
   : T extends AccountTxRequest
@@ -551,9 +565,11 @@ export {
   AccountNFTsRequest,
   AccountNFTsResponse,
   AccountObject,
+  AccountObjectByFilter,
   AccountObjectType,
   AccountObjectsRequest,
   AccountObjectsResponse,
+  AccountObjectsResponseMap,
   AccountOffer,
   AccountOffersRequest,
   AccountOffersResponse,
@@ -588,6 +604,8 @@ export {
   LedgerDataLedgerState,
   LedgerEntryBinaryRequest,
   LedgerEntryJsonRequest,
+  LedgerEntryLookupMap,
+  LedgerEntryNode,
   LedgerEntryRequest,
   LedgerEntryBinaryResponse,
   LedgerEntryJsonResponse,

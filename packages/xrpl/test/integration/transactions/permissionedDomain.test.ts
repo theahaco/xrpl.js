@@ -7,7 +7,6 @@ import {
   PermissionedDomainSet,
   AuthorizeCredential,
 } from '../../../src'
-import PermissionedDomain from '../../../src/models/ledger/PermissionedDomain'
 import serverUrl from '../serverUrl'
 import {
   setupClient,
@@ -55,7 +54,7 @@ describe('PermissionedDomainSet', function () {
       })
 
       assert.equal(result.result.account_objects.length, 1)
-      const pd = result.result.account_objects[0] as PermissionedDomain
+      const pd = result.result.account_objects[0]
 
       assert.equal(pd.Flags, 0)
       expect(pd.AcceptedCredentials).toEqual([sampleCredential])
