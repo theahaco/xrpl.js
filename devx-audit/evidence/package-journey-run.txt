@@ -1,0 +1,17 @@
+packed: 16/16 selected criteria met
+J01 PASS A valid Payment is accepted
+J02 PASS Misspelled optional transaction fields are rejected (2561)
+J03 PASS Misspelled request fields are rejected (2561)
+J04 PASS Omitting Account preserves other required Payment fields (2739)
+J05 PASS Autofill exposes the Fee and LastLedgerSequence it populates
+J06 PASS An MPT issuance lookup infers MPTokenIssuance
+J07 PASS An account root lookup infers AccountRoot
+J08 PASS An offer filter narrows account_objects entries
+J09 PASS submitAndWait exposes parsed final metadata
+J10 PASS Signing and submitting preserve issuance metadata type
+J11 PASS A literal API version selects the matching response shape
+J12 PASS A stored broadly typed request keeps a safe response union (18048,2339)
+J13 PASS A binary ledger request must not expose a JSON node (2339)
+J14 PASS Known options on request literals reject typos at the call (2769)
+J15 PASS Unknown transaction fields are rejected at the submission call (2769)
+J16 PASS Object flags become a numeric mask after autofill

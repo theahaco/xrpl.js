@@ -1,0 +1,460 @@
+{
+  "baseline": {
+    "xrpl": "5.3.0",
+    "typescript": "5.9.3"
+  },
+  "options": {
+    "strict": true,
+    "skipLibCheck": true,
+    "target": 9,
+    "module": 199,
+    "moduleResolution": 99,
+    "noEmit": true,
+    "baseUrl": "/Users/willem/.codex/.chatgpt-projects/g-p-6ab298cc94e0819193fda09c1334961b/audit/harness",
+    "paths": {
+      "xrpl": [
+        "/Users/willem/.codex/.chatgpt-projects/g-p-6ab298cc94e0819193fda09c1334961b/audit/build/package/package/dist/npm/index.d.ts"
+      ]
+    }
+  },
+  "probes": [
+    {
+      "id": "event-on-inference",
+      "intent": "An unknown ledgerClosed payload field should fail type checking.",
+      "code": "client.on('ledgerClosed', ledger => ledger.nonexistent());",
+      "startLine": 5,
+      "endLine": 5,
+      "diagnostics": [
+        {
+          "code": 2339,
+          "line": 5,
+          "message": "Property 'nonexistent' does not exist on type 'LedgerStream'."
+        }
+      ]
+    },
+    {
+      "id": "event-on-wrong-listener",
+      "intent": "A string callback for ledgerClosed should fail type checking.",
+      "code": "client.on('ledgerClosed', (ledger: string) => ledger.toUpperCase());",
+      "startLine": 9,
+      "endLine": 9,
+      "diagnostics": []
+    },
+    {
+      "id": "event-once-inference",
+      "intent": "Inherited once should retain typed payloads.",
+      "code": "client.once('ledgerClosed', ledger => ledger.nonexistent());",
+      "startLine": 13,
+      "endLine": 13,
+      "diagnostics": []
+    },
+    {
+      "id": "tx-missing-identifier",
+      "intent": "A tx query requires a transaction hash or CTID.",
+      "code": "const requestWithoutId: TxRequest = { command: 'tx' };",
+      "startLine": 17,
+      "endLine": 17,
+      "diagnostics": []
+    },
+    {
+      "id": "tx-conflicting-identifiers",
+      "intent": "A tx query requires exactly one identifier.",
+      "code": "const requestWithBothIds: TxRequest = { command: 'tx', transaction: 'hash', ctid: 'ctid' };",
+      "startLine": 21,
+      "endLine": 21,
+      "diagnostics": []
+    },
+    {
+      "id": "nft-pagination-next",
+      "intent": "An account_nfts response should work with the next-page helper.",
+      "code": "const nfts = await client.request({command: 'account_nfts', account: 'rExample'});\nawait client.requestNextPage({command: 'account_nfts', account: 'rExample'}, nfts);",
+      "startLine": 25,
+      "endLine": 26,
+      "diagnostics": [
+        {
+          "code": 2820,
+          "line": 26,
+          "message": "Type '\"account_nfts\"' is not assignable to type '\"account_channels\" | \"account_lines\" | \"account_objects\" | \"account_offers\" | \"account_tx\" | \"ledger_data\"'. Did you mean '\"account_tx\"'?"
+        }
+      ]
+    },
+    {
+      "id": "nft-pagination-all",
+      "intent": "An accepted account_nfts request should work with requestAll defaults.",
+      "code": "const nftPages = await client.requestAll({command: 'account_nfts', account: 'rExample'});",
+      "startLine": 30,
+      "endLine": 30,
+      "diagnostics": []
+    },
+    {
+      "id": "unsigned-submit-no-wallet",
+      "intent": "An unsigned JSON transaction cannot be submitted without a wallet.",
+      "code": "await client.submit({TransactionType: 'Payment', Account: 'rFrom', Destination: 'rTo', Amount: '1'});",
+      "startLine": 34,
+      "endLine": 34,
+      "diagnostics": []
+    },
+    {
+      "id": "decode-sign-roundtrip",
+      "intent": "Decoding a known valid encoded payment should retain useful transaction information.",
+      "code": "const payment: Payment = {TransactionType: 'Payment', Account: 'rFrom', Destination: 'rTo', Amount: '1'};\nconst decoded = decode(encode(payment));\nWallet.generate().sign(decoded);",
+      "startLine": 38,
+      "endLine": 40,
+      "diagnostics": [
+        {
+          "code": 2345,
+          "line": 40,
+          "message": "Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'Transaction'.\n  Type 'Record<string, unknown>' is missing the following properties from type 'LoanSet': TransactionType, LoanBrokerID, PrincipalRequested, Account"
+        }
+      ]
+    },
+    {
+      "id": "error-discovery",
+      "intent": "Narrowing an RPC error to RippledError should expose the RPC error code.",
+      "code": "try { await client.request({command:'ping'}); } catch (error) { if (error instanceof RippledError) console.log(error.data.error); }",
+      "startLine": 44,
+      "endLine": 44,
+      "diagnostics": [
+        {
+          "code": 18046,
+          "line": 44,
+          "message": "'error.data' is of type 'unknown'."
+        }
+      ]
+    },
+    {
+      "id": "confidential-operation-guidance",
+      "intent": "A confidential send recipe must include destination and sender keypair.",
+      "code": "const badOperation: ConfidentialBatchOperation = {operation:'send', account:'rFrom', mptIssuanceID:'id', amount:1n};",
+      "startLine": 48,
+      "endLine": 48,
+      "diagnostics": [
+        {
+          "code": 2322,
+          "line": 48,
+          "message": "Type '{ operation: \"send\"; account: string; mptIssuanceID: string; amount: bigint; }' is not assignable to type 'ConfidentialBatchOperation'.\n  Type '{ operation: \"send\"; account: string; mptIssuanceID: string; amount: bigint; }' is not assignable to type '{ operation: \"send\"; } & Omit<ConfidentialSendParams, \"sequence\" | \"ledgerIndex\" | \"confidentialState\" | \"outstandingDelta\" | \"destinationKey\">'.\n    Type '{ operation: \"send\"; account: string; mptIssuanceID: string; amount: bigint; }' is missing the following properties from type 'Omit<ConfidentialSendParams, \"sequence\" | \"ledgerIndex\" | \"confidentialState\" | \"outstandingDelta\" | \"destinationKey\">': destination, senderKeypair"
+        }
+      ]
+    },
+    {
+      "id": "transaction-discriminant-guidance",
+      "intent": "Selecting Payment should require destination and amount.",
+      "code": "const badPayment: Transaction = {TransactionType:'Payment', Account:'rFrom'};",
+      "startLine": 52,
+      "endLine": 52,
+      "diagnostics": [
+        {
+          "code": 2322,
+          "line": 52,
+          "message": "Type '{ TransactionType: \"Payment\"; Account: string; }' is not assignable to type 'Transaction'.\n  Type '{ TransactionType: \"Payment\"; Account: string; }' is missing the following properties from type 'Payment': Amount, Destination"
+        }
+      ]
+    }
+  ],
+  "quickInfo": [
+    {
+      "label": "Client constructor",
+      "found": true,
+      "display": "(alias) new Client(server: string, options?: ClientOptions): Client\nimport Client",
+      "documentation": "Creates a new Client with a websocket connection to a rippled server.",
+      "tags": [
+        {
+          "name": "param",
+          "text": [
+            {
+              "text": "server",
+              "kind": "parameterName"
+            },
+            {
+              "text": " ",
+              "kind": "space"
+            },
+            {
+              "text": "- URL of the server to connect to.",
+              "kind": "text"
+            }
+          ]
+        },
+        {
+          "name": "param",
+          "text": [
+            {
+              "text": "options",
+              "kind": "parameterName"
+            },
+            {
+              "text": " ",
+              "kind": "space"
+            },
+            {
+              "text": "- Options for client settings.",
+              "kind": "text"
+            }
+          ]
+        },
+        {
+          "name": "category",
+          "text": [
+            {
+              "text": "Constructor",
+              "kind": "text"
+            }
+          ]
+        },
+        {
+          "name": "example",
+          "text": [
+            {
+              "text": "```ts\nimport { Client } from \"xrpl\"\nconst client = new Client('wss://s.altnet.rippletest.net:51233')\n```",
+              "kind": "text"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Client.on",
+      "found": true,
+      "display": "(method) Client.on<\"ledgerClosed\", (ledger: LedgerStream) => any>(eventName: \"ledgerClosed\", listener: (ledger: LedgerStream) => any): Client",
+      "documentation": "Event handler for subscription streams.",
+      "tags": [
+        {
+          "name": "category",
+          "text": [
+            {
+              "text": "Network",
+              "kind": "text"
+            }
+          ]
+        },
+        {
+          "name": "param",
+          "text": [
+            {
+              "text": "eventName",
+              "kind": "parameterName"
+            },
+            {
+              "text": " ",
+              "kind": "space"
+            },
+            {
+              "text": "- Name of the event. Only forwards streams.",
+              "kind": "text"
+            }
+          ]
+        },
+        {
+          "name": "param",
+          "text": [
+            {
+              "text": "listener",
+              "kind": "parameterName"
+            },
+            {
+              "text": " ",
+              "kind": "space"
+            },
+            {
+              "text": "- Function to run on event.",
+              "kind": "text"
+            }
+          ]
+        },
+        {
+          "name": "returns",
+          "text": [
+            {
+              "text": "This, because it inherits from EventEmitter.\n\n*",
+              "kind": "text"
+            }
+          ]
+        },
+        {
+          "name": "example",
+          "text": [
+            {
+              "text": "```ts\nconst api = new Client('wss://s.altnet.rippletest.net:51233')\n\napi.on('transaction', (tx: TransactionStream) => {\n console.log(\"Received Transaction\")\n console.log(tx)\n})\n\nawait api.connect()\nconst response = await api.request({\n    command: 'subscribe',\n    streams: ['transactions_proposed']\n})\n```",
+              "kind": "text"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Client.request",
+      "found": true,
+      "display": "(method) Client.request<{\n    readonly command: \"account_nfts\";\n    readonly account: \"rExample\";\n}, 2, AccountNFTsResponse>(req: StrictRequest<{\n    readonly command: \"account_nfts\";\n    readonly account: \"rExample\";\n}>): Promise<AccountNFTsResponse> (+1 overload)",
+      "documentation": "Makes a request to the client with the given command and\nadditional request body parameters.\n\nLiteral lookup fields, filters and API versions determine the response\ntype. Stored requests with optional or union-valued options keep the\ncorresponding broader response type.\n\nA key that the command's request type does not declare is a compile\nerror, so a misspelled key (`ledger_indx`, `typ`) cannot be silently\nignored by the server. To send a key that xrpl.js does not know about\nyet, assert the literal to the command's request type\n(`{ ... } as LedgerEntryRequest`); the key is still sent.",
+      "tags": [
+        {
+          "name": "category",
+          "text": [
+            {
+              "text": "Network",
+              "kind": "text"
+            }
+          ]
+        },
+        {
+          "name": "param",
+          "text": [
+            {
+              "text": "req",
+              "kind": "parameterName"
+            },
+            {
+              "text": " ",
+              "kind": "space"
+            },
+            {
+              "text": "- Request to send to the server.",
+              "kind": "text"
+            }
+          ]
+        },
+        {
+          "name": "returns",
+          "text": [
+            {
+              "text": "The response from the server.",
+              "kind": "text"
+            }
+          ]
+        },
+        {
+          "name": "example",
+          "text": [
+            {
+              "text": "```ts\nconst response = await client.request({\n  command: 'account_info',\n  account: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',\n})\nconsole.log(response)\n```",
+              "kind": "text"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Wallet.generate",
+      "found": true,
+      "display": "(method) Wallet.generate(algorithm?: ECDSA): Wallet",
+      "documentation": "`generate()` creates a new random Wallet. In order to make this a valid account on ledger, you must\nSend XRP to it. On test networks that can be done with \"faucets\" which send XRP to any account which asks\nFor it. You can call `client.fundWallet()` in order to generate credentials and fund the account on test networks.",
+      "tags": [
+        {
+          "name": "example",
+          "text": [
+            {
+              "text": "```ts\nconst { Wallet } = require('xrpl')\nconst wallet = Wallet.generate()\n```",
+              "kind": "text"
+            }
+          ]
+        },
+        {
+          "name": "param",
+          "text": [
+            {
+              "text": "algorithm",
+              "kind": "parameterName"
+            },
+            {
+              "text": " ",
+              "kind": "space"
+            },
+            {
+              "text": "- The digital signature algorithm to generate an address for.",
+              "kind": "text"
+            }
+          ]
+        },
+        {
+          "name": "returns",
+          "text": [
+            {
+              "text": "A new Wallet derived from a generated seed.",
+              "kind": "text"
+            }
+          ]
+        },
+        {
+          "name": "throws",
+          "text": [
+            {
+              "text": "ValidationError when signing algorithm isn't valid",
+              "kind": "text"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "xrpToDrops",
+      "found": true,
+      "display": "(alias) function xrpToDrops(xrpToConvert: BigNumber.Value): string\nimport xrpToDrops",
+      "documentation": "Convert an amount in XRP to an amount in drops.",
+      "tags": [
+        {
+          "name": "param",
+          "text": [
+            {
+              "text": "xrpToConvert",
+              "kind": "parameterName"
+            },
+            {
+              "text": " ",
+              "kind": "space"
+            },
+            {
+              "text": "- Amount in XRP.",
+              "kind": "text"
+            }
+          ]
+        },
+        {
+          "name": "returns",
+          "text": [
+            {
+              "text": "Amount in drops.",
+              "kind": "text"
+            }
+          ]
+        },
+        {
+          "name": "throws",
+          "text": [
+            {
+              "text": "When amount in xrp is invalid.",
+              "kind": "text"
+            }
+          ]
+        },
+        {
+          "name": "category",
+          "text": [
+            {
+              "text": "Utilities",
+              "kind": "text"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "inferred": [
+    {
+      "line": 5,
+      "name": "ledger",
+      "type": "LedgerStream"
+    },
+    {
+      "line": 9,
+      "name": "ledger",
+      "type": "string"
+    },
+    {
+      "line": 13,
+      "name": "ledger",
+      "type": "any"
+    }
+  ],
+  "unrelatedDiagnostics": [],
+  "packageUnderTest": "/Users/willem/.codex/.chatgpt-projects/g-p-6ab298cc94e0819193fda09c1334961b/audit/build/package/package/dist/npm/index.d.ts"
+}

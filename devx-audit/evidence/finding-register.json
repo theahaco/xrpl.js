@@ -1,0 +1,975 @@
+{
+  "schema_version": 1,
+  "scope": "Consolidated report groups from current published-package evidence and tracked portal examples. Groups are not counts of bugs or a sum of historical IDs and new surface observations.",
+  "sdk_baseline": {
+    "package": "xrpl",
+    "version": "5.3.0",
+    "typescript": "5.9.3",
+    "provenance": "evidence/npm-baseline.json"
+  },
+  "portal_baseline": {
+    "commit": "87b3007547539741d99425f43a0796802c834fc3",
+    "source_snapshot": "evidence/portal-tracked-baseline",
+    "excludes": "Pre-existing untracked TS additions are not published-portal findings."
+  },
+  "evidence_policy": "Current observations are supported by the named workstream artifacts. This register reviewed and reconciled those artifacts; it did not rerun their compiler/runtime probes. Each row states the actual evidence type and limitations. No live-ledger conclusion is inferred from a compiler failure, synthetic fixture or source inspection.",
+  "severity_policy": {
+    "high": "Broad interruption of the agreed developer guidance goals, reproducible type-safety failure, or a misleading example/helper outcome with material consequences if copied or relied on.",
+    "medium": "Bounded friction, inconsistent support, representation limit, or a design gap with a clear workaround.",
+    "note": "These are contextual DevX priorities, not security severity ratings or measured prevalence."
+  },
+  "publication": {
+    "state": "fork_branch_artifact",
+    "stable_report_url": "https://github.com/theahaco/xrpl.js/blob/aha/devx-audit-2026-09/devx-audit/evidence/finding-register.md",
+    "note": "Draft audit on aha fork. Proposed SDK changes are unreleased."
+  },
+  "counting_policy": [
+    "107 prior numbered claims remain historical background, not 107 current verified findings.",
+    "18 report groups combine 12 SDK observations/opportunities and 6 portal themes. Do not add this group count to the prior 107 or the surface evidence count.",
+    "Exact overlap and thematic relation are separate. A related old claim is not automatically reproduced or newly counted.",
+    "DX-09 is explicitly a design opportunity. Source-only portal groups are not executed runtime defect counts.",
+    "New relative to prior corpus means no matching root cause was found in the retained 107-document corpus; no global novelty claim is made."
+  ],
+  "positive_controls": [
+    "A valid Payment passes the selected compiler criteria.",
+    "Missing required Payment payload fields fail in the surface probe.",
+    "Ordinary inferred on('ledgerClosed') rejects an unknown payload member.",
+    "Broad stored ledger requests retain a safe union; binary ledger requests reject JSON node access.",
+    "Seven tracked portal TypeScript families compile with existing configurations; stricter indexed-access checking fails only the Paths case in the captured run."
+  ],
+  "excluded_conclusions": [
+    "No re-verification of historical claims 022/061 about changed wire amounts/global freeze is asserted here.",
+    "Protocol admission/deny-list limitations and Batch outer/inner semantics remain separate contextual material, not new SDK defect counts.",
+    "Intermediate runtime-baseline failures involving harness setup or disabled amendments are not registered as SDK defects or successful journey proof.",
+    "No account of deployed exploitation, measured developer-time savings, production fund loss or comprehensive behavioral API coverage is implied."
+  ],
+  "findings": [
+    {
+      "id": "DX-01",
+      "domain": "sdk",
+      "kind": "distribution_defect",
+      "title": "Published declarations strip developer guidance from editor hovers",
+      "severity": "high",
+      "evidenceTier": "language_service_and_artifact_inspection",
+      "observation": "All 447 inventoried named root symbols lack compiler-visible JSDoc prose in the installed declaration graph; source has prose for 344. Four actual package-consumer hovers (Client constructor, Client.request, Wallet.generate, xrpToDrops) return signatures without documentation.",
+      "impact": "Developers lose existing parameter guidance and examples at the point of use across the package. This directly undermines the agreed goal that the API should teach through the editor.",
+      "limitations": [
+        "The inherited Client.on hover contains EventEmitter prose; this is not a claim that every possible hover is blank.",
+        "Presence of source comments does not establish correctness of those comments."
+      ],
+      "novelty": "new_relative_to_prior_corpus",
+      "mitigation": "Preserve JSDoc in published declarations; check hovers and completion documentation against the packed npm consumer artifact, then correct stale examples (DX-12).",
+      "reproduce": "Re-run inventory and TypeScript language-service quickInfo probes against the exact packed candidate package.",
+      "stable_report_url": null,
+      "implementation_status": "Baseline observation or design opportunity; mitigation and current demonstration status must be verified separately.",
+      "prior_overlap": {
+        "exact_prior_ids": [],
+        "matching_scope": "No exact numbered prior claim matched this group.",
+        "thematically_related_ids": [
+          "008",
+          "013",
+          "044",
+          "048",
+          "050",
+          "051"
+        ],
+        "issues": [],
+        "proposed_prs": [],
+        "claim_sources": []
+      },
+      "evidence": [
+        {
+          "artifact": "evidence/surface-probes.json",
+          "selector": "quickInfo",
+          "reproduction_or_inspection_file": "harness/inventory-surface-probes.cjs"
+        },
+        {
+          "artifact": "evidence/api-inventory.json",
+          "selector": "447 named root symbols; documentation coverage",
+          "reproduction_or_inspection_file": "harness/inventory-public-api.cjs"
+        }
+      ],
+      "evidence_status": "Reviewed current audit artifact; no independent rerun performed during reconciliation"
+    },
+    {
+      "id": "DX-02",
+      "domain": "sdk",
+      "kind": "type_model_defect",
+      "title": "Default transaction and request types allow misspelled fields",
+      "severity": "high",
+      "evidenceTier": "strict_compiler",
+      "observation": "Payment DestinationTagg and request ledger_indx typos compile in annotated literals and ordinary submission/request calls. Omit<Payment,'Account'> also accepts a value missing other required Payment fields.",
+      "impact": "Ordinary editor workflows fail to flag locally knowable mistakes; utility-type composition loses required-field guarantees. Current probes establish acceptance, not a specific on-ledger loss.",
+      "limitations": [
+        "J02/J03/J04/J14/J15 use placeholders and were compiled, not submitted.",
+        "Do not generalize this result to every utility type; Partial behavior was not the demonstrated defect."
+      ],
+      "novelty": "reproduced_prior_claims",
+      "mitigation": "Make ordinary request/transaction surfaces strict while preserving explicit forward-compatible boundaries. Test direct generic calls as well as satisfies annotations and require useful typo diagnostics.",
+      "reproduce": "Run the listed positive and negative compiler probes before and after the proposed strictness changes.",
+      "stable_report_url": null,
+      "implementation_status": "Baseline observation or design opportunity; mitigation and current demonstration status must be verified separately.",
+      "prior_overlap": {
+        "exact_prior_ids": [
+          "004",
+          "055"
+        ],
+        "matching_scope": "Prior 004 keyof/Omit/typo behavior and the index-signature half of 055; missing lookup members and broad Partial headline are not reverified.",
+        "thematically_related_ids": [
+          "061"
+        ],
+        "issues": [
+          {
+            "number": 7,
+            "url": "https://github.com/theahaco/xrpl.js/issues/7",
+            "state": "OPEN"
+          },
+          {
+            "number": 8,
+            "url": "https://github.com/theahaco/xrpl.js/issues/8",
+            "state": "OPEN"
+          }
+        ],
+        "proposed_prs": [
+          {
+            "number": 46,
+            "url": "https://github.com/theahaco/xrpl.js/pull/46",
+            "state": "OPEN",
+            "title": "fix(xrpl)!: make transaction types strict by dropping the BaseTransaction index signature",
+            "head_branch": "fm/xrpljs-strict-transaction-types-f05",
+            "base_branch": "main",
+            "base_pr": null,
+            "merged": false,
+            "test_evidence_status": "PR-body claims only; not independently verified in this reconciliation"
+          },
+          {
+            "number": 51,
+            "url": "https://github.com/theahaco/xrpl.js/pull/51",
+            "state": "OPEN",
+            "title": "fix(xrpl)!: reject request keys the command does not declare",
+            "head_branch": "fm/xrpljs-strict-request-types-f06",
+            "base_branch": "main",
+            "base_pr": null,
+            "merged": false,
+            "test_evidence_status": "PR-body claims only; not independently verified in this reconciliation"
+          }
+        ],
+        "claim_sources": [
+          {
+            "id": "004",
+            "url": "https://github.com/theahaco/xrpl.js/blob/5103bd90dac80f51a7fa498eaa7e868ca1c4dfaf/audit/004-basetransaction-record-string-unknown-collapses-keyof.md"
+          },
+          {
+            "id": "055",
+            "url": "https://github.com/theahaco/xrpl.js/blob/5103bd90dac80f51a7fa498eaa7e868ca1c4dfaf/audit/055-ledger-entry-request-lacks-lookup-members-index-signature-hides-typos.md"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "artifact": "evidence/journey-baseline.json",
+          "selector": "J02,J03,J04,J14,J15",
+          "reproduction_or_inspection_file": "harness/probe-journeys.mjs"
+        }
+      ],
+      "evidence_status": "Reviewed current audit artifact; no independent rerun performed during reconciliation"
+    },
+    {
+      "id": "DX-03",
+      "domain": "sdk",
+      "kind": "type_model_defect",
+      "title": "Transaction lifecycle operations discard information they already know",
+      "severity": "high",
+      "evidenceTier": "strict_compiler",
+      "observation": "autofill does not expose newly populated Fee/LastLedgerSequence for an inferred literal; object Flags remain an object statically. submitAndWait metadata retains string/undefined alternatives. Signing to a plain blob loses issuance-specific metadata typing.",
+      "impact": "The prepare\u2192sign\u2192confirm workflow repeatedly forces workarounds and re-establishment of facts the library already knows, creating opportunities to hide errors with assertions.",
+      "limitations": [
+        "Compiler behavior is verified; these probes do not prove ledger execution fails.",
+        "Current-release simulate normalization and every prior lifecycle claim were not reproduced by this evidence."
+      ],
+      "novelty": "reproduced_prior_claims",
+      "mitigation": "Return truthful autofilled and validated-result types and preserve a transaction's identity across signed blobs. Replace normalized Flags rather than intersecting incompatible field types. Keep plain-string fallback honest.",
+      "reproduce": "Compile the full journey with literal and explicitly typed input, object/numeric/absent Flags, signed blobs and plain strings.",
+      "stable_report_url": null,
+      "implementation_status": "Baseline observation or design opportunity; mitigation and current demonstration status must be verified separately.",
+      "prior_overlap": {
+        "exact_prior_ids": [
+          "001",
+          "002",
+          "033"
+        ],
+        "matching_scope": "Prior 001/002/033 reproduced as declaration behavior; no claim to have rerun prior 030 simulate behavior.",
+        "thematically_related_ids": [
+          "030"
+        ],
+        "issues": [
+          {
+            "number": 5,
+            "url": "https://github.com/theahaco/xrpl.js/issues/5",
+            "state": "OPEN"
+          }
+        ],
+        "proposed_prs": [
+          {
+            "number": 55,
+            "url": "https://github.com/theahaco/xrpl.js/pull/55",
+            "state": "OPEN",
+            "title": "fix(xrpl): keep the transaction type through sign, autofill, simulate and submitAndWait",
+            "head_branch": "fm/xrpljs-submit-path-typing-f03",
+            "base_branch": "fm/xrpljs-submitandwait-outcomes-f14",
+            "base_pr": 45,
+            "merged": false,
+            "test_evidence_status": "PR-body claims only; not independently verified in this reconciliation"
+          }
+        ],
+        "claim_sources": [
+          {
+            "id": "001",
+            "url": "https://github.com/theahaco/xrpl.js/blob/5103bd90dac80f51a7fa498eaa7e868ca1c4dfaf/audit/001-submitandwait-meta-string-undefined.md"
+          },
+          {
+            "id": "002",
+            "url": "https://github.com/theahaco/xrpl.js/blob/5103bd90dac80f51a7fa498eaa7e868ca1c4dfaf/audit/002-wallet-sign-erases-transaction-type.md"
+          },
+          {
+            "id": "033",
+            "url": "https://github.com/theahaco/xrpl.js/blob/5103bd90dac80f51a7fa498eaa7e868ca1c4dfaf/audit/033-autofill-return-type-keeps-filled-fields-optional.md"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "artifact": "evidence/journey-baseline.json",
+          "selector": "J05,J09,J10,J16",
+          "reproduction_or_inspection_file": "harness/probe-journeys.mjs"
+        }
+      ],
+      "evidence_status": "Reviewed current audit artifact; no independent rerun performed during reconciliation"
+    },
+    {
+      "id": "DX-04",
+      "domain": "sdk",
+      "kind": "type_model_defect",
+      "title": "Literal query selectors do not guide response types",
+      "severity": "high",
+      "evidenceTier": "strict_compiler",
+      "observation": "MPT issuance and account-root lookups return the full LedgerEntry union; account_objects type:'offer' does not select Offer; explicit api_version:1 still returns a v2-shaped type.",
+      "impact": "Developers must cast or manually narrow responses even after making the narrowing choice in the request. Wrong version typing also suggests fields absent from the chosen response format.",
+      "limitations": [
+        "Current probes cover these selectors, not all RPC variants.",
+        "Broad stored requests and binary requests correctly retain safe behavior in J12/J13 and must stay protected.",
+        "Nested event-discriminant narrowing is a related prior claim, not established here."
+      ],
+      "novelty": "reproduced_prior_claims",
+      "mitigation": "Map literal selectors, filters and API version to response variants; preserve unions for broad inputs and separate binary responses. Require inference without a caller assertion.",
+      "reproduce": "Run literal, variable, broad-union, API-version and binary compiler cases against candidate declarations.",
+      "stable_report_url": null,
+      "implementation_status": "Baseline observation or design opportunity; mitigation and current demonstration status must be verified separately.",
+      "prior_overlap": {
+        "exact_prior_ids": [
+          "005",
+          "007",
+          "078"
+        ],
+        "matching_scope": "Prior 005/007/078 literal-selector/version inference; no automatic stream metadata correlation claim.",
+        "thematically_related_ids": [
+          "006",
+          "058"
+        ],
+        "issues": [
+          {
+            "number": 4,
+            "url": "https://github.com/theahaco/xrpl.js/issues/4",
+            "state": "OPEN"
+          }
+        ],
+        "proposed_prs": [
+          {
+            "number": 53,
+            "url": "https://github.com/theahaco/xrpl.js/pull/53",
+            "state": "OPEN",
+            "title": "fix(xrpl): narrow response types by request for ledger_entry, account_objects, transaction streams and api_version",
+            "head_branch": "fm/xrpljs-response-narrowing-f02",
+            "base_branch": "fm/xrpljs-mpt-ledger-types-f01",
+            "base_pr": 33,
+            "merged": false,
+            "test_evidence_status": "PR-body claims only; not independently verified in this reconciliation"
+          }
+        ],
+        "claim_sources": [
+          {
+            "id": "005",
+            "url": "https://github.com/theahaco/xrpl.js/blob/5103bd90dac80f51a7fa498eaa7e868ca1c4dfaf/audit/005-ledger-entry-response-never-narrows-node.md"
+          },
+          {
+            "id": "007",
+            "url": "https://github.com/theahaco/xrpl.js/blob/5103bd90dac80f51a7fa498eaa7e868ca1c4dfaf/audit/007-account-objects-type-filter-does-not-narrow.md"
+          },
+          {
+            "id": "078",
+            "url": "https://github.com/theahaco/xrpl.js/blob/5103bd90dac80f51a7fa498eaa7e868ca1c4dfaf/audit/078-client-request-never-infers-api-version.md"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "artifact": "evidence/journey-baseline.json",
+          "selector": "J06,J07,J08,J11; positive controls J12,J13",
+          "reproduction_or_inspection_file": "harness/probe-journeys.mjs"
+        }
+      ],
+      "evidence_status": "Reviewed current audit artifact; no independent rerun performed during reconciliation"
+    },
+    {
+      "id": "DX-05",
+      "domain": "sdk",
+      "kind": "type_safety_defect",
+      "title": "Event payload safety depends on listener-registration style",
+      "severity": "high",
+      "evidenceTier": "strict_compiler_and_local_runtime",
+      "observation": "on('ledgerClosed', (ledger:string)=>ledger.toUpperCase()) compiles and then throws on a locally emitted ledger object. An inherited once callback receives any and accepts a nonexistent member; ordinary inferred on correctly rejects that member.",
+      "impact": "A small registration-style change silently removes editor safety, while an explicitly wrong callback is accepted and produces a reproducible runtime TypeError.",
+      "limitations": [
+        "Runtime proof uses local event dispatch, not a live ledger stream.",
+        "This is not the same root cause as prior stream transaction/metadata correlation finding 058."
+      ],
+      "novelty": "new_relative_to_prior_corpus",
+      "mitigation": "Use one event-to-argument map across on, once and aliases; reject incompatible callbacks while preserving contextual inference.",
+      "reproduce": "Compile both registration styles and dispatch representative local event payloads; preserve ordinary-on negative controls.",
+      "stable_report_url": null,
+      "implementation_status": "Baseline observation or design opportunity; mitigation and current demonstration status must be verified separately.",
+      "prior_overlap": {
+        "exact_prior_ids": [],
+        "matching_scope": "No exact numbered prior claim matched this group.",
+        "thematically_related_ids": [
+          "058"
+        ],
+        "issues": [],
+        "proposed_prs": [],
+        "claim_sources": []
+      },
+      "evidence": [
+        {
+          "artifact": "evidence/surface-probes.json",
+          "selector": "event-on-inference,event-on-wrong-listener,event-once-inference",
+          "reproduction_or_inspection_file": "harness/inventory-surface-probes.cjs"
+        },
+        {
+          "artifact": "evidence/surface-runtime-probes.json",
+          "selector": "event-on-wrong-listener",
+          "reproduction_or_inspection_file": "harness/inventory-runtime-probes.cjs"
+        }
+      ],
+      "evidence_status": "Reviewed current audit artifact; no independent rerun performed during reconciliation"
+    },
+    {
+      "id": "DX-06",
+      "domain": "sdk",
+      "kind": "api_consistency_defect",
+      "title": "Pagination support and defaults disagree across helpers",
+      "severity": "medium",
+      "evidenceTier": "strict_compiler_local_runtime_and_mock",
+      "observation": "request supports account_nfts, requestNextPage rejects it, and requestAll accepts it without collect but immediately throws. A two-page fake connection shows omitted limit fetches both pages, contradicting the source claim of one request.",
+      "impact": "Developers cannot compose the same supported request with paging helpers consistently and may make more requests than source guidance promises.",
+      "limitations": [
+        "Two-page behavior is a mock result, not a live-server failure.",
+        "Prior finding 079 concerns normalization/warnings; it is related but not this paging defect."
+      ],
+      "novelty": "new_relative_to_prior_corpus",
+      "mitigation": "Unify supported command/collection mappings; require collect when needed and correct the default-limit documentation. Consider a typed async iterator as separately scoped design work.",
+      "reproduce": "Compile supported command permutations and test explicit/omitted collect and limit using bounded multi-page fixtures.",
+      "stable_report_url": null,
+      "implementation_status": "Baseline observation or design opportunity; mitigation and current demonstration status must be verified separately.",
+      "prior_overlap": {
+        "exact_prior_ids": [],
+        "matching_scope": "No exact numbered prior claim matched this group.",
+        "thematically_related_ids": [
+          "079"
+        ],
+        "issues": [],
+        "proposed_prs": [],
+        "claim_sources": []
+      },
+      "evidence": [
+        {
+          "artifact": "evidence/surface-probes.json",
+          "selector": "nft-pagination-next,nft-pagination-all",
+          "reproduction_or_inspection_file": "harness/inventory-surface-probes.cjs"
+        },
+        {
+          "artifact": "evidence/surface-runtime-probes.json",
+          "selector": "nft-pagination-all,pagination-default-multiple-pages",
+          "reproduction_or_inspection_file": "harness/inventory-runtime-probes.cjs"
+        }
+      ],
+      "evidence_status": "Reviewed current audit artifact; no independent rerun performed during reconciliation"
+    },
+    {
+      "id": "DX-07",
+      "domain": "sdk",
+      "kind": "type_model_defect",
+      "title": "Types permit ordinary calls that violate local preconditions",
+      "severity": "medium",
+      "evidenceTier": "strict_compiler_and_local_preflight",
+      "observation": "TxRequest accepts neither identifier or both transaction and ctid despite its exactly-one source contract. A visibly unsigned Payment compiles without a wallet and immediately fails submission preflight.",
+      "impact": "Developers discover errors after invoking the API that the editor could have explained while constructing the request.",
+      "limitations": [
+        "Tx selector expectations were checked against the shipped source contract, not a live-server rejection.",
+        "Runtime state, authorization and amendment availability cannot generally be proven by TypeScript."
+      ],
+      "novelty": "new_relative_to_prior_corpus",
+      "mitigation": "Model exclusive request selectors and signed-versus-unsigned submission states. Preserve explicitly flexible entrypoints where justified.",
+      "reproduce": "Compile neither/either/both selector cases and signed blob/signed object/unsigned draft submissions with and without wallet.",
+      "stable_report_url": null,
+      "implementation_status": "Baseline observation or design opportunity; mitigation and current demonstration status must be verified separately.",
+      "prior_overlap": {
+        "exact_prior_ids": [],
+        "matching_scope": "No exact numbered prior claim matched this group.",
+        "thematically_related_ids": [
+          "004",
+          "055"
+        ],
+        "issues": [],
+        "proposed_prs": [],
+        "claim_sources": []
+      },
+      "evidence": [
+        {
+          "artifact": "evidence/surface-probes.json",
+          "selector": "tx-missing-identifier,tx-conflicting-identifiers,unsigned-submit-no-wallet",
+          "reproduction_or_inspection_file": "harness/inventory-surface-probes.cjs"
+        },
+        {
+          "artifact": "evidence/surface-runtime-probes.json",
+          "selector": "unsigned-submit-no-wallet",
+          "reproduction_or_inspection_file": "harness/inventory-runtime-probes.cjs"
+        }
+      ],
+      "evidence_status": "Reviewed current audit artifact; no independent rerun performed during reconciliation"
+    },
+    {
+      "id": "DX-08",
+      "domain": "sdk",
+      "kind": "type_model_gap",
+      "title": "RPC error classification still requires application-invented guards",
+      "severity": "medium",
+      "evidenceTier": "strict_compiler_and_source",
+      "observation": "After instanceof RippledError, error.data remains unknown, so accessing error.data.error fails type checking despite the request manager constructing the subclass from RPC responses.",
+      "impact": "Routine not-found and other RPC recovery paths require repeated structural guards or assertions instead of a documented typed accessor.",
+      "limitations": [
+        "Retaining unknown for arbitrary external payloads is appropriate; the requested improvement is checked access to recognized RPC fields.",
+        "Other prior polling/error-taxonomy claims are not reverified here."
+      ],
+      "novelty": "reproduced_prior_claim",
+      "mitigation": "Provide validated RPC error-code/data accessors or a truthful typed RPC subclass while retaining unknown for unclassified data.",
+      "reproduce": "Compile instanceof-based recovery and execute accessors on valid, partial and malformed RPC error payloads.",
+      "stable_report_url": null,
+      "implementation_status": "Baseline observation or design opportunity; mitigation and current demonstration status must be verified separately.",
+      "prior_overlap": {
+        "exact_prior_ids": [
+          "035"
+        ],
+        "matching_scope": "Prior 035 RPC error data typing only; unrelated polling wrappers are not reproduced.",
+        "thematically_related_ids": [
+          "025",
+          "063",
+          "069"
+        ],
+        "issues": [
+          {
+            "number": 22,
+            "url": "https://github.com/theahaco/xrpl.js/issues/22",
+            "state": "OPEN"
+          }
+        ],
+        "proposed_prs": [
+          {
+            "number": 38,
+            "url": "https://github.com/theahaco/xrpl.js/pull/38",
+            "state": "OPEN",
+            "title": "fix(xrpl): type mpt_holders and RippledError.data, route requestAll through request",
+            "head_branch": "fm/xrpljs-rpc-additions-f20",
+            "base_branch": "main",
+            "base_pr": null,
+            "merged": false,
+            "test_evidence_status": "PR-body claims only; not independently verified in this reconciliation"
+          }
+        ],
+        "claim_sources": [
+          {
+            "id": "035",
+            "url": "https://github.com/theahaco/xrpl.js/blob/5103bd90dac80f51a7fa498eaa7e868ca1c4dfaf/audit/035-rippled-error-data-untyped.md"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "artifact": "evidence/surface-probes.json",
+          "selector": "error-discovery",
+          "reproduction_or_inspection_file": "harness/inventory-surface-probes.cjs"
+        }
+      ],
+      "evidence_status": "Reviewed current audit artifact; no independent rerun performed during reconciliation"
+    },
+    {
+      "id": "DX-09",
+      "domain": "sdk",
+      "kind": "design_opportunity",
+      "title": "Decoded data has no obvious validated path back to a typed transaction",
+      "severity": "medium",
+      "evidenceTier": "strict_compiler_and_source",
+      "observation": "decode(encode(payment)) returns Record<string,unknown>, which cannot be passed directly to Wallet.sign. The inspected public path does not teach how to validate/narrow it into a transaction.",
+      "impact": "Consumers handwrite a guard or use an assertion at an important data boundary; a named validated decoder would make the safe path easier to discover.",
+      "limitations": [
+        "A general decoder returning unknown data is defensible and is not itself a bug.",
+        "This is a design opportunity, not proof that every decoded object should be trusted or that sign should accept arbitrary records."
+      ],
+      "novelty": "new_relative_to_prior_corpus_design_opportunity",
+      "mitigation": "Add a validated transaction decoder or a public assertion/guard with useful narrowed output; avoid caller-selected generics that make unchecked promises.",
+      "reproduce": "Validate transaction versus ledger/metadata blobs and malformed shapes, then compile the guarded sign path.",
+      "stable_report_url": null,
+      "implementation_status": "Baseline observation or design opportunity; mitigation and current demonstration status must be verified separately.",
+      "prior_overlap": {
+        "exact_prior_ids": [],
+        "matching_scope": "No exact numbered prior claim matched this group.",
+        "thematically_related_ids": [
+          "004",
+          "061"
+        ],
+        "issues": [],
+        "proposed_prs": [],
+        "claim_sources": []
+      },
+      "evidence": [
+        {
+          "artifact": "evidence/surface-probes.json",
+          "selector": "decode-sign-roundtrip",
+          "reproduction_or_inspection_file": "harness/inventory-surface-probes.cjs"
+        }
+      ],
+      "evidence_status": "Reviewed current audit artifact; no independent rerun performed during reconciliation"
+    },
+    {
+      "id": "DX-10",
+      "domain": "sdk",
+      "kind": "runtime_coverage_defect",
+      "title": "Balance-change helper omits public MPT changes",
+      "severity": "high",
+      "evidenceTier": "synthetic_metadata_runtime_and_source",
+      "observation": "A synthetic ModifiedNode for MPToken with MPTAmount changing from 10 to 25 yields an empty getBalanceChanges result; source implementation covers AccountRoot and RippleState, while prose promises every changed balance.",
+      "impact": "Applications relying on the broad helper description can omit public MPT activity from their views or accounting. Severity is high for that dependency, not a claim that all applications are affected.",
+      "limitations": [
+        "The probe is synthetic metadata, not a recorded live transaction.",
+        "No confidential-balance coverage claim is made.",
+        "Prior getBalances omission 077 was not independently reproduced by this probe."
+      ],
+      "novelty": "reproduced_prior_claim_with_synthetic_fixture",
+      "mitigation": "Clarify XRP/trustline scope immediately; introduce a typed public-MPT balance representation and node handling, tested against captured ledger fixtures.",
+      "reproduce": "Add captured Modified/Created/Deleted MPToken metadata cases, mixed asset changes and zero holdings before claiming complete support.",
+      "stable_report_url": null,
+      "implementation_status": "Baseline observation or design opportunity; mitigation and current demonstration status must be verified separately.",
+      "prior_overlap": {
+        "exact_prior_ids": [
+          "053"
+        ],
+        "matching_scope": "Prior 053 reproduced with synthetic public MPToken metadata; prior 077 getBalances and confidential balances excluded.",
+        "thematically_related_ids": [
+          "077",
+          "017"
+        ],
+        "issues": [
+          {
+            "number": 23,
+            "url": "https://github.com/theahaco/xrpl.js/issues/23",
+            "state": "OPEN"
+          }
+        ],
+        "proposed_prs": [
+          {
+            "number": 50,
+            "url": "https://github.com/theahaco/xrpl.js/pull/50",
+            "state": "OPEN",
+            "title": "fix(xrpl): report MPT holdings from getBalances and getBalanceChanges",
+            "head_branch": "fm/xrpljs-balance-helpers-mpt-f21",
+            "base_branch": "fm/xrpljs-mpt-ledger-types-f01",
+            "base_pr": 33,
+            "merged": false,
+            "test_evidence_status": "PR-body claims only; not independently verified in this reconciliation"
+          }
+        ],
+        "claim_sources": [
+          {
+            "id": "053",
+            "url": "https://github.com/theahaco/xrpl.js/blob/5103bd90dac80f51a7fa498eaa7e868ca1c4dfaf/audit/053-getbalancechanges-ignores-mpt-nodes.md"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "artifact": "evidence/surface-runtime-probes.json",
+          "selector": "mpt-balance-change-coverage",
+          "reproduction_or_inspection_file": "harness/inventory-runtime-probes.cjs"
+        }
+      ],
+      "evidence_status": "Reviewed current audit artifact; no independent rerun performed during reconciliation"
+    },
+    {
+      "id": "DX-11",
+      "domain": "sdk",
+      "kind": "numeric_representation_limitation",
+      "title": "Number-returning XRP conversion is not exact for large values",
+      "severity": "medium",
+      "evidenceTier": "direct_runtime",
+      "observation": "dropsToXrp('9007199254740991') returns 9007199254.740992, and xrpToDrops of that result is '9007199254740992', one drop above the input.",
+      "impact": "Large-value round trips through JavaScript numbers can alter the represented amount. Users needing exact accounting need an explicit exact-value path.",
+      "limitations": [
+        "The demonstrated value is very large; do not imply ordinary small values universally lose precision.",
+        "No real transaction or loss of funds was observed.",
+        "Prior UInt64 codec precision finding 096 is a different boundary."
+      ],
+      "novelty": "new_relative_to_prior_corpus",
+      "mitigation": "Offer exact string/decimal conversions and balance accessors with an explicit migration strategy for number-returning APIs.",
+      "reproduce": "Round-trip decimal boundary values and preserve exact strings through balance-change reporting; document limits of numeric convenience APIs.",
+      "stable_report_url": null,
+      "implementation_status": "Baseline observation or design opportunity; mitigation and current demonstration status must be verified separately.",
+      "prior_overlap": {
+        "exact_prior_ids": [],
+        "matching_scope": "No exact numbered prior claim matched this group.",
+        "thematically_related_ids": [
+          "096"
+        ],
+        "issues": [],
+        "proposed_prs": [],
+        "claim_sources": []
+      },
+      "evidence": [
+        {
+          "artifact": "evidence/surface-runtime-probes.json",
+          "selector": "amount-precision-roundtrip",
+          "reproduction_or_inspection_file": "harness/inventory-runtime-probes.cjs"
+        }
+      ],
+      "evidence_status": "Reviewed current audit artifact; no independent rerun performed during reconciliation"
+    },
+    {
+      "id": "DX-12",
+      "domain": "sdk",
+      "kind": "documentation_defect",
+      "title": "Shipped source examples contain stale or internally inconsistent calls",
+      "severity": "medium",
+      "evidenceTier": "source_inspection",
+      "observation": "Wallet example calls absent signTransaction; submitAndWait example omits awaiting/destructuring funded wallets, uses undefined names and demonstrates submit; requestAll example uses transaction_data outside the public Request union.",
+      "impact": "Restoring documentation delivery alone would surface examples that misteach the public workflow or cannot be copied as written.",
+      "limitations": [
+        "These particular source snippets were inspected, not executed as standalone live examples.",
+        "Published declarations currently strip this guidance; the source inaccuracies and the distribution defect are distinct."
+      ],
+      "novelty": "prior_claim_reproduced_and_scope_extended",
+      "mitigation": "Use compiled public-package snippets as the shared source for hovers and portal examples; correct names and make each snippet demonstrate the advertised method.",
+      "reproduce": "Extract and compile each maintained example against the packed package, with deterministic runtime checks where the lesson depends on outcomes.",
+      "stable_report_url": null,
+      "implementation_status": "Baseline observation or design opportunity; mitigation and current demonstration status must be verified separately.",
+      "prior_overlap": {
+        "exact_prior_ids": [
+          "048"
+        ],
+        "matching_scope": "Prior 048 stale submitAndWait/sign examples overlap; Wallet class and requestAll details extend the current static inspection.",
+        "thematically_related_ids": [
+          "044"
+        ],
+        "issues": [
+          {
+            "number": 28,
+            "url": "https://github.com/theahaco/xrpl.js/issues/28",
+            "state": "OPEN"
+          }
+        ],
+        "proposed_prs": [
+          {
+            "number": 39,
+            "url": "https://github.com/theahaco/xrpl.js/pull/39",
+            "state": "OPEN",
+            "title": "docs(xrpl): fix client and MPT ledger doc comments (audit 044/045/048/050/051/052)",
+            "head_branch": "fm/xrpljs-client-and-ledger-docs-f26",
+            "base_branch": "main",
+            "base_pr": null,
+            "merged": false,
+            "test_evidence_status": "PR-body claims only; not independently verified in this reconciliation"
+          }
+        ],
+        "claim_sources": [
+          {
+            "id": "048",
+            "url": "https://github.com/theahaco/xrpl.js/blob/5103bd90dac80f51a7fa498eaa7e868ca1c4dfaf/audit/048-submitandwait-and-sign-examples-do-not-run.md"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "artifact": "evidence/surface-findings.md",
+          "selector": "SURF-08; published Wallet source line60, Client lines474/819/830",
+          "reproduction_or_inspection_file": "harness/node_modules/xrpl/src/Wallet/index.ts"
+        },
+        {
+          "artifact": "evidence/surface-findings.md",
+          "selector": "SURF-08; requestAll and submitAndWait source examples",
+          "reproduction_or_inspection_file": "harness/node_modules/xrpl/src/client/index.ts"
+        }
+      ],
+      "evidence_status": "Reviewed current audit artifact; no independent rerun performed during reconciliation"
+    },
+    {
+      "id": "PORT-01",
+      "domain": "portal",
+      "kind": "example_type_guidance_gap",
+      "title": "TypeScript examples sometimes bypass the type guidance they teach",
+      "severity": "medium",
+      "evidenceTier": "tracked_source_and_compiler_review",
+      "observation": "Tracked AMM library imports xrpl with untyped require and accepts any clients/wallets/metadata; Get Started uses a double assertion for validate and redundant response annotations. Handwritten nullable token/request shapes further weaken the intended guidance.",
+      "impact": "A .ts extension and successful compilation give a misleading impression of checked SDK usage. Readers inherit assertions and custom scaffolding instead of learning usable public types and inference.",
+      "limitations": [
+        "Seven tracked families compile under their own configs; compilation alone does not prove type safety when any is present.",
+        "Local pre-existing untracked TS adaptations are excluded from this finding.",
+        "Not every annotation or guard is unnecessary."
+      ],
+      "novelty": "new_relative_to_prior_corpus_portal_evidence",
+      "mitigation": "Teach literal input guidance, imported Client/Wallet/public models and inferred responses; keep necessary runtime guards explicit and explain current SDK workarounds.",
+      "reproduce": "Compile strict public-package consumers, review for any/assertion escapes, and test intended invalid edits\u2014not only clean compilation.",
+      "stable_report_url": null,
+      "implementation_status": "Baseline observation or design opportunity; mitigation and current demonstration status must be verified separately.",
+      "prior_overlap": {
+        "exact_prior_ids": [],
+        "matching_scope": "No exact numbered prior claim matched this group.",
+        "thematically_related_ids": [
+          "004",
+          "005",
+          "001"
+        ],
+        "issues": [],
+        "proposed_prs": [],
+        "claim_sources": []
+      },
+      "evidence": [
+        {
+          "artifact": "evidence/portal-review.md",
+          "selector": "P-01,P-02,P-04,P-06; baseline 87b3007547539741d99425f43a0796802c834fc3",
+          "reproduction_or_inspection_file": "evidence/portal-tracked-baseline/_code-samples/create-amm/ts/lib/amm.ts"
+        },
+        {
+          "artifact": "evidence/portal-baseline-compile.json",
+          "selector": "all seven families compile",
+          "reproduction_or_inspection_file": "evidence/portal-tracked-baseline/_code-samples/get-started/ts/get-acct-info.ts"
+        }
+      ],
+      "evidence_status": "Reviewed current audit artifact; no independent rerun performed during reconciliation"
+    },
+    {
+      "id": "PORT-02",
+      "domain": "portal",
+      "kind": "example_outcome_and_lifecycle_defect",
+      "title": "Examples can continue or report progress without verifying the right outcome",
+      "severity": "high",
+      "evidenceTier": "tracked_source_inspection",
+      "observation": "AMM trust-line handling reads issuer_setup_result metadata instead of trust_result, and issuance checks a previous transaction's result variable. Other examples log inclusion/balances without checking the current transaction result; several exception paths skip disconnect and Get Started does not observe its subscription promise.",
+      "impact": "Tutorial users can copy a workflow that logs misleading success, continues after failed setup or leaves connections open. The wrong-variable checks are directly visible in tracked source.",
+      "limitations": [
+        "These old paths were not executed with injected failures in this workstream.",
+        "Ledger inclusion and transaction success are distinct protocol facts; that distinction itself is not an SDK defect.",
+        "Cleanup and outcome problems are grouped as one tutorial lifecycle theme and should not be counted again per file."
+      ],
+      "novelty": "new_relative_to_prior_corpus_portal_evidence",
+      "mitigation": "Check parsed metadata for each corresponding result, stop on failed setup, await subscriptions, and use explicit connection ownership/finally cleanup.",
+      "reproduce": "Inject resolved tec failures and rejected requests at every stage; verify no false success or subsequent dependent action, and verify cleanup.",
+      "stable_report_url": null,
+      "implementation_status": "Baseline observation or design opportunity; mitigation and current demonstration status must be verified separately.",
+      "prior_overlap": {
+        "exact_prior_ids": [],
+        "matching_scope": "No exact numbered prior claim matched this group.",
+        "thematically_related_ids": [
+          "025",
+          "043"
+        ],
+        "issues": [],
+        "proposed_prs": [],
+        "claim_sources": []
+      },
+      "evidence": [
+        {
+          "artifact": "evidence/portal-review.md",
+          "selector": "P-03,P-05,P-11,P-13,P-16,P-17",
+          "reproduction_or_inspection_file": "evidence/portal-tracked-baseline/_code-samples/create-amm/ts/lib/amm.ts"
+        },
+        {
+          "artifact": "evidence/portal-review.md",
+          "selector": "P-16 reliable submission line74; P-03 Get Started line85",
+          "reproduction_or_inspection_file": "evidence/portal-tracked-baseline/_code-samples/reliable-tx-submission/js/reliableTransactionSubmission.ts"
+        }
+      ],
+      "evidence_status": "Reviewed current audit artifact; no independent rerun performed during reconciliation"
+    },
+    {
+      "id": "PORT-03",
+      "domain": "portal",
+      "kind": "example_preparation_defect",
+      "title": "Paths example discards the prepared transaction before signing",
+      "severity": "high",
+      "evidenceTier": "tracked_source_inspection",
+      "observation": "Paths calls await client.autofill(tx) without keeping the returned object, then wallet.sign(tx) on the original. The SDK autofill implementation returns a new transaction object.",
+      "impact": "The example fails to carry required preparation into signing and teaches the wrong mutation model for a core workflow.",
+      "limitations": [
+        "No failing live Paths execution is claimed here.",
+        "This is an example-use defect, distinct from SDK autofill return typing (DX-03)."
+      ],
+      "novelty": "new_relative_to_prior_corpus_portal_evidence",
+      "mitigation": "Store const prepared = await client.autofill(tx) and sign prepared; make return-value ownership clear in the tutorial.",
+      "reproduce": "Offline test that the object passed to sign has Fee/Sequence/LastLedgerSequence; then execute against a controlled funded route.",
+      "stable_report_url": null,
+      "implementation_status": "Baseline observation or design opportunity; mitigation and current demonstration status must be verified separately.",
+      "prior_overlap": {
+        "exact_prior_ids": [],
+        "matching_scope": "No exact numbered prior claim matched this group.",
+        "thematically_related_ids": [
+          "033"
+        ],
+        "issues": [],
+        "proposed_prs": [],
+        "claim_sources": []
+      },
+      "evidence": [
+        {
+          "artifact": "evidence/portal-review.md",
+          "selector": "P-14",
+          "reproduction_or_inspection_file": "evidence/portal-tracked-baseline/_code-samples/paths/js/paths.ts"
+        },
+        {
+          "artifact": "evidence/surface-findings.md",
+          "selector": "published Client autofill source contract",
+          "reproduction_or_inspection_file": "harness/node_modules/xrpl/src/client/index.ts"
+        }
+      ],
+      "evidence_status": "Reviewed current audit artifact; no independent rerun performed during reconciliation"
+    },
+    {
+      "id": "PORT-04",
+      "domain": "portal",
+      "kind": "example_empty_result_defect",
+      "title": "Query examples assume a nonempty result",
+      "severity": "medium",
+      "evidenceTier": "tracked_source_and_stricter_compiler",
+      "observation": "Get Transaction treats an empty transactions array as truthy and uses its first item. Paths uses alternatives[0] without a no-route branch; strict plus noUncheckedIndexedAccess produces TS2532 at that access.",
+      "impact": "Normal empty-ledger or unavailable-route states become undefined inputs or property errors instead of an explained tutorial outcome.",
+      "limitations": [
+        "Only Paths produced the captured stricter compiler diagnostic; Get Transaction is a separate source observation.",
+        "Hardcoded account liquidity and all route failures were not exercised."
+      ],
+      "novelty": "new_relative_to_prior_corpus_portal_evidence",
+      "mitigation": "Check for a first element, explain no-result outcomes, and use reproducible funded accounts/liquidity for the route example.",
+      "reproduce": "Execute with empty transaction/alternative arrays and with one valid entry; require strict indexed-access checks for maintained examples.",
+      "stable_report_url": null,
+      "implementation_status": "Baseline observation or design opportunity; mitigation and current demonstration status must be verified separately.",
+      "prior_overlap": {
+        "exact_prior_ids": [],
+        "matching_scope": "No exact numbered prior claim matched this group.",
+        "thematically_related_ids": [],
+        "issues": [],
+        "proposed_prs": [],
+        "claim_sources": []
+      },
+      "evidence": [
+        {
+          "artifact": "evidence/portal-strict-baseline-compile.json",
+          "selector": "paths/js TS2532 at paths.ts:35",
+          "reproduction_or_inspection_file": "evidence/portal-tracked-baseline/_code-samples/paths/js/paths.ts"
+        },
+        {
+          "artifact": "evidence/portal-review.md",
+          "selector": "P-10,P-15",
+          "reproduction_or_inspection_file": "evidence/portal-tracked-baseline/_code-samples/get-tx/js/getTransaction.ts"
+        }
+      ],
+      "evidence_status": "Reviewed current audit artifact; no independent rerun performed during reconciliation"
+    },
+    {
+      "id": "PORT-05",
+      "domain": "portal",
+      "kind": "example_protocol_guidance_gap",
+      "title": "Payment-channel example does not demonstrate a verified authorized claim",
+      "severity": "high",
+      "evidenceTier": "tracked_source_inspection_protocol_execution_pending",
+      "observation": "Tracked source labels Amount:'100' as 10 XRP; derives a channel ID with Sequence??0; constructs a destination claim with Amount but no Balance or signed claim fields; uses submit then immediately prints post-claim balances without checking a validated outcome.",
+      "impact": "Readers are not shown an end-to-end verified channel claim and are taught inconsistent units and optimistic completion. The unit mismatch and missing validation wait are source-confirmed.",
+      "limitations": [
+        "No server rejection or actual payout failure was reproduced; exact authorization behavior requires protocol and ledger confirmation.",
+        "Do not describe absence of a Balance field alone as proof the transaction is always invalid; distinguish a payout claim from other channel operations."
+      ],
+      "novelty": "new_relative_to_prior_corpus_portal_evidence",
+      "mitigation": "Use explicit XRP-to-drops conversion, derive the real created channel, generate/verify the intended authorized payout claim, and wait for validated success before balance conclusions.",
+      "reproduce": "Run creation, authorized payout and deliberately invalid authorization cases on an isolated ledger; verify exact delivered amount and channel state.",
+      "stable_report_url": null,
+      "implementation_status": "Baseline observation or design opportunity; mitigation and current demonstration status must be verified separately.",
+      "prior_overlap": {
+        "exact_prior_ids": [],
+        "matching_scope": "No exact numbered prior claim matched this group.",
+        "thematically_related_ids": [],
+        "issues": [],
+        "proposed_prs": [],
+        "claim_sources": []
+      },
+      "evidence": [
+        {
+          "artifact": "evidence/portal-review.md",
+          "selector": "P-07,P-08,P-09",
+          "reproduction_or_inspection_file": "evidence/portal-tracked-baseline/_code-samples/claim-payment-channel/js/claimPayChannel.ts"
+        }
+      ],
+      "evidence_status": "Reviewed current audit artifact; no independent rerun performed during reconciliation"
+    },
+    {
+      "id": "PORT-06",
+      "domain": "portal",
+      "kind": "example_payment_interpretation_gap",
+      "title": "Partial-payment lesson omits explicit delivered-amount interpretation",
+      "severity": "high",
+      "evidenceTier": "tracked_source_inspection",
+      "observation": "The example sends a Payment with tfPartialPayment and prints the response and balances, but does not check TransactionResult or explicitly read and explain delivered_amount where it demonstrates confirmation.",
+      "impact": "The lesson misses the critical distinction between a requested maximum and the amount actually delivered. Severity reflects the consequence if readers reuse that interpretation in payment processing, not an observed exploit.",
+      "limitations": [
+        "No funds loss or deployed application vulnerability was observed.",
+        "The generic Get Transaction sample does explain delivered_amount; the gap is in this specific partial-payment lesson."
+      ],
+      "novelty": "new_relative_to_prior_corpus_portal_evidence",
+      "mitigation": "Check current validated result, explain/read delivered_amount, and handle unavailable and amount-kind cases explicitly before reporting receipt.",
+      "reproduce": "Use controlled partial-delivery metadata and a ledger scenario where delivered amount is less than requested; assert the lesson reports actual delivery.",
+      "stable_report_url": null,
+      "implementation_status": "Baseline observation or design opportunity; mitigation and current demonstration status must be verified separately.",
+      "prior_overlap": {
+        "exact_prior_ids": [],
+        "matching_scope": "No exact numbered prior claim matched this group.",
+        "thematically_related_ids": [
+          "043",
+          "057"
+        ],
+        "issues": [],
+        "proposed_prs": [],
+        "claim_sources": []
+      },
+      "evidence": [
+        {
+          "artifact": "evidence/portal-review.md",
+          "selector": "P-12",
+          "reproduction_or_inspection_file": "evidence/portal-tracked-baseline/_code-samples/partial-payment/js/partialPayment.ts"
+        }
+      ],
+      "evidence_status": "Reviewed current audit artifact; no independent rerun performed during reconciliation"
+    }
+  ],
+  "updated_at_utc": "2026-09-22T16:17:13.033708+00:00",
+  "counts": {
+    "report_groups": 18,
+    "sdk_groups": 12,
+    "portal_groups": 6,
+    "sdk_design_opportunities": 1,
+    "distinct_historical_ids_with_some_current_overlap": 11,
+    "note": "Group counts are organizational; evidence depth differs. Historical overlap can be partial, especially 055."
+  }
+}

@@ -1,0 +1,1340 @@
+diff --git a/packages/xrpl/HISTORY.md b/packages/xrpl/HISTORY.md
+index 66a5531034..4d6a6ee86e 100644
+--- a/packages/xrpl/HISTORY.md
++++ b/packages/xrpl/HISTORY.md
+@@ -10,6 +10,7 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
+ 
+ ### Fixed
+ * Fix the `MPToken` ledger type to match rippled: add the required `Account` field, make `MPTAmount` optional (rippled omits it when the balance is zero) and `OwnerNode` required. Add the synthetic `mpt_issuance_id` rippled returns on every `MPTokenIssuance` JSON view. Type `Credential.Flags` as a `number` (the ledger never returns a flags object).
++* Narrow response types by request: `ledger_entry` types `result.node` as the entry the lookup field implies (`mpt_issuance` → `MPTokenIssuance`, `mptoken` → `MPToken`, `account_root` → `AccountRoot`, ...; `index` and mixed lookups keep the `LedgerEntry` union); `account_objects` with a `type` filter (also via `requestAll`/`requestNextPage`) types `account_objects` as that entry type; `TransactionStream<T>` and `AccountTxTransaction<Version, T>` take the transaction type so `meta` is `TransactionMetadata<T>` (e.g. `meta.mpt_issuance_id` on an `MPTokenIssuanceCreate` event); `client.request` infers the response version from a literal `api_version: 1` on the request, so v1 responses are no longer typed as v2 (`BaseRequest.api_version` is now typed `APIVersion`, i.e. `1 | 2`).
+ ## 5.2.0 (2026-09-11)
+ 
+ ### BREAKING CHANGES
+diff --git a/packages/xrpl/src/client/index.ts b/packages/xrpl/src/client/index.ts
+index 1035b3a93b..07e2cc26ba 100644
+--- a/packages/xrpl/src/client/index.ts
++++ b/packages/xrpl/src/client/index.ts
+@@ -24,7 +24,7 @@ import {
+   AccountLinesRequest,
+   AccountLinesResponse,
+   AccountObjectsRequest,
+-  AccountObjectsResponse,
++  AccountObjectsResponseMap,
+   AccountOffersRequest,
+   AccountOffersResponse,
+   AccountTxRequest,
+@@ -35,6 +35,7 @@ import {
+   TxResponse,
+ } from '../models/methods'
+ import type {
++  RequestAPIVersion,
+   RequestResponseMap,
+   RequestAllResponseMap,
+   MarkerRequest,
+@@ -134,7 +135,7 @@ type RequestNextPageReturnMap<T> = T extends AccountChannelsRequest
+   : T extends AccountLinesRequest
+     ? AccountLinesResponse
+     : T extends AccountObjectsRequest
+-      ? AccountObjectsResponse
++      ? AccountObjectsResponseMap<T>
+       : T extends AccountOffersRequest
+         ? AccountOffersResponse
+         : T extends AccountTxRequest
+@@ -226,7 +227,11 @@ class Client extends EventEmitter<EventTypes> {
+   public buildVersion: string | undefined
+ 
+   /**
+-   * API Version used by the server this client is connected to
++   * API version sent with every request that does not set its own
++   * `api_version`. Changing it changes the runtime shape of responses but not
++   * their TypeScript types: {@link Client.request} infers the response type
++   * from the request's own `api_version` field, so set `api_version: 1` on the
++   * request itself to get the version 1 response type.
+    *
+    */
+   public apiVersion: APIVersion = DEFAULT_API_VERSION
+@@ -354,7 +359,7 @@ class Client extends EventEmitter<EventTypes> {
+    */
+   public async request<
+     R extends Request,
+-    V extends APIVersion = typeof DEFAULT_API_VERSION,
++    V extends APIVersion = RequestAPIVersion<R>,
+     T = RequestResponseMap<R, V>,
+   >(req: R): Promise<T> {
+     const request = {
+@@ -477,7 +482,7 @@ class Client extends EventEmitter<EventTypes> {
+ 
+   public async requestAll<
+     T extends MarkerRequest,
+-    U = RequestAllResponseMap<T, APIVersion>,
++    U = RequestAllResponseMap<T, RequestAPIVersion<T>>,
+   >(request: T, collect?: string): Promise<U[]> {
+     /*
+      * The data under collection is keyed based on the command. Fail if command
+diff --git a/packages/xrpl/src/models/methods/accountObjects.ts b/packages/xrpl/src/models/methods/accountObjects.ts
+index 5cf3d36ed3..68d09bffe0 100644
+--- a/packages/xrpl/src/models/methods/accountObjects.ts
++++ b/packages/xrpl/src/models/methods/accountObjects.ts
+@@ -1,5 +1,36 @@
+-import { Amendments, FeeSettings, LedgerHashes } from '../ledger'
++import {
++  AccountRoot,
++  Amendments,
++  AMM,
++  Bridge,
++  Check,
++  Credential,
++  Delegate,
++  DepositPreauth,
++  DID,
++  DirectoryNode,
++  Escrow,
++  FeeSettings,
++  LedgerHashes,
++  Loan,
++  LoanBroker,
++  MPToken,
++  MPTokenIssuance,
++  NFTokenOffer,
++  NFTokenPage,
++  Offer,
++  Oracle,
++  PayChannel,
++  RippleState,
++  SignerList,
++  Sponsorship,
++  Ticket,
++  Vault,
++  XChainOwnedClaimID,
++  XChainOwnedCreateAccountClaimID,
++} from '../ledger'
+ import { LedgerEntry, LedgerEntryFilter } from '../ledger/LedgerEntry'
++import PermissionedDomain from '../ledger/PermissionedDomain'
+ 
+ import { BaseRequest, BaseResponse, LookupByLedgerRequest } from './baseMethod'
+ 
+@@ -57,11 +88,50 @@ export type AccountObject = Exclude<
+ >
+ 
+ /**
+- * Response expected from an {@link AccountObjectsRequest}.
++ * Maps each `account_objects` `type` filter to the ledger entry type the
++ * filtered response contains.
++ */
++export interface AccountObjectByFilter {
++  account: AccountRoot
++  amm: AMM
++  bridge: Bridge
++  check: Check
++  credential: Credential
++  delegate: Delegate
++  deposit_preauth: DepositPreauth
++  did: DID
++  directory: DirectoryNode
++  escrow: Escrow
++  loan: Loan
++  loan_broker: LoanBroker
++  mpt_issuance: MPTokenIssuance
++  mptoken: MPToken
++  nft_offer: NFTokenOffer
++  nft_page: NFTokenPage
++  offer: Offer
++  oracle: Oracle
++  payment_channel: PayChannel
++  permissioned_domain: PermissionedDomain
++  signer_list: SignerList
++  sponsorship: Sponsorship
++  state: RippleState
++  ticket: Ticket
++  vault: Vault
++  xchain_owned_create_account_claim_id: XChainOwnedCreateAccountClaimID
++  xchain_owned_claim_id: XChainOwnedClaimID
++}
++
++/**
++ * Response expected from an {@link AccountObjectsRequest}. `T` is the entry
++ * type of the returned objects: the full {@link AccountObject} union by
++ * default, or the entry type a `type` filter selects (see
++ * {@link AccountObjectsResponseMap}).
+  *
+  * @category Responses
+  */
+-export interface AccountObjectsResponse extends BaseResponse {
++export interface AccountObjectsResponse<
++  T extends AccountObject = AccountObject,
++> extends BaseResponse {
+   result: {
+     /** Unique Address of the account this request corresponds to. */
+     account: string
+@@ -69,7 +139,7 @@ export interface AccountObjectsResponse extends BaseResponse {
+      * Array of objects owned by this account. Each object is in its raw
+      * ledger format.
+      */
+-    account_objects: AccountObject[]
++    account_objects: T[]
+     /**
+      * The identifying hash of the ledger that was used to generate this
+      * response.
+@@ -101,3 +171,16 @@ export interface AccountObjectsResponse extends BaseResponse {
+     validated?: boolean
+   }
+ }
++
++/**
++ * Type to map an `account_objects` request to its response: when the request
++ * sets a `type` filter, `account_objects` is narrowed to that entry type;
++ * otherwise it stays the full {@link AccountObject} union.
++ *
++ * @category Responses
++ */
++export type AccountObjectsResponseMap<T> = T extends {
++  type: infer K extends AccountObjectType
++}
++  ? AccountObjectsResponse<AccountObjectByFilter[K]>
++  : AccountObjectsResponse
+diff --git a/packages/xrpl/src/models/methods/accountTx.ts b/packages/xrpl/src/models/methods/accountTx.ts
+index ccff2279eb..94e70fe84a 100644
+--- a/packages/xrpl/src/models/methods/accountTx.ts
++++ b/packages/xrpl/src/models/methods/accountTx.ts
+@@ -6,6 +6,7 @@ import {
+   ResponseOnlyTxInfo,
+ } from '../common'
+ import { Transaction, TransactionMetadata } from '../transactions'
++import { BaseTransaction } from '../transactions/common'
+ 
+ import { BaseRequest, BaseResponse, LookupByLedgerRequest } from './baseMethod'
+ 
+@@ -55,8 +56,15 @@ export interface AccountTxRequest extends BaseRequest, LookupByLedgerRequest {
+   marker?: unknown
+ }
+ 
++/**
++ * One row of an `account_tx` response. `T` is the transaction type carried in
++ * `tx_json` (or `tx` under API version 1); `meta` is the metadata type for
++ * that same transaction, so narrowing a row to
++ * `AccountTxTransaction<2, MPTokenIssuanceCreate>` also narrows `meta`.
++ */
+ export interface AccountTxTransaction<
+   Version extends APIVersion = typeof DEFAULT_API_VERSION,
++  T extends BaseTransaction = Transaction,
+ > {
+   /** The ledger index of the ledger version that included this transaction. */
+   ledger_index: number
+@@ -64,15 +72,13 @@ export interface AccountTxTransaction<
+    * If binary is True, then this is a hex string of the transaction metadata.
+    * Otherwise, the transaction metadata is included in JSON format.
+    */
+-  meta: string | TransactionMetadata
++  meta: string | TransactionMetadata<T>
+   /** JSON object defining the transaction. */
+   tx_json?: Version extends typeof RIPPLED_API_V2
+-    ? Transaction & ResponseOnlyTxInfo
++    ? T & ResponseOnlyTxInfo
+     : never
+   /** JSON object defining the transaction in rippled API v1. */
+-  tx?: Version extends typeof RIPPLED_API_V1
+-    ? Transaction & ResponseOnlyTxInfo
+-    : never
++  tx?: Version extends typeof RIPPLED_API_V1 ? T & ResponseOnlyTxInfo : never
+   /** The hash of the transaction. */
+   hash?: Version extends typeof RIPPLED_API_V2 ? string : never
+   /** Unique hashed String representing the transaction. */
+diff --git a/packages/xrpl/src/models/methods/baseMethod.ts b/packages/xrpl/src/models/methods/baseMethod.ts
+index f264c2bd32..1d93d8d4ab 100644
+--- a/packages/xrpl/src/models/methods/baseMethod.ts
++++ b/packages/xrpl/src/models/methods/baseMethod.ts
+@@ -1,4 +1,4 @@
+-import { LedgerIndex } from '../common'
++import { APIVersion, LedgerIndex } from '../common'
+ 
+ import type { Request } from '.'
+ 
+@@ -12,8 +12,12 @@ export interface BaseRequest {
+   id?: number | string
+   /** The name of the API method. */
+   command: string
+-  /** The API version to use. If omitted, use version 1. */
+-  api_version?: number
++  /**
++   * The API version to use. If omitted, the client's `apiVersion` (by default
++   * version 2) is sent. Setting a literal `1` here also selects the version 1
++   * response type in {@link RequestResponseMap}.
++   */
++  api_version?: APIVersion
+ }
+ 
+ export interface LookupByLedgerRequest {
+diff --git a/packages/xrpl/src/models/methods/index.ts b/packages/xrpl/src/models/methods/index.ts
+index 1bcffa12af..84adf18b4e 100644
+--- a/packages/xrpl/src/models/methods/index.ts
++++ b/packages/xrpl/src/models/methods/index.ts
+@@ -33,8 +33,10 @@ import {
+ } from './accountNFTs'
+ import {
+   AccountObject,
++  AccountObjectByFilter,
+   AccountObjectsRequest,
+   AccountObjectsResponse,
++  AccountObjectsResponseMap,
+   AccountObjectType,
+ } from './accountObjects'
+ import {
+@@ -115,6 +117,8 @@ import {
+ import {
+   LedgerEntryBinaryRequest,
+   LedgerEntryJsonRequest,
++  LedgerEntryLookupMap,
++  LedgerEntryNode,
+   LedgerEntryRequest,
+   LedgerEntryBinaryResponse,
+   LedgerEntryJsonResponse,
+@@ -340,7 +344,7 @@ export type RequestResponseMap<
+   : T extends AccountNFTsRequest
+   ? AccountNFTsResponse
+   : T extends AccountObjectsRequest
+-  ? AccountObjectsResponse
++  ? AccountObjectsResponseMap<T>
+   : T extends AccountOffersRequest
+   ? AccountOffersResponse
+   : T extends AccountSponsoringRequest
+@@ -430,9 +434,9 @@ export type RequestResponseMap<
+   : T extends LedgerEntryBinaryRequest
+   ? LedgerEntryBinaryResponse
+   : T extends LedgerEntryJsonRequest
+-  ? LedgerEntryJsonResponse
++  ? LedgerEntryJsonResponse<LedgerEntryNode<T>>
+   : T extends LedgerEntryRequest
+-  ? LedgerEntryJsonResponse
++  ? LedgerEntryJsonResponse<LedgerEntryNode<T>>
+   : T extends SimulateBinaryRequest
+   ? SimulateBinaryResponse
+   : T extends SimulateJsonRequest
+@@ -493,6 +497,16 @@ export type RequestResponseMap<
+   ? VaultInfoResponse
+   : Response<Version>
+ 
++/**
++ * The API version a request pins through its `api_version` field, or
++ * {@link DEFAULT_API_VERSION} when it leaves the field unset.
++ */
++export type RequestAPIVersion<T> = T extends {
++  api_version: infer V extends APIVersion
++}
++  ? V
++  : typeof DEFAULT_API_VERSION
++
+ export type MarkerRequest = Request & {
+   limit?: number
+   marker?: unknown
+@@ -514,7 +528,7 @@ export type RequestAllResponseMap<
+   : T extends AccountLinesRequest
+   ? AccountLinesResponse
+   : T extends AccountObjectsRequest
+-  ? AccountObjectsResponse
++  ? AccountObjectsResponseMap<T>
+   : T extends AccountOffersRequest
+   ? AccountOffersResponse
+   : T extends AccountTxRequest
+@@ -551,9 +565,11 @@ export {
+   AccountNFTsRequest,
+   AccountNFTsResponse,
+   AccountObject,
++  AccountObjectByFilter,
+   AccountObjectType,
+   AccountObjectsRequest,
+   AccountObjectsResponse,
++  AccountObjectsResponseMap,
+   AccountOffer,
+   AccountOffersRequest,
+   AccountOffersResponse,
+@@ -588,6 +604,8 @@ export {
+   LedgerDataLedgerState,
+   LedgerEntryBinaryRequest,
+   LedgerEntryJsonRequest,
++  LedgerEntryLookupMap,
++  LedgerEntryNode,
+   LedgerEntryRequest,
+   LedgerEntryBinaryResponse,
+   LedgerEntryJsonResponse,
+diff --git a/packages/xrpl/src/models/methods/ledgerEntry.ts b/packages/xrpl/src/models/methods/ledgerEntry.ts
+index 41d6831d34..106a4b6a24 100644
+--- a/packages/xrpl/src/models/methods/ledgerEntry.ts
++++ b/packages/xrpl/src/models/methods/ledgerEntry.ts
+@@ -1,5 +1,27 @@
+ import { Currency, XChainBridge } from '../common'
+-import { LedgerEntry } from '../ledger'
++import {
++  AccountRoot,
++  AMM,
++  Bridge,
++  Check,
++  Credential,
++  Delegate,
++  DepositPreauth,
++  DID,
++  DirectoryNode,
++  Escrow,
++  LedgerEntry,
++  MPToken,
++  MPTokenIssuance,
++  NFTokenPage,
++  Offer,
++  PayChannel,
++  RippleState,
++  Sponsorship,
++  Ticket,
++  XChainOwnedClaimID,
++  XChainOwnedCreateAccountClaimID,
++} from '../ledger'
+ 
+ import { BaseRequest, BaseResponse, LookupByLedgerRequest } from './baseMethod'
+ 
+@@ -252,6 +274,67 @@ export type LedgerEntryJsonRequest = LedgerEntryRequest & {
+   binary?: false
+ }
+ 
++/**
++ * Maps each `ledger_entry` lookup field to the ledger entry type it resolves
++ * to. `index` is absent because it can address any entry, and
++ * `bridge_account` because it only qualifies a `bridge` lookup.
++ */
++export interface LedgerEntryLookupMap {
++  account_root: AccountRoot
++  amm: AMM
++  bridge: Bridge
++  check: Check
++  credential: Credential
++  delegate: Delegate
++  deposit_preauth: DepositPreauth
++  did: DID
++  directory: DirectoryNode
++  escrow: Escrow
++  mpt_issuance: MPTokenIssuance
++  mptoken: MPToken
++  nft_page: NFTokenPage
++  offer: Offer
++  payment_channel: PayChannel
++  ripple_state: RippleState
++  sponsorship: Sponsorship
++  ticket: Ticket
++  xchain_owned_claim_id: XChainOwnedClaimID
++  xchain_owned_create_account_claim_id: XChainOwnedCreateAccountClaimID
++}
++
++type IsUnion<T, U = T> = T extends unknown
++  ? [U] extends [T]
++    ? false
++    : true
++  : never
++
++/**
++ * The lookup fields that a request type `T` sets as required (not optional
++ * and not possibly `undefined`).
++ */
++type RequiredLookupKeys<T> = {
++  [K in keyof T & keyof LedgerEntryLookupMap]-?: undefined extends T[K]
++    ? never
++    : K
++}[keyof T & keyof LedgerEntryLookupMap]
++
++/**
++ * The ledger entry type a `ledger_entry` request `T` resolves to. When the
++ * request pins exactly one lookup field (for example `mpt_issuance`) this is
++ * the entry type that field implies; when it uses `index`, sets several
++ * lookup fields, or leaves them optional, this is the full {@link LedgerEntry}
++ * union.
++ */
++export type LedgerEntryNode<T> = T extends { index: string }
++  ? LedgerEntry
++  : [RequiredLookupKeys<T>] extends [never]
++    ? LedgerEntry
++    : true extends IsUnion<RequiredLookupKeys<T>>
++      ? LedgerEntry
++      : RequiredLookupKeys<T> extends keyof LedgerEntryLookupMap
++        ? LedgerEntryLookupMap[RequiredLookupKeys<T>]
++        : LedgerEntry
++
+ interface LedgerEntryResponseResultBase {
+   /** The unique ID of this ledger object. */
+   index: string
+diff --git a/packages/xrpl/src/models/methods/subscribe.ts b/packages/xrpl/src/models/methods/subscribe.ts
+index 37557502ee..d4dce5cb75 100644
+--- a/packages/xrpl/src/models/methods/subscribe.ts
++++ b/packages/xrpl/src/models/methods/subscribe.ts
+@@ -11,6 +11,7 @@ import type {
+ } from '../common'
+ import { Offer } from '../ledger'
+ import { OfferCreate, Transaction } from '../transactions'
++import { BaseTransaction } from '../transactions/common'
+ import { TransactionMetadata } from '../transactions/metadata'
+ 
+ import type { BaseRequest, BaseResponse } from './baseMethod'
+@@ -283,12 +284,16 @@ export interface ValidationStream extends BaseStream {
+ }
+ 
+ /**
+- * Many subscriptions result in messages about transactions.
++ * Many subscriptions result in messages about transactions. `T` is the
++ * transaction type carried in `tx_json` (or `transaction` under API version
++ * 1); `meta` is the metadata type for that same transaction, so narrowing an
++ * event to `TransactionStream<MPTokenIssuanceCreate>` also narrows `meta`.
+  *
+  * @category Streams
+  */
+ interface TransactionStreamBase<
+   Version extends APIVersion = typeof DEFAULT_API_VERSION,
++  T extends BaseTransaction = Transaction,
+ > extends BaseStream {
+   status: string
+   type: 'transaction'
+@@ -320,14 +325,14 @@ interface TransactionStreamBase<
+    * The transaction metadata, which shows the exact outcome of the transaction
+    * in detail.
+    */
+-  meta?: TransactionMetadata
++  meta?: TransactionMetadata<T>
+   /** JSON object defining the transaction. */
+   tx_json?: Version extends typeof RIPPLED_API_V2
+-    ? Transaction & ResponseOnlyTxInfo
++    ? T & ResponseOnlyTxInfo
+     : never
+   /** JSON object defining the transaction in rippled API v1. */
+   transaction?: Version extends typeof RIPPLED_API_V1
+-    ? Transaction & ResponseOnlyTxInfo
++    ? T & ResponseOnlyTxInfo
+     : never
+   /**
+    * If true, this transaction is included in a validated ledger and its
+@@ -339,18 +344,22 @@ interface TransactionStreamBase<
+ }
+ 
+ /**
+- * Expected response from an {@link AccountTxRequest}.
++ * A `transaction` stream event. Pass the transaction type as `T` to correlate
++ * `tx_json` and `meta`, for example in a type predicate:
++ * `ev is TransactionStream<MPTokenIssuanceCreate>`.
+  *
+  * @category Streams
+  */
+-export type TransactionStream = TransactionStreamBase
++export type TransactionStream<T extends BaseTransaction = Transaction> =
++  TransactionStreamBase<typeof DEFAULT_API_VERSION, T>
+ 
+ /**
+- * Expected response from an {@link AccountTxRequest} with `api_version` set to 1.
++ * A `transaction` stream event with `api_version` set to 1.
+  *
+  * @category Streams
+  */
+-export type TransactionV1Stream = TransactionStreamBase<typeof RIPPLED_API_V1>
++export type TransactionV1Stream<T extends BaseTransaction = Transaction> =
++  TransactionStreamBase<typeof RIPPLED_API_V1, T>
+ 
+ /**
+  * The admin-only `peer_status` stream reports a large amount of information on
+diff --git a/packages/xrpl/test/integration/requests/vaultInfo.test.ts b/packages/xrpl/test/integration/requests/vaultInfo.test.ts
+index 2f1117d4a0..361f9459b2 100644
+--- a/packages/xrpl/test/integration/requests/vaultInfo.test.ts
++++ b/packages/xrpl/test/integration/requests/vaultInfo.test.ts
+@@ -8,7 +8,6 @@ import {
+   AccountSet,
+   AccountSetAsfFlags,
+ } from '../../../src'
+-import { Vault } from '../../../src/models/ledger'
+ import serverUrl from '../serverUrl'
+ import {
+   setupClient,
+@@ -50,7 +49,7 @@ describe('Single Asset Vault', function () {
+       1,
+       'Should find one vault',
+     )
+-    const vaultObj = result.result.account_objects[0] as Vault
++    const vaultObj = result.result.account_objects[0]
+     const vaultId = vaultObj.index
+ 
+     // Fetch vault_info using vault_id
+@@ -179,14 +178,14 @@ describe('Single Asset Vault', function () {
+       type: 'vault',
+     })
+     const vaultObj = result.result.account_objects.find((obj) => {
+-      const vault = obj as Vault
++      const vault = obj
+       const asset = vault.Asset as unknown as Record<string, unknown>
+       return (
+         asset.currency === 'USD' &&
+         asset.issuer === testContext.wallet.classicAddress
+       )
+-    }) as Vault
+-    assert.isDefined(vaultObj, 'Should find IOU vault')
++    })
++    assert(vaultObj != null, 'Should find IOU vault')
+ 
+     // Fetch vault_info using vault_id
+     const vaultInfoRes: VaultInfoResponse = await testContext.client.request({
+diff --git a/packages/xrpl/test/integration/transactions/lendingProtocolV1_1.test.ts b/packages/xrpl/test/integration/transactions/lendingProtocolV1_1.test.ts
+index a94387ffb6..e13de94f63 100644
+--- a/packages/xrpl/test/integration/transactions/lendingProtocolV1_1.test.ts
++++ b/packages/xrpl/test/integration/transactions/lendingProtocolV1_1.test.ts
+@@ -14,7 +14,6 @@ import {
+   VaultWithdrawalPolicy,
+   Wallet,
+ } from '../../../src'
+-import { Vault } from '../../../src/models/ledger'
+ import serverUrl from '../serverUrl'
+ import {
+   setupClient,
+@@ -68,7 +67,7 @@ describe('LendingProtocolV1_1', function () {
+         account: vaultOwnerWallet.classicAddress,
+         type: 'vault',
+       })
+-      const vault = result.result.account_objects[0] as Vault
++      const vault = result.result.account_objects[0]
+ 
+       assert.equal(result.result.account_objects.length, 1)
+       assert.equal(vault.Owner, vaultOwnerWallet.classicAddress)
+@@ -97,7 +96,7 @@ describe('LendingProtocolV1_1', function () {
+         account: vaultOwnerWallet.classicAddress,
+         type: 'vault',
+       })
+-      const vaultId = (result.result.account_objects[0] as Vault).index
++      const vaultId = result.result.account_objects[0].index
+ 
+       const deleteTx: VaultDelete = {
+         TransactionType: 'VaultDelete',
+@@ -193,7 +192,7 @@ describe('LendingProtocolV1_1', function () {
+         account: vaultOwnerWallet.classicAddress,
+         type: 'vault',
+       })
+-      const vaultId = (vaultResult.result.account_objects[0] as Vault).index
++      const vaultId = vaultResult.result.account_objects[0].index
+ 
+       // --- Fetch the depositor's credential ID ---
+       const credentials = await testContext.client.request({
+@@ -227,7 +226,7 @@ describe('LendingProtocolV1_1', function () {
+         account: vaultOwnerWallet.classicAddress,
+         type: 'vault',
+       })
+-      const afterVault = afterWithdraw.result.account_objects[0] as Vault
++      const afterVault = afterWithdraw.result.account_objects[0]
+       assert.equal(afterVault.AssetsTotal ?? '0', '500000')
+     },
+     TIMEOUT,
+diff --git a/packages/xrpl/test/integration/transactions/mptokenIssuanceCreate.test.ts b/packages/xrpl/test/integration/transactions/mptokenIssuanceCreate.test.ts
+index 4b2cec9418..eb1fb9410e 100644
+--- a/packages/xrpl/test/integration/transactions/mptokenIssuanceCreate.test.ts
++++ b/packages/xrpl/test/integration/transactions/mptokenIssuanceCreate.test.ts
+@@ -3,7 +3,6 @@ import { assert } from 'chai'
+ import {
+   decodeMPTokenMetadata,
+   encodeMPTokenMetadata,
+-  MPTokenIssuance,
+   MPTokenIssuanceCreate,
+   MPTokenIssuanceCreateFlags,
+   MPTokenIssuanceCreateImmutableFlags,
+@@ -84,7 +83,6 @@ describe('MPTokenIssuanceCreate', function () {
+         'Should be exactly one issuance on the ledger',
+       )
+       const issuance = accountObjectsResponse.result.account_objects[0]
+-      assert(issuance.LedgerEntryType === 'MPTokenIssuance')
+       assert.equal(issuance.MaximumAmount, `9223372036854775807`)
+ 
+       assert(issuance.MPTokenMetadata != null)
+@@ -131,7 +129,7 @@ describe('MPTokenIssuanceCreate', function () {
+       const issuance = accountObjectsResponse.result.account_objects.find(
+         (node) =>
+           (node as { mpt_issuance_id?: string }).mpt_issuance_id === issuanceId,
+-      ) as MPTokenIssuance | undefined
++      )
+       assert.exists(issuance, 'Created MPTokenIssuance not found')
+ 
+       const lsf = parseMPTokenIssuanceFlags(issuance.Flags)
+diff --git a/packages/xrpl/test/integration/transactions/mptokenIssuanceSet.test.ts b/packages/xrpl/test/integration/transactions/mptokenIssuanceSet.test.ts
+index 284e942e23..d828edb468 100644
+--- a/packages/xrpl/test/integration/transactions/mptokenIssuanceSet.test.ts
++++ b/packages/xrpl/test/integration/transactions/mptokenIssuanceSet.test.ts
+@@ -14,7 +14,6 @@ import {
+   parseMPTokenIssuanceFlags,
+   parseMPTokenIssuanceImmutableFlags,
+ } from '../../../src'
+-import type PermissionedDomain from '../../../src/models/ledger/PermissionedDomain'
+ import serverUrl from '../serverUrl'
+ import {
+   setupClient,
+@@ -470,12 +469,10 @@ async function readMPTokenIssuance(
+     type: 'mpt_issuance',
+   })
+   const issuanceNode = accountObjectsResponse.result.account_objects.find(
+-    (node) =>
+-      node.LedgerEntryType === 'MPTokenIssuance' &&
+-      node.mpt_issuance_id === issuanceId,
++    (node) => node.mpt_issuance_id === issuanceId,
+   )
+   assert(
+-    issuanceNode?.LedgerEntryType === 'MPTokenIssuance',
++    issuanceNode != null,
+     `MPTokenIssuance with id ${issuanceId} not found in account_objects`,
+   )
+   return issuanceNode
+@@ -524,8 +521,9 @@ async function createPermissionedDomain(
+     account: testContext.wallet.classicAddress,
+     type: 'permissioned_domain',
+   })
+-  const newestDomain = accountObjects.result.account_objects[
+-    accountObjects.result.account_objects.length - 1
+-  ] as PermissionedDomain
++  const newestDomain =
++    accountObjects.result.account_objects[
++      accountObjects.result.account_objects.length - 1
++    ]
+   return newestDomain.index
+ }
+diff --git a/packages/xrpl/test/integration/transactions/oracleSet.test.ts b/packages/xrpl/test/integration/transactions/oracleSet.test.ts
+index 2e1d6cf1c1..0b59f65338 100644
+--- a/packages/xrpl/test/integration/transactions/oracleSet.test.ts
++++ b/packages/xrpl/test/integration/transactions/oracleSet.test.ts
+@@ -2,7 +2,6 @@ import { stringToHex } from '@xrplf/isomorphic/utils'
+ import { assert } from 'chai'
+ 
+ import { OracleSet } from '../../../src'
+-import { Oracle } from '../../../src/models/ledger'
+ import serverUrl from '../serverUrl'
+ import {
+   setupClient,
+@@ -75,7 +74,7 @@ describe('OracleSet', function () {
+       assert.equal(result.result.account_objects.length, 1)
+ 
+       // confirm details of Oracle ledger entry object
+-      const oracle = result.result.account_objects[0] as Oracle
++      const oracle = result.result.account_objects[0]
+       assert.equal(oracle.LastUpdateTime, tx.LastUpdateTime)
+       assert.equal(oracle.Owner, testContext.wallet.classicAddress)
+       assert.equal(oracle.AssetClass, tx.AssetClass)
+diff --git a/packages/xrpl/test/integration/transactions/payment.test.ts b/packages/xrpl/test/integration/transactions/payment.test.ts
+index 17b9f7e494..31cbb5a716 100644
+--- a/packages/xrpl/test/integration/transactions/payment.test.ts
++++ b/packages/xrpl/test/integration/transactions/payment.test.ts
+@@ -192,7 +192,6 @@ describe('Payment', function () {
+         type: 'mpt_issuance',
+       })
+       assert.equal(
+-        // @ts-expect-error -- Object type not known
+         accountObjectsResponse.result.account_objects[0].OutstandingAmount,
+         `100`,
+       )
+diff --git a/packages/xrpl/test/integration/transactions/permissionedDEX.test.ts b/packages/xrpl/test/integration/transactions/permissionedDEX.test.ts
+index 7c90b405ac..89f28ee280 100644
+--- a/packages/xrpl/test/integration/transactions/permissionedDEX.test.ts
++++ b/packages/xrpl/test/integration/transactions/permissionedDEX.test.ts
+@@ -8,7 +8,6 @@ import {
+   IssuedCurrencyAmount,
+   AccountSetAsfFlags,
+ } from '../../../src'
+-import DirectoryNode from '../../../src/models/ledger/DirectoryNode'
+ import Offer from '../../../src/models/ledger/Offer'
+ import PermissionedDomain from '../../../src/models/ledger/PermissionedDomain'
+ import {
+@@ -134,8 +133,7 @@ describe('PermissionedDEX', function () {
+       type: 'permissioned_domain',
+     })
+ 
+-    permDomainLedgerObject = result.result
+-      .account_objects[0] as PermissionedDomain
++    permDomainLedgerObject = result.result.account_objects[0]
+ 
+     // wallet1 establishes a trust line for USD IOU Token
+     await testTransaction(
+@@ -232,7 +230,7 @@ describe('PermissionedDEX', function () {
+             seq: offerCreateTxResponse.result.tx_json.Sequence as number,
+           },
+         })
+-      ).result.node as Offer
++      ).result.node
+ 
+       assert.equal(offerLedgerObject.LedgerEntryType, 'Offer')
+       assert.equal(offerLedgerObject.DomainID, permDomainLedgerObject.index)
+@@ -259,15 +257,15 @@ describe('PermissionedDEX', function () {
+       })
+ 
+       assert.equal(
+-        (ledgerEntryResponse.result.node as DirectoryNode).index,
++        ledgerEntryResponse.result.node.index,
+         offerLedgerObject.BookDirectory,
+       )
+       assert.equal(
+-        (ledgerEntryResponse.result.node as DirectoryNode).LedgerEntryType,
++        ledgerEntryResponse.result.node.LedgerEntryType,
+         'DirectoryNode',
+       )
+       assert.equal(
+-        (ledgerEntryResponse.result.node as DirectoryNode).DomainID,
++        ledgerEntryResponse.result.node.DomainID,
+         permDomainLedgerObject.index,
+       )
+ 
+diff --git a/packages/xrpl/test/integration/transactions/permissionedDomain.test.ts b/packages/xrpl/test/integration/transactions/permissionedDomain.test.ts
+index 688f4a1fe3..eaac14a423 100644
+--- a/packages/xrpl/test/integration/transactions/permissionedDomain.test.ts
++++ b/packages/xrpl/test/integration/transactions/permissionedDomain.test.ts
+@@ -7,7 +7,6 @@ import {
+   PermissionedDomainSet,
+   AuthorizeCredential,
+ } from '../../../src'
+-import PermissionedDomain from '../../../src/models/ledger/PermissionedDomain'
+ import serverUrl from '../serverUrl'
+ import {
+   setupClient,
+@@ -55,7 +54,7 @@ describe('PermissionedDomainSet', function () {
+       })
+ 
+       assert.equal(result.result.account_objects.length, 1)
+-      const pd = result.result.account_objects[0] as PermissionedDomain
++      const pd = result.result.account_objects[0]
+ 
+       assert.equal(pd.Flags, 0)
+       expect(pd.AcceptedCredentials).toEqual([sampleCredential])
+diff --git a/packages/xrpl/test/integration/transactions/singleAssetVault.test.ts b/packages/xrpl/test/integration/transactions/singleAssetVault.test.ts
+index aafcac19aa..caae57585d 100644
+--- a/packages/xrpl/test/integration/transactions/singleAssetVault.test.ts
++++ b/packages/xrpl/test/integration/transactions/singleAssetVault.test.ts
+@@ -22,7 +22,7 @@ import {
+   Wallet,
+   XRP,
+ } from '../../../src'
+-import { MPTokenIssuance, Vault, VaultFlags } from '../../../src/models/ledger'
++import { MPTokenIssuance, VaultFlags } from '../../../src/models/ledger'
+ import { MPTokenIssuanceCreateMetadata } from '../../../src/models/transactions/MPTokenIssuanceCreate'
+ import serverUrl from '../serverUrl'
+ import {
+@@ -120,7 +120,7 @@ describe('Single Asset Vault', function () {
+         account: vaultOwnerWallet.classicAddress,
+         type: 'vault',
+       })
+-      const vault = result.result.account_objects[0] as Vault
++      const vault = result.result.account_objects[0]
+       const vaultId = vault.index
+       const asset = vault.Asset as XRP
+       const assetsMaximum = vault.AssetsMaximum as string
+@@ -181,7 +181,7 @@ describe('Single Asset Vault', function () {
+         account: vaultOwnerWallet.classicAddress,
+         type: 'vault',
+       })
+-      const updatedVault = updatedResult.result.account_objects[0] as Vault
++      const updatedVault = updatedResult.result.account_objects[0]
+ 
+       assert.equal(updatedVault.AssetsMaximum, '1000')
+       assert.equal(updatedVault.Data, stringToHex('updated metadata'))
+@@ -209,8 +209,7 @@ describe('Single Asset Vault', function () {
+         account: vaultOwnerWallet.classicAddress,
+         type: 'vault',
+       })
+-      const afterDepositVault = afterDepositResult.result
+-        .account_objects[0] as Vault
++      const afterDepositVault = afterDepositResult.result.account_objects[0]
+ 
+       // Should have new balance after deposit (this assumes AssetsTotal tracks deposits)
+       assert.equal(
+@@ -244,8 +243,7 @@ describe('Single Asset Vault', function () {
+         account: vaultOwnerWallet.classicAddress,
+         type: 'vault',
+       })
+-      const afterWithdrawVault = afterWithdrawResult.result
+-        .account_objects[0] as Vault
++      const afterWithdrawVault = afterWithdrawResult.result.account_objects[0]
+ 
+       // Should have reduced balance after withdrawal (should be 0 if all withdrawn)
+       assert.equal(
+@@ -281,8 +279,7 @@ describe('Single Asset Vault', function () {
+         type: 'vault',
+       })
+ 
+-      const afterClawbackVault = afterClawbackResult.result
+-        .account_objects[0] as Vault
++      const afterClawbackVault = afterClawbackResult.result.account_objects[0]
+ 
+       assert.equal(
+         afterClawbackVault.AssetsTotal ?? '0',
+@@ -392,7 +389,7 @@ describe('Single Asset Vault', function () {
+         account: vaultOwnerWallet.classicAddress,
+         type: 'vault',
+       })
+-      const vault = result.result.account_objects[0] as Vault
++      const vault = result.result.account_objects[0]
+       const vaultId = vault.index
+       const asset = vault.Asset as MPTCurrency
+       const assetsMaximum = vault.AssetsMaximum as string
+@@ -453,7 +450,7 @@ describe('Single Asset Vault', function () {
+         account: vaultOwnerWallet.classicAddress,
+         type: 'vault',
+       })
+-      const updatedVault = updatedResult.result.account_objects[0] as Vault
++      const updatedVault = updatedResult.result.account_objects[0]
+ 
+       assert.equal(updatedVault.AssetsMaximum, '1000')
+       assert.equal(updatedVault.Data, stringToHex('updated metadata'))
+@@ -480,8 +477,7 @@ describe('Single Asset Vault', function () {
+         account: vaultOwnerWallet.classicAddress,
+         type: 'vault',
+       })
+-      const afterDepositVault = afterDepositResult.result
+-        .account_objects[0] as Vault
++      const afterDepositVault = afterDepositResult.result.account_objects[0]
+ 
+       // Should have new balance after deposit (this assumes AssetsTotal tracks deposits)
+       assert.equal(
+@@ -512,8 +508,7 @@ describe('Single Asset Vault', function () {
+         account: vaultOwnerWallet.classicAddress,
+         type: 'vault',
+       })
+-      const afterWithdrawVault = afterWithdrawResult.result
+-        .account_objects[0] as Vault
++      const afterWithdrawVault = afterWithdrawResult.result.account_objects[0]
+ 
+       // Should have reduced balance after withdrawal (should be 0 if all withdrawn)
+       assert.equal(
+@@ -547,8 +542,7 @@ describe('Single Asset Vault', function () {
+         account: vaultOwnerWallet.classicAddress,
+         type: 'vault',
+       })
+-      const afterClawbackVault = afterClawbackResult.result
+-        .account_objects[0] as Vault
++      const afterClawbackVault = afterClawbackResult.result.account_objects[0]
+ 
+       assert.equal(
+         afterClawbackVault.AssetsTotal ?? '0',
+diff --git a/packages/xrpl/test/models/responseNarrowing.test.ts b/packages/xrpl/test/models/responseNarrowing.test.ts
+new file mode 100644
+index 0000000000..0e77eab4b4
+--- /dev/null
++++ b/packages/xrpl/test/models/responseNarrowing.test.ts
+@@ -0,0 +1,431 @@
++import { assert } from 'chai'
++
++import {
++  AccountObject,
++  AccountObjectsResponse,
++  AccountTxTransaction,
++  LedgerEntry,
++  MPTokenIssuance,
++  MPTokenIssuanceCreate,
++  Transaction,
++  TransactionMetadata,
++  TransactionStream,
++  TxRequest,
++  TxResponse,
++  TxV1Response,
++} from '../../src'
++import {
++  setupClient,
++  teardownClient,
++  type XrplTestContext,
++} from '../setupClient'
++
++/**
++ * `true` when `A` and `B` are the same type, `false` otherwise.
++ */
++type Equals<A, B> =
++  (<X>() => X extends A ? 1 : 2) extends <X>() => X extends B ? 1 : 2
++    ? true
++    : false
++
++/**
++ * Compile-time assertion: only instantiable when `T` is `true`.
++ *
++ * @returns Always true.
++ */
++function typeIs<T extends true>(): T {
++  return true as T
++}
++
++const ISSUER = 'rJSAsZm9mrs7kdAxfswswBimT8DKgwWWwT'
++const HOLDER = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh'
++const ISSUANCE_ID = '000000077EEF664B7A629066730123E42508AA854744FFE7'
++const TX_HASH =
++  'FF8964708994E4868056B4E40B2651D972FE8235F1EBDB3BC8E5B4921887876C'
++
++const issuance: MPTokenIssuance = {
++  Flags: 0,
++  Issuer: ISSUER,
++  LedgerEntryType: 'MPTokenIssuance',
++  MaximumAmount: '1000',
++  MPTokenMetadata: '7B7D',
++  OutstandingAmount: '0',
++  OwnerNode: '0',
++  PreviousTxnID: TX_HASH,
++  PreviousTxnLgrSeq: 21,
++  Sequence: 7,
++  index: '910ED7E8D1ECC5687209DB58B66CC76E282398BDACA4F5E3C263531E90B775CC',
++  mpt_issuance_id: ISSUANCE_ID,
++}
++
++const mptoken: LedgerEntry.MPToken = {
++  Account: HOLDER,
++  Flags: 0,
++  LedgerEntryType: 'MPToken',
++  MPTokenIssuanceID: ISSUANCE_ID,
++  OwnerNode: '0',
++  PreviousTxnID: TX_HASH,
++  PreviousTxnLgrSeq: 22,
++  index: '3E0EF1A38D33CECF97A8510C45CE6027632A00FFCEEC3A33DE4D5DC737332F20',
++}
++
++const issuanceCreate: MPTokenIssuanceCreate = {
++  TransactionType: 'MPTokenIssuanceCreate',
++  Account: ISSUER,
++  Fee: '10',
++  Sequence: 7,
++  SigningPubKey: '',
++}
++
++const issuanceCreateMeta = {
++  AffectedNodes: [],
++  TransactionIndex: 0,
++  TransactionResult: 'tesSUCCESS',
++  mpt_issuance_id: ISSUANCE_ID,
++}
++
++/**
++ * Narrow a stream event to an `MPTokenIssuanceCreate` event. TypeScript does
++ * not narrow a parent object through a nested discriminant, so this is the
++ * idiom that reaches `meta.mpt_issuance_id` on the push path.
++ *
++ * @param ev - Any transaction stream event.
++ * @returns Whether the event carries an MPTokenIssuanceCreate.
++ */
++function isIssuanceCreateEvent(
++  ev: TransactionStream,
++): ev is TransactionStream<MPTokenIssuanceCreate> {
++  return ev.tx_json?.TransactionType === 'MPTokenIssuanceCreate'
++}
++
++describe('Response narrowing by request', function () {
++  let testContext: XrplTestContext
++
++  beforeEach(async () => {
++    testContext = await setupClient()
++  })
++  afterEach(async () => teardownClient(testContext))
++
++  describe('ledger_entry', function () {
++    beforeEach(() => {
++      testContext.mockRippled!.addResponse('ledger_entry', (req) => {
++        const node = 'mptoken' in req ? mptoken : issuance
++        return {
++          id: req.id,
++          type: 'response',
++          status: 'success',
++          result: {
++            index: node.index,
++            ledger_current_index: 30,
++            validated: false,
++            node,
++          },
++        }
++      })
++    })
++
++    it('narrows node to MPTokenIssuance for an mpt_issuance lookup', async function () {
++      const res = await testContext.client.request({
++        command: 'ledger_entry',
++        mpt_issuance: ISSUANCE_ID,
++      })
++      // No cast, no LedgerEntryType check.
++      assert.equal(res.result.node.MPTokenMetadata, '7B7D')
++      assert.equal(res.result.node.mpt_issuance_id, ISSUANCE_ID)
++      assert.isTrue(typeIs<Equals<typeof res.result.node, MPTokenIssuance>>())
++      // @ts-expect-error -- Balance is an AccountRoot field, not an issuance field
++      assert.isUndefined(res.result.node.Balance)
++    })
++
++    it('narrows node to MPToken for an mptoken lookup', async function () {
++      const res = await testContext.client.request({
++        command: 'ledger_entry',
++        mptoken: { mpt_issuance_id: ISSUANCE_ID, account: HOLDER },
++      })
++      assert.equal(res.result.node.MPTokenIssuanceID, ISSUANCE_ID)
++      assert.isTrue(
++        typeIs<Equals<typeof res.result.node, LedgerEntry.MPToken>>(),
++      )
++    })
++
++    it('narrows node to AccountRoot for an account_root lookup', async function () {
++      const res = await testContext.client.request({
++        command: 'ledger_entry',
++        account_root: ISSUER,
++      })
++      assert.exists(res.result.node.index)
++      assert.isTrue(
++        typeIs<Equals<typeof res.result.node, LedgerEntry.AccountRoot>>(),
++      )
++    })
++
++    it('keeps the LedgerEntry union for index and mixed lookups', async function () {
++      const byIndex = await testContext.client.request({
++        command: 'ledger_entry',
++        index: issuance.index,
++      })
++      assert.isTrue(
++        typeIs<Equals<typeof byIndex.result.node, LedgerEntry.LedgerEntry>>(),
++      )
++      assert(byIndex.result.node.LedgerEntryType === 'MPTokenIssuance')
++      assert.equal(byIndex.result.node.mpt_issuance_id, ISSUANCE_ID)
++
++      const mixed = await testContext.client.request({
++        command: 'ledger_entry',
++        mpt_issuance: ISSUANCE_ID,
++        offer: 'ABCDEF',
++      })
++      assert.exists(mixed.result.node)
++      assert.isTrue(
++        typeIs<Equals<typeof mixed.result.node, LedgerEntry.LedgerEntry>>(),
++      )
++
++      const bridge = await testContext.client.request({
++        command: 'ledger_entry',
++        bridge_account: ISSUER,
++        bridge: {
++          LockingChainDoor: ISSUER,
++          LockingChainIssue: { currency: 'XRP' },
++          IssuingChainDoor: HOLDER,
++          IssuingChainIssue: { currency: 'XRP' },
++        },
++      })
++      assert.exists(bridge.result.node)
++      assert.isTrue(
++        typeIs<Equals<typeof bridge.result.node, LedgerEntry.Bridge>>(),
++      )
++    })
++
++    it('still returns node_binary for binary lookups', async function () {
++      testContext.mockRippled!.addResponse('ledger_entry', (req) => ({
++        id: req.id,
++        type: 'response',
++        status: 'success',
++        result: {
++          index: issuance.index,
++          ledger_current_index: 30,
++          node_binary: '1100',
++        },
++      }))
++      const res = await testContext.client.request({
++        command: 'ledger_entry',
++        mpt_issuance: ISSUANCE_ID,
++        binary: true,
++      })
++      assert.equal(res.result.node_binary, '1100')
++      assert.isTrue(typeIs<Equals<typeof res.result.node_binary, string>>())
++    })
++  })
++
++  describe('account_objects', function () {
++    beforeEach(() => {
++      testContext.mockRippled!.addResponse('account_objects', (req) => ({
++        id: req.id,
++        type: 'response',
++        status: 'success',
++        result: {
++          account: req.account,
++          account_objects: req.type === 'mptoken' ? [mptoken] : [issuance],
++          ledger_current_index: 30,
++          validated: false,
++        },
++      }))
++    })
++
++    it('narrows account_objects to MPTokenIssuance[] for type mpt_issuance', async function () {
++      const res = await testContext.client.request({
++        command: 'account_objects',
++        account: ISSUER,
++        type: 'mpt_issuance',
++      })
++      assert.equal(res.result.account_objects[0].MaximumAmount, '1000')
++      assert.isTrue(
++        typeIs<Equals<typeof res.result.account_objects, MPTokenIssuance[]>>(),
++      )
++    })
++
++    it('narrows account_objects to MPToken[] for type mptoken', async function () {
++      const res = await testContext.client.request({
++        command: 'account_objects',
++        account: HOLDER,
++        type: 'mptoken',
++      })
++      assert.equal(res.result.account_objects[0].MPTokenIssuanceID, ISSUANCE_ID)
++      assert.isTrue(
++        typeIs<
++          Equals<typeof res.result.account_objects, LedgerEntry.MPToken[]>
++        >(),
++      )
++    })
++
++    it('keeps the AccountObject union without a type filter', async function () {
++      const res = await testContext.client.request({
++        command: 'account_objects',
++        account: ISSUER,
++      })
++      assert.lengthOf(res.result.account_objects, 1)
++      assert.isTrue(
++        typeIs<Equals<typeof res.result.account_objects, AccountObject[]>>(),
++      )
++      // The narrowed response is still assignable to the plain response type.
++      const plain: AccountObjectsResponse = await testContext.client.request({
++        command: 'account_objects',
++        account: ISSUER,
++        type: 'mpt_issuance',
++      })
++      assert.lengthOf(plain.result.account_objects, 1)
++    })
++
++    it('narrows requestAll pages the same way', async function () {
++      const pages = await testContext.client.requestAll({
++        command: 'account_objects',
++        account: ISSUER,
++        type: 'mpt_issuance',
++      })
++      assert.equal(
++        pages[0].result.account_objects[0].mpt_issuance_id,
++        ISSUANCE_ID,
++      )
++      assert.isTrue(
++        typeIs<
++          Equals<
++            (typeof pages)[number]['result']['account_objects'],
++            MPTokenIssuance[]
++          >
++        >(),
++      )
++    })
++  })
++
++  describe('transaction stream and account_tx', function () {
++    it('correlates meta with tx_json through TransactionStream<T>', async function () {
++      const seen = await new Promise<string | undefined>((resolve) => {
++        testContext.client.on('transaction', (ev) => {
++          if (isIssuanceCreateEvent(ev)) {
++            resolve(ev.meta?.mpt_issuance_id)
++          }
++        })
++        // @ts-expect-error Using private method for testing
++        testContext.client.connection.onMessage(
++          JSON.stringify({
++            type: 'transaction',
++            status: 'closed',
++            engine_result: 'tesSUCCESS',
++            engine_result_code: 0,
++            engine_result_message: 'The transaction was applied.',
++            ledger_index: 30,
++            validated: true,
++            tx_json: { ...issuanceCreate, hash: TX_HASH },
++            meta: issuanceCreateMeta,
++          }),
++        )
++      })
++      assert.equal(seen, ISSUANCE_ID)
++
++      // The default type argument is unchanged, so existing code keeps the
++      // full `Transaction` union.
++      assert.isTrue(
++        typeIs<
++          Equals<
++            NonNullable<TransactionStream['meta']>,
++            // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-arguments -- asserts the default argument
++            TransactionMetadata<Transaction>
++          >
++        >(),
++      )
++    })
++
++    it('correlates meta with tx_json through AccountTxTransaction<2, T>', async function () {
++      testContext.mockRippled!.addResponse('account_tx', (req) => ({
++        id: req.id,
++        type: 'response',
++        status: 'success',
++        result: {
++          account: req.account,
++          ledger_index_min: 1,
++          ledger_index_max: 30,
++          limit: 10,
++          transactions: [
++            {
++              ledger_index: 30,
++              hash: TX_HASH,
++              validated: true,
++              tx_json: issuanceCreate,
++              meta: issuanceCreateMeta,
++            },
++          ],
++          validated: true,
++        },
++      }))
++      const res = await testContext.client.request({
++        command: 'account_tx',
++        account: ISSUER,
++      })
++      const [row] = res.result.transactions
++      if (row.tx_json?.TransactionType === 'MPTokenIssuanceCreate') {
++        const created = row as AccountTxTransaction<2, MPTokenIssuanceCreate>
++        assert(typeof created.meta !== 'string')
++        assert.equal(created.meta.mpt_issuance_id, ISSUANCE_ID)
++      } else {
++        assert.fail('expected an MPTokenIssuanceCreate row')
++      }
++    })
++  })
++
++  describe('api_version inference', function () {
++    beforeEach(() => {
++      testContext.mockRippled!.addResponse('tx', (req) => ({
++        id: req.id,
++        type: 'response',
++        status: 'success',
++        result:
++          req.api_version === 1
++            ? {
++                ...issuanceCreate,
++                hash: TX_HASH,
++                ledger_index: 30,
++                meta: issuanceCreateMeta,
++                validated: true,
++              }
++            : {
++                hash: TX_HASH,
++                ledger_index: 30,
++                tx_json: issuanceCreate,
++                meta: issuanceCreateMeta,
++                validated: true,
++              },
++      }))
++    })
++
++    it('types a request with api_version 1 as the v1 response', async function () {
++      const res = await testContext.client.request({
++        command: 'tx',
++        transaction: TX_HASH,
++        api_version: 1,
++      })
++      assert.isTrue(typeIs<Equals<typeof res, TxV1Response>>())
++      // v1 puts the transaction fields at the top level of `result`.
++      assert.equal(res.result.Account, ISSUER)
++      assert.isUndefined(res.result.meta_blob)
++    })
++
++    it('defaults to the v2 response when api_version is unset', async function () {
++      const res = await testContext.client.request({
++        command: 'tx',
++        transaction: TX_HASH,
++      })
++      assert.isTrue(typeIs<Equals<typeof res, TxResponse>>())
++      assert.equal(res.result.tx_json.Account, ISSUER)
++    })
++
++    it('still accepts explicit type arguments', async function () {
++      const res = await testContext.client.request<TxRequest, 1>({
++        command: 'tx',
++        transaction: TX_HASH,
++        api_version: 1,
++      })
++      assert.isTrue(typeIs<Equals<typeof res, TxV1Response>>())
++      assert.equal(res.result.Account, ISSUER)
++    })
++  })
++})

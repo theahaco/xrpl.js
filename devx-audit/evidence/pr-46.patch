@@ -1,0 +1,392 @@
+diff --git a/packages/xrpl/HISTORY.md b/packages/xrpl/HISTORY.md
+index 81df487f97..4c1f857dd2 100644
+--- a/packages/xrpl/HISTORY.md
++++ b/packages/xrpl/HISTORY.md
+@@ -4,8 +4,12 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
+ 
+ ## Unreleased
+ 
++### BREAKING CHANGES
++* `BaseTransaction` no longer extends `Record<string, unknown>`, so every transaction interface (`Payment`, `MPTokenIssuanceSet`, ...) is now strict: `keyof` is the literal field union, `Omit`/`Pick`/`Partial` work, and object literals with unknown field names (typos included) fail to compile. Code that assigned arbitrary extra keys to a typed transaction, or read unmodelled fields off a `Transaction`, must now use the new `LenientTransaction` type (`Transaction & Record<string, unknown>`), an explicit `Payment & Record<string, unknown>` style intersection, or a narrowing cast (for example `signAsSponsor(...).tx as Payment`). `validate()` accepts `BaseTransaction | Record<string, unknown>`, so typed transactions can be passed to it without a cast.
++
+ ### Added
+ * Add `LendingProtocolV1_1` support.
++* Add `LenientTransaction` (`Transaction & Record<string, unknown>`) for forward-compatible boundaries where a transaction may carry fields this library does not model yet.
+ ## 5.2.0 (2026-09-11)
+ 
+ ### BREAKING CHANGES
+diff --git a/packages/xrpl/src/Wallet/batchSigner.ts b/packages/xrpl/src/Wallet/batchSigner.ts
+index 84514628c6..0c4434535d 100644
+--- a/packages/xrpl/src/Wallet/batchSigner.ts
++++ b/packages/xrpl/src/Wallet/batchSigner.ts
+@@ -92,8 +92,7 @@ export function signMultiBatch(
+   /*
+    * This will throw a more clear error for JS users if the supplied transaction has incorrect formatting
+    */
+-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- validate does not accept Transaction type
+-  validate(transaction as unknown as Record<string, unknown>)
++  validate(transaction)
+ 
+   // An account must sign the Batch if it authorizes an inner transaction or is
+   // the `Counterparty` of one.
+@@ -104,11 +103,12 @@ export function signMultiBatch(
+     involvedAccounts.add(
+       raw.RawTransaction.Delegate ?? raw.RawTransaction.Account,
+     )
+-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Counterparty only exists on some inner tx types
+-    const counterparty = (raw.RawTransaction as Record<string, unknown>)
+-      .Counterparty
+-    if (typeof counterparty === 'string') {
+-      involvedAccounts.add(counterparty)
++    // Counterparty only exists on some inner tx types (e.g. LoanSet)
++    if (
++      'Counterparty' in raw.RawTransaction &&
++      typeof raw.RawTransaction.Counterparty === 'string'
++    ) {
++      involvedAccounts.add(raw.RawTransaction.Counterparty)
+     }
+   })
+   if (!involvedAccounts.has(batchAccount)) {
+diff --git a/packages/xrpl/src/Wallet/counterpartySigner.ts b/packages/xrpl/src/Wallet/counterpartySigner.ts
+index 1f76bbe9f1..2a57efe743 100644
+--- a/packages/xrpl/src/Wallet/counterpartySigner.ts
++++ b/packages/xrpl/src/Wallet/counterpartySigner.ts
+@@ -64,8 +64,7 @@ export function signLoanSetByCounterparty(
+     )
+   }
+ 
+-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- validate does not accept Transaction type
+-  validate(tx as unknown as Record<string, unknown>)
++  validate(tx)
+ 
+   let multisignAddress: boolean | string = false
+   if (typeof opts.multisign === 'string') {
+@@ -144,8 +143,7 @@ export function combineLoanSetCounterpartySigners(
+     /*
+      * This will throw a more clear error for JS users if any of the supplied transactions has incorrect formatting
+      */
+-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- validate does not accept Transaction type
+-    validate(tx as unknown as Record<string, unknown>)
++    validate(tx)
+ 
+     if (tx.TransactionType !== 'LoanSet') {
+       throw new ValidationError('Transaction must be a LoanSet transaction.')
+diff --git a/packages/xrpl/src/Wallet/index.ts b/packages/xrpl/src/Wallet/index.ts
+index 32bae138cf..45d4073978 100644
+--- a/packages/xrpl/src/Wallet/index.ts
++++ b/packages/xrpl/src/Wallet/index.ts
+@@ -405,8 +405,7 @@ export class Wallet {
+     /*
+      * This will throw a more clear error for JS users if the supplied transaction has incorrect formatting
+      */
+-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- validate does not accept Transaction type
+-    validate(tx as unknown as Record<string, unknown>)
++    validate(tx)
+     if (hasFlag(tx, GlobalFlags.tfInnerBatchTxn, 'tfInnerBatchTxn')) {
+       throw new ValidationError('Cannot sign a Batch inner transaction.')
+     }
+diff --git a/packages/xrpl/src/Wallet/signer.ts b/packages/xrpl/src/Wallet/signer.ts
+index 205f64bc7d..cdc5b4beb1 100644
+--- a/packages/xrpl/src/Wallet/signer.ts
++++ b/packages/xrpl/src/Wallet/signer.ts
+@@ -34,8 +34,7 @@ function multisign(transactions: Array<Transaction | string>): string {
+     /*
+      * This will throw a more clear error for JS users if any of the supplied transactions has incorrect formatting
+      */
+-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- validate does not accept Transaction type
+-    validate(tx as unknown as Record<string, unknown>)
++    validate(tx)
+     if (tx.Signers == null || tx.Signers.length === 0) {
+       throw new ValidationError(
+         "For multisigning all transactions must include a Signers field containing an array of signatures. You may have forgotten to pass the 'forMultisign' parameter when signing.",
+diff --git a/packages/xrpl/src/Wallet/sponsorSigner.ts b/packages/xrpl/src/Wallet/sponsorSigner.ts
+index 7640f3d380..ff6a46966e 100644
+--- a/packages/xrpl/src/Wallet/sponsorSigner.ts
++++ b/packages/xrpl/src/Wallet/sponsorSigner.ts
+@@ -133,8 +133,7 @@ export function signAsSponsor(
+   }
+ 
+   // Validate the final signed transaction (after SponsorSignature is attached)
+-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- validate does not accept Transaction type
+-  validate(tx as unknown as Record<string, unknown>)
++  validate(tx)
+ 
+   const serialized = encode(tx)
+   return {
+@@ -176,8 +175,7 @@ export function combineSponsorSigners(
+     /*
+      * This will throw a more clear error for JS users if any of the supplied transactions has incorrect formatting
+      */
+-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- validate does not accept Transaction type
+-    validate(tx as unknown as Record<string, unknown>)
++    validate(tx)
+ 
+     if (
+       tx.SponsorSignature?.Signers == null ||
+diff --git a/packages/xrpl/src/models/transactions/common.ts b/packages/xrpl/src/models/transactions/common.ts
+index 4bb5d1b6dc..b105fb5b44 100644
+--- a/packages/xrpl/src/models/transactions/common.ts
++++ b/packages/xrpl/src/models/transactions/common.ts
+@@ -667,7 +667,7 @@ export enum SponsorFlags {
+ /**
+  * Every transaction has the same set of common fields.
+  */
+-export interface BaseTransaction extends Record<string, unknown> {
++export interface BaseTransaction {
+   /** The unique address of the transaction sender. */
+   Account: Account
+   /**
+diff --git a/packages/xrpl/src/models/transactions/index.ts b/packages/xrpl/src/models/transactions/index.ts
+index 0b9b1676eb..e08361c4bf 100644
+--- a/packages/xrpl/src/models/transactions/index.ts
++++ b/packages/xrpl/src/models/transactions/index.ts
+@@ -7,6 +7,7 @@ export {
+ } from './common'
+ export {
+   validate,
++  LenientTransaction,
+   PseudoTransaction,
+   SubmittableTransaction,
+   TransactionAndMetadata,
+diff --git a/packages/xrpl/src/models/transactions/transaction.ts b/packages/xrpl/src/models/transactions/transaction.ts
+index 3bfd01ed4b..1f30c5e492 100644
+--- a/packages/xrpl/src/models/transactions/transaction.ts
++++ b/packages/xrpl/src/models/transactions/transaction.ts
+@@ -269,6 +269,18 @@ export type PseudoTransaction = EnableAmendment | SetFee | UNLModify
+  */
+ export type Transaction = SubmittableTransaction | PseudoTransaction
+ 
++/**
++ * A transaction that may carry fields the models do not (yet) declare.
++ *
++ * `BaseTransaction` has no index signature, so `keyof`, `Omit`, `Partial` and
++ * excess-property checks work on every transaction type. Use this type at
++ * forward-compatible boundaries instead: decoded blobs, ledger responses, or
++ * literals that must carry a field newer than this library.
++ *
++ * @category Transaction Models
++ */
++export type LenientTransaction = Transaction & Record<string, unknown>
++
+ /**
+  * @category Transaction Models
+  */
+@@ -287,8 +299,10 @@ export interface TransactionAndMetadata<
+  * @throws ValidationError When the Transaction is malformed.
+  * @category Utilities
+  */
+-export function validate(transaction: Record<string, unknown>): void {
+-  const tx = { ...transaction }
++export function validate(
++  transaction: BaseTransaction | Record<string, unknown>,
++): void {
++  const tx: Record<string, unknown> = { ...transaction }
+ 
+   // should already be done in the tx-specific validation, but doesn't hurt to check again
+   validateBaseTransaction(tx)
+diff --git a/packages/xrpl/src/sugar/autofill.ts b/packages/xrpl/src/sugar/autofill.ts
+index 6610ee6d5d..1a5fd2cc55 100644
+--- a/packages/xrpl/src/sugar/autofill.ts
++++ b/packages/xrpl/src/sugar/autofill.ts
+@@ -11,7 +11,7 @@ import {
+   AccountObjectsRequest,
+   LedgerEntryRequest,
+ } from '../models/methods'
+-import { Batch, Payment, Transaction } from '../models/transactions'
++import { Batch, LoanSet, Payment, Transaction } from '../models/transactions'
+ import { Account, areAddressesEqual } from '../models/transactions/common'
+ import { xrpToDrops } from '../utils'
+ 
+@@ -223,11 +223,12 @@ function getClassicAccountAndTag(
+  * @param fieldName - The name of the field to convert.export
+  */
+ function convertToClassicAddress(tx: Transaction, fieldName: string): void {
+-  const account = tx[fieldName]
++  // The address field is only present on some transaction types.
++  const record = tx as unknown as Record<string, unknown>
++  const account = record[fieldName]
+   if (typeof account === 'string') {
+     const { classicAccount } = getClassicAccountAndTag(account)
+-    // eslint-disable-next-line no-param-reassign -- param reassign is safe
+-    tx[fieldName] = classicAccount
++    record[fieldName] = classicAccount
+   }
+ }
+ 
+@@ -289,11 +290,12 @@ async function fetchOwnerReserveFee(client: Client): Promise<BigNumber> {
+  */
+ async function fetchCounterPartySignersCount(
+   client: Client,
+-  tx: Transaction,
++  tx: LoanSet,
+ ): Promise<number> {
+-  let counterParty: Account | undefined = tx.Counterparty as Account | undefined
++  let counterParty: Account | undefined = tx.Counterparty
+   // Loan Borrower initiated the transaction, Loan Broker is the counterparty.
+   if (counterParty == null) {
++    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defends against JS callers omitting the field
+     if (tx.LoanBrokerID == null) {
+       throw new ValidationError(
+         'LoanBrokerID is required for LoanSet transaction',
+diff --git a/packages/xrpl/test/models/transactionTypes.test.ts b/packages/xrpl/test/models/transactionTypes.test.ts
+new file mode 100644
+index 0000000000..b2101fc881
+--- /dev/null
++++ b/packages/xrpl/test/models/transactionTypes.test.ts
+@@ -0,0 +1,101 @@
++import { assert } from 'chai'
++
++import {
++  LenientTransaction,
++  MPTokenIssuanceSet,
++  MPTokenIssuanceSetFlags,
++  Payment,
++  validate,
++} from '../../src'
++
++/**
++ * Compile-time checks for the transaction models.
++ *
++ * ts-jest type-checks this file, so a regression here fails the suite before
++ * any test runs. The `assert` calls only give jest something to execute; the
++ * `@ts-expect-error` directives are the real assertions: each one fails to
++ * compile ("Unused '@ts-expect-error' directive") as soon as the line below
++ * it stops being a type error.
++ */
++
++// `true` iff X and Y are the same type.
++type Equal<X, Y> =
++  (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2
++    ? true
++    : false
++
++const ACCOUNT = 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm'
++const HOLDER = 'rajgkBmMxmz161r8bWYH7CQAFZP5bA9oSG'
++const TOKEN_ID = '000004C463C52827307480341125DA0577DEFC38405B0E3E'
++
++describe('transaction models are strict', function () {
++  it('keyof is the literal field union, not string | number', function () {
++    const keyofIsNotString: Equal<
++      string extends keyof MPTokenIssuanceSet ? true : false,
++      false
++    > = true
++    const holderIsAKey: 'Holder' extends keyof MPTokenIssuanceSet
++      ? true
++      : false = true
++    // @ts-expect-error -- 'not-a-field' is not a key of MPTokenIssuanceSet
++    const notAKey: keyof MPTokenIssuanceSet = 'not-a-field'
++
++    assert.deepEqual([keyofIsNotString, holderIsAKey], [true, true])
++    assert.equal(notAKey, 'not-a-field')
++  })
++
++  it('rejects unknown field names on a transaction literal', function () {
++    const typo: MPTokenIssuanceSet = {
++      TransactionType: 'MPTokenIssuanceSet',
++      Account: ACCOUNT,
++      MPTokenIssuanceID: TOKEN_ID,
++      // @ts-expect-error -- 'Hodler' is a typo of 'Holder'; excess-property check must catch it
++      Hodler: HOLDER,
++    }
++    const partialTypo: Partial<Payment> = {
++      // @ts-expect-error -- 'Destinaton' is a typo of 'Destination'
++      Destinaton: HOLDER,
++    }
++
++    assert.equal(typo.TransactionType, 'MPTokenIssuanceSet')
++    assert.isUndefined(partialTypo.Destination)
++  })
++
++  it('Omit removes the key and keeps the other fields required', function () {
++    const omitted: Omit<MPTokenIssuanceSet, 'Holder'> = {
++      TransactionType: 'MPTokenIssuanceSet',
++      Account: ACCOUNT,
++      MPTokenIssuanceID: TOKEN_ID,
++      // @ts-expect-error -- Holder was omitted
++      Holder: HOLDER,
++    }
++    // @ts-expect-error -- Account and TransactionType are still required
++    const missingRequired: Omit<MPTokenIssuanceSet, 'MPTokenIssuanceID'> = {}
++
++    assert.equal(omitted.MPTokenIssuanceID, TOKEN_ID)
++    assert.isObject(missingRequired)
++  })
++
++  it('LenientTransaction keeps the escape hatch for unmodelled fields', function () {
++    const lenient: LenientTransaction = {
++      TransactionType: 'MPTokenIssuanceSet',
++      Account: ACCOUNT,
++      MPTokenIssuanceID: TOKEN_ID,
++      FieldFromAFutureAmendment: 1,
++    }
++
++    assert.equal(lenient.FieldFromAFutureAmendment, 1)
++  })
++
++  it('validate() accepts a typed transaction without a cast', function () {
++    const tx: MPTokenIssuanceSet = {
++      TransactionType: 'MPTokenIssuanceSet',
++      Account: ACCOUNT,
++      MPTokenIssuanceID: TOKEN_ID,
++      Holder: HOLDER,
++      Flags: MPTokenIssuanceSetFlags.tfMPTLock,
++    }
++
++    assert.doesNotThrow(() => validate(tx))
++  })
++})
+diff --git a/packages/xrpl/test/models/vaultWithdraw.test.ts b/packages/xrpl/test/models/vaultWithdraw.test.ts
+index 3fddbd9b12..90defc02fe 100644
+--- a/packages/xrpl/test/models/vaultWithdraw.test.ts
++++ b/packages/xrpl/test/models/vaultWithdraw.test.ts
+@@ -57,7 +57,6 @@ describe('VaultWithdraw', function () {
+ 
+   it('verifies valid VaultWithdraw with Destination', function () {
+     tx.Destination = 'rfmDuhDyLGgx94qiwf3YF8BUV5j6KSvE8'
+-    assert.doesNotThrow(() => validateVaultWithdraw(tx))
+     assert.doesNotThrow(() => validate(tx))
+     assertValid(tx)
+   })
+diff --git a/packages/xrpl/test/wallet/sponsorSigner.test.ts b/packages/xrpl/test/wallet/sponsorSigner.test.ts
+index e4d08ba494..dc7a49b213 100644
+--- a/packages/xrpl/test/wallet/sponsorSigner.test.ts
++++ b/packages/xrpl/test/wallet/sponsorSigner.test.ts
+@@ -93,10 +93,8 @@ describe('sponsorSigner', function () {
+     }, /Transaction Sponsor field .* does not match the signing wallet address/u)
+ 
+     // Test successful single signature
+-    const { tx: sponsorSignedTx } = signAsSponsor(
+-      sponsorWallet,
+-      signedPayment as Payment,
+-    )
++    const { tx } = signAsSponsor(sponsorWallet, signedPayment as Payment)
++    const sponsorSignedTx = tx as Payment
+ 
+     // Verify structure and key fields. Signatures are deterministic
+     // (Ed25519), so the sponsor signature is pinned exactly below to catch any
+@@ -237,10 +235,8 @@ describe('sponsorSigner', function () {
+     }, 'Sponsor transactions are not the same.')
+ 
+     // Test successful combination
+-    const { tx: combinedTx } = combineSponsorSigners([
+-      tx1 as Payment,
+-      tx2 as Payment,
+-    ])
++    const { tx } = combineSponsorSigners([tx1 as Payment, tx2 as Payment])
++    const combinedTx = tx as Payment
+ 
+     // Verify structure. Signatures are deterministic (Ed25519), so each
+     // sponsor signer's signature is pinned exactly below to catch any
+@@ -320,7 +316,11 @@ describe('sponsorSigner', function () {
+       const sponsorAddress = 'rBJMcbqnAaxcUeEPF7WiaoHCtFiTmga7un'
+       const sponsorFlags = SponsorFlags.spfSponsorFee
+ 
+-      const result = addPreFundedSponsor(payment, sponsorAddress, sponsorFlags)
++      const result = addPreFundedSponsor(
++        payment,
++        sponsorAddress,
++        sponsorFlags,
++      ) as Payment
+ 
+       assert.equal(result.Sponsor, sponsorAddress)
+       assert.equal(result.SponsorFlags, sponsorFlags)

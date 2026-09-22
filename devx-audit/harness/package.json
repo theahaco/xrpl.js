@@ -1,0 +1,13 @@
+{
+  "name": "aha-xrpl-devx-audit",
+  "private": true,
+  "type": "module",
+  "description": "Pinned published baseline and reproducible developer-experience probes",
+  "dependencies": {
+    "xrpl": "5.3.0"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/node": "22.18.6"
+  }
+}

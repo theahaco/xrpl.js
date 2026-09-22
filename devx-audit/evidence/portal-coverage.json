@@ -1,0 +1,229 @@
+[
+  {
+    "family": "get-started",
+    "source": "_code-samples/get-started/ts/get-acct-info.ts",
+    "baseline": "87b3007547539741d99425f43a0796802c834fc3",
+    "scope": "source+baseline compile+improved compile",
+    "implementationStatus": "revised Node and browser",
+    "baselinePublishedSDK": "5.3.0",
+    "compiler": "5.9.3",
+    "baselineCompilePassed": true,
+    "networkExecution": "not performed by portal reviewer",
+    "findings": [
+      {
+        "id": "P-01",
+        "severity": "medium",
+        "line": 71,
+        "evidence": "validate(payment as unknown as Record<string, unknown>)",
+        "observation": "A double assertion bypasses the typed boundary; the prose incorrectly equates local validation with server checks.",
+        "recommendation": "satisfies Payment retains object shape; validate(payment) compiles without assertion; docs distinguish local constraints from ledger state."
+      },
+      {
+        "id": "P-02",
+        "severity": "medium",
+        "line": 53,
+        "evidence": "const response: AccountInfoResponse",
+        "observation": "Redundant response and Wallet annotations obscure the SDK inference developers should learn to rely on.",
+        "recommendation": "Remove response/Wallet annotations and use typed object guidance at the input."
+      },
+      {
+        "id": "P-03",
+        "severity": "high",
+        "line": 85,
+        "evidence": "client.request({",
+        "observation": "Subscription promise is unobserved, result code is not checked, and exceptions before the delayed disconnect can leave connections open.",
+        "recommendation": "Await subscription; inspect transaction result; finally disconnect; only report success after tesSUCCESS."
+      }
+    ]
+  },
+  {
+    "family": "create-amm",
+    "source": "_code-samples/create-amm/ts/lib/amm.ts",
+    "baseline": "87b3007547539741d99425f43a0796802c834fc3",
+    "scope": "source+baseline compile+guided compile",
+    "implementationStatus": "guided example added; broad original retained",
+    "baselinePublishedSDK": "5.3.0",
+    "compiler": "5.9.3",
+    "baselineCompilePassed": true,
+    "networkExecution": "not performed by portal reviewer",
+    "findings": [
+      {
+        "id": "P-04",
+        "severity": "high",
+        "line": 1,
+        "evidence": "var xrpl = require('xrpl')",
+        "observation": "The SDK and client/wallet parameters become any, removing editor guidance despite a .ts extension and strict compiler config.",
+        "recommendation": "New guided AMM uses SDK imports, typed wallets/clients, public transaction/amount types and inferred responses."
+      },
+      {
+        "id": "P-05",
+        "severity": "high",
+        "line": 733,
+        "evidence": "const metaData2: any = issuer_setup_result.result.meta!",
+        "observation": "Trust-line and issuance steps consult metadata from earlier transactions; multiple catches log errors and continue.",
+        "recommendation": "Guided journey checks each submission independently and propagates failures before continuing."
+      },
+      {
+        "id": "P-06",
+        "severity": "medium",
+        "line": 7,
+        "evidence": "\"currency\": string | null",
+        "observation": "Custom nullable token shapes need non-null assertions and hide the public Amount/Currency models; request command is widened to string.",
+        "recommendation": "Guided journey demonstrates XRP drops versus issued amount as the SDK union; literal request uses satisfies AMMInfoRequest."
+      }
+    ]
+  },
+  {
+    "family": "claim-payment-channel",
+    "source": "_code-samples/claim-payment-channel/js/claimPayChannel.ts",
+    "baseline": "87b3007547539741d99425f43a0796802c834fc3",
+    "scope": "source+baseline compile",
+    "implementationStatus": "reviewed; no edits",
+    "baselinePublishedSDK": "5.3.0",
+    "compiler": "5.9.3",
+    "baselineCompilePassed": true,
+    "networkExecution": "not performed by portal reviewer",
+    "findings": [
+      {
+        "id": "P-07",
+        "severity": "medium",
+        "line": 31,
+        "evidence": "Amount: '100', // 10 XRP",
+        "observation": "Comment misstates drops by five orders of magnitude; 100 drops is 0.0001 XRP, not 10 XRP.",
+        "recommendation": "Use xrpToDrops with an explicit XRP amount."
+      },
+      {
+        "id": "P-08",
+        "severity": "high",
+        "line": 68,
+        "evidence": "const channelClaimResponse = await client.submit",
+        "observation": "The example claims from the destination without a signed channel claim or Balance, then reads balances without waiting for validation; success is not checked.",
+        "recommendation": "Rework around a valid authorized claim and tesSUCCESS; use validated results before balance conclusions. Runtime behavior not exercised in this audit."
+      },
+      {
+        "id": "P-09",
+        "severity": "medium",
+        "line": 62,
+        "evidence": "paymentChannelResponse.result.tx_json.Sequence ?? 0",
+        "observation": "A missing sequence silently becomes zero when deriving the channel ID.",
+        "recommendation": "Require/derive the actual creation sequence or retrieve the created channel from validated metadata."
+      }
+    ]
+  },
+  {
+    "family": "get-tx",
+    "source": "_code-samples/get-tx/js/getTransaction.ts",
+    "baseline": "87b3007547539741d99425f43a0796802c834fc3",
+    "scope": "source+baseline compile",
+    "implementationStatus": "reviewed; no edits",
+    "baselinePublishedSDK": "5.3.0",
+    "compiler": "5.9.3",
+    "baselineCompilePassed": true,
+    "networkExecution": "not performed by portal reviewer",
+    "findings": [
+      {
+        "id": "P-10",
+        "severity": "medium",
+        "line": 19,
+        "evidence": "if (transactions) {",
+        "observation": "An empty transaction array is truthy; the following transactions[0] can be undefined.",
+        "recommendation": "Check for an available first hash and show the empty-ledger outcome."
+      },
+      {
+        "id": "P-11",
+        "severity": "medium",
+        "line": 41,
+        "evidence": "await client.disconnect()",
+        "observation": "Request/metadata errors bypass disconnect.",
+        "recommendation": "Own the connection in a finally block."
+      }
+    ]
+  },
+  {
+    "family": "partial-payment",
+    "source": "_code-samples/partial-payment/js/partialPayment.ts",
+    "baseline": "87b3007547539741d99425f43a0796802c834fc3",
+    "scope": "source+baseline compile",
+    "implementationStatus": "reviewed; no edits",
+    "baselinePublishedSDK": "5.3.0",
+    "compiler": "5.9.3",
+    "baselineCompilePassed": true,
+    "networkExecution": "not performed by portal reviewer",
+    "findings": [
+      {
+        "id": "P-12",
+        "severity": "high",
+        "line": 87,
+        "evidence": "console.log(\"Partial Payment response: \", submitResponse)",
+        "observation": "The partial-payment teaching example prints the response/balances but never explicitly explains or reads delivered_amount at the point where the user learns to confirm delivery.",
+        "recommendation": "Check tesSUCCESS and show delivered_amount, including unavailable and amount-kind handling; distinguish requested maximum from actual delivery."
+      },
+      {
+        "id": "P-13",
+        "severity": "medium",
+        "line": 95,
+        "evidence": "await client.disconnect()",
+        "observation": "Setup/issuance failures are not checked and exceptions skip cleanup.",
+        "recommendation": "Stop on failed setup transactions; finally disconnect."
+      }
+    ]
+  },
+  {
+    "family": "paths",
+    "source": "_code-samples/paths/js/paths.ts",
+    "baseline": "87b3007547539741d99425f43a0796802c834fc3",
+    "scope": "source+baseline compile+strict diagnostic",
+    "implementationStatus": "reviewed; no edits",
+    "baselinePublishedSDK": "5.3.0",
+    "compiler": "5.9.3",
+    "baselineCompilePassed": true,
+    "networkExecution": "not performed by portal reviewer",
+    "findings": [
+      {
+        "id": "P-14",
+        "severity": "high",
+        "line": 46,
+        "evidence": "await client.autofill(tx)",
+        "observation": "The returned prepared transaction is discarded and the original is signed. The SDK returns a new object.",
+        "recommendation": "const prepared = await client.autofill(tx); wallet.sign(prepared)."
+      },
+      {
+        "id": "P-15",
+        "severity": "medium",
+        "line": 35,
+        "evidence": "resp.result.alternatives[0].paths_computed",
+        "observation": "Assumes at least one route for hardcoded external accounts; strict/noUncheckedIndexedAccess catches the unchecked first element.",
+        "recommendation": "Handle no alternatives explicitly and use reproducible funded accounts/liquidity."
+      }
+    ]
+  },
+  {
+    "family": "reliable-tx-submission",
+    "source": "_code-samples/reliable-tx-submission/js/reliableTransactionSubmission.ts",
+    "baseline": "87b3007547539741d99425f43a0796802c834fc3",
+    "scope": "source+baseline compile",
+    "implementationStatus": "reviewed; no edits",
+    "baselinePublishedSDK": "5.3.0",
+    "compiler": "5.9.3",
+    "baselineCompilePassed": true,
+    "networkExecution": "not performed by portal reviewer",
+    "findings": [
+      {
+        "id": "P-16",
+        "severity": "high",
+        "line": 74,
+        "evidence": "console.log(\"Validated:\", txResponse.result.validated)",
+        "observation": "Reports validation and balances without checking the transaction result; ledger inclusion can be a tec failure.",
+        "recommendation": "Check parsed metadata.TransactionResult before declaring payment success."
+      },
+      {
+        "id": "P-17",
+        "severity": "medium",
+        "line": 80,
+        "evidence": "await client.disconnect();",
+        "observation": "Exceptions can bypass connection cleanup.",
+        "recommendation": "Use finally and failing process status."
+      }
+    ]
+  }
+]

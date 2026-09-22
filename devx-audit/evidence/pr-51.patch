@@ -1,0 +1,428 @@
+diff --git a/packages/xrpl/HISTORY.md b/packages/xrpl/HISTORY.md
+index 81df487f97..a636c7771b 100644
+--- a/packages/xrpl/HISTORY.md
++++ b/packages/xrpl/HISTORY.md
+@@ -4,8 +4,13 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
+ 
+ ## Unreleased
+ 
++### BREAKING CHANGES
++* `BaseRequest` no longer carries a `[x: string]: unknown` index signature, and `Client.request` now rejects any key that the command's request type does not declare. A misspelled key such as `ledger_indx` or `typ` used to compile and be silently ignored by the server; it is now a compile error (reported as `command: never` on the fallback overload). Migration: fix the key. To send a key that xrpl.js does not know about yet, assert the literal to the command's request type (`client.request({ command: 'ledger_entry', loan: id } as LedgerEntryRequest)`); the key is still sent. Requests that extend `BaseRequest` to add their own keys must now declare each key.
++
+ ### Added
+ * Add `LendingProtocolV1_1` support.
++* Add the admin-only `ledger_accept` method (`LedgerAcceptRequest` / `LedgerAcceptResponse`; stand-alone mode) to the typed request methods.
++* `Client.request` accepts commands that are not in the `Request` union (admin-only, Clio-only, or newly amended commands) and resolves them to `BaseResponse`, or to the response type passed as the second type argument (`client.request<MyRequest, MyResponse>(req)`), so callers no longer need `client.connection.request`.
+ ## 5.2.0 (2026-09-11)
+ 
+ ### BREAKING CHANGES
+diff --git a/packages/xrpl/src/client/index.ts b/packages/xrpl/src/client/index.ts
+index 1035b3a93b..9ce9ce99c0 100644
+--- a/packages/xrpl/src/client/index.ts
++++ b/packages/xrpl/src/client/index.ts
+@@ -35,12 +35,16 @@ import {
+   TxResponse,
+ } from '../models/methods'
+ import type {
++  BaseRequest,
++  BaseResponse,
+   RequestResponseMap,
+   RequestAllResponseMap,
+   MarkerRequest,
+   MarkerResponse,
++  StrictRequest,
+   SubmitResponse,
+   SimulateRequest,
++  UnknownCommandRequest,
+ } from '../models/methods'
+ import type { BookOffer, BookOfferCurrency } from '../models/methods/bookOffers'
+ import {
+@@ -339,6 +343,12 @@ class Client extends EventEmitter<EventTypes> {
+    * Makes a request to the client with the given command and
+    * additional request body parameters.
+    *
++   * A key that the command's request type does not declare is a compile
++   * error, so a misspelled key (`ledger_indx`, `typ`) cannot be silently
++   * ignored by the server. To send a key that xrpl.js does not know about
++   * yet, assert the literal to the command's request type
++   * (`{ ... } as LedgerEntryRequest`); the key is still sent.
++   *
+    * @category Network
+    * @param req - Request to send to the server.
+    * @returns The response from the server.
+@@ -356,13 +366,38 @@ class Client extends EventEmitter<EventTypes> {
+     R extends Request,
+     V extends APIVersion = typeof DEFAULT_API_VERSION,
+     T = RequestResponseMap<R, V>,
+-  >(req: R): Promise<T> {
++  >(req: StrictRequest<R>): Promise<T>
++
++  /**
++   * Makes a request with a command that xrpl.js has no types for: an
++   * admin-only command such as `log_level`, a Clio-only command, or a command
++   * added by a new amendment. The response is a {@link BaseResponse} unless a
++   * response type is given as the second type argument.
++   *
++   * @category Network
++   * @param req - Request to send to the server.
++   * @returns The response from the server.
++   *
++   * @example
++   * ```ts
++   * const response = await client.request({
++   *   command: 'log_level',
++   *   severity: 'debug',
++   * })
++   * console.log(response.result)
++   * ```
++   */
++  public async request<
++    R extends BaseRequest,
++    T extends BaseResponse = BaseResponse,
++  >(req: UnknownCommandRequest<R>): Promise<T>
++
++  public async request<R extends BaseRequest, T>(req: R): Promise<T> {
++    const account: unknown = 'account' in req ? req.account : undefined
+     const request = {
+       ...req,
+       account:
+-        typeof req.account === 'string'
+-          ? ensureClassicAddress(req.account)
+-          : undefined,
++        typeof account === 'string' ? ensureClassicAddress(account) : undefined,
+       api_version: req.api_version ?? this.apiVersion,
+     }
+     const response = await this.connection.request<R, T>(request)
+@@ -406,7 +441,7 @@ class Client extends EventEmitter<EventTypes> {
+         new NotFoundError('response does not have a next page'),
+       )
+     }
+-    const nextPageRequest = { ...req, marker: resp.result.marker }
++    const nextPageRequest: Request = { ...req, marker: resp.result.marker }
+     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Necessary for overloading
+     return this.request(nextPageRequest) as unknown as U
+   }
+diff --git a/packages/xrpl/src/models/methods/baseMethod.ts b/packages/xrpl/src/models/methods/baseMethod.ts
+index f264c2bd32..f56e56ca7f 100644
+--- a/packages/xrpl/src/models/methods/baseMethod.ts
++++ b/packages/xrpl/src/models/methods/baseMethod.ts
+@@ -3,7 +3,6 @@ import { LedgerIndex } from '../common'
+ import type { Request } from '.'
+ 
+ export interface BaseRequest {
+-  [x: string]: unknown
+   /**
+    * A unique value to identify this request. The response to this request uses
+    * the same id field. This way, even if responses arrive out of order, you
+diff --git a/packages/xrpl/src/models/methods/index.ts b/packages/xrpl/src/models/methods/index.ts
+index 1bcffa12af..4ad98686de 100644
+--- a/packages/xrpl/src/models/methods/index.ts
++++ b/packages/xrpl/src/models/methods/index.ts
+@@ -103,6 +103,7 @@ import {
+   LedgerRequestExpandedTransactionsBinary,
+   LedgerVersionResponseMap,
+ } from './ledger'
++import { LedgerAcceptRequest, LedgerAcceptResponse } from './ledgerAccept'
+ import { LedgerClosedRequest, LedgerClosedResponse } from './ledgerClosed'
+ import { LedgerCurrentRequest, LedgerCurrentResponse } from './ledgerCurrent'
+ import {
+@@ -263,6 +264,8 @@ type Request =
+   | GetAggregatePriceRequest
+   // Vault methods
+   | VaultInfoRequest
++  // admin methods (stand-alone mode)
++  | LedgerAcceptRequest
+ 
+ /**
+  * @category Responses
+@@ -325,6 +328,8 @@ type Response<Version extends APIVersion = typeof DEFAULT_API_VERSION> =
+   | GetAggregatePriceResponse
+   // Vault methods
+   | VaultInfoResponse
++  // admin methods (stand-alone mode)
++  | LedgerAcceptResponse
+ 
+ export type RequestResponseMap<
+   T,
+@@ -491,8 +496,46 @@ export type RequestResponseMap<
+   ? NFTHistoryResponse
+   : T extends VaultInfoRequest
+   ? VaultInfoResponse
++  : T extends LedgerAcceptRequest
++  ? LedgerAcceptResponse
+   : Response<Version>
+ 
++/**
++ * The keys of every member of a union, rather than only the keys shared by
++ * all of its members.
++ */
++export type KeysOfUnion<T> = T extends unknown ? keyof T : never
++
++/**
++ * `R`, with every key that the matching {@link Request} member does not
++ * declare typed as `never`.
++ *
++ * `Client.request` infers `R` from the request literal, and TypeScript does
++ * not apply excess-property checks to an inferred type parameter, so a
++ * misspelled key such as `ledger_indx` would otherwise compile and be
++ * silently ignored by the server. With this type it is a compile error
++ * instead. A request whose `command` is not in {@link Request} is left
++ * untouched; see {@link UnknownCommandRequest}.
++ */
++export type StrictRequest<R extends BaseRequest> = R & {
++  [K in Exclude<
++    keyof R,
++    KeysOfUnion<Extract<Request, { command: R['command'] }>>
++  >]?: never
++}
++
++/**
++ * `R`, accepted only when its `command` is not one of the commands in
++ * {@link Request}. Used by the `Client.request` overload that sends commands
++ * xrpl.js has no types for (admin-only, Clio-only, or newly amended
++ * commands), so that a typed command with a misspelled key is not routed
++ * through it: if `command` shows up as `never` in a compile error, the
++ * request literal has a key that its request type does not declare.
++ */
++export type UnknownCommandRequest<R extends BaseRequest> = R & {
++  command: R['command'] extends Request['command'] ? never : R['command']
++}
++
+ export type MarkerRequest = Request & {
+   limit?: number
+   marker?: unknown
+@@ -592,6 +635,9 @@ export {
+   LedgerEntryBinaryResponse,
+   LedgerEntryJsonResponse,
+   LedgerEntryResponse,
++  // admin methods (stand-alone mode)
++  LedgerAcceptRequest,
++  LedgerAcceptResponse,
+   // transaction methods with types
+   SimulateRequest,
+   SimulateResponse,
+diff --git a/packages/xrpl/src/models/methods/ledgerAccept.ts b/packages/xrpl/src/models/methods/ledgerAccept.ts
+new file mode 100644
+index 0000000000..08c54ff943
+--- /dev/null
++++ b/packages/xrpl/src/models/methods/ledgerAccept.ts
+@@ -0,0 +1,34 @@
++import { BaseRequest, BaseResponse } from './baseMethod'
++
++/**
++ * The `ledger_accept` method forces the server to close the current ledger
++ * and advance to the next one. Expects a response in the form of a
++ * {@link LedgerAcceptResponse}.
++ *
++ * @remarks Admin-only. Only available on a server running in stand-alone
++ * mode (`--standalone`); a networked server responds with `notStandAlone`.
++ *
++ * @example
++ * ```ts
++ * const ledgerAccept: LedgerAcceptRequest = {
++ *   command: 'ledger_accept'
++ * }
++ * ```
++ *
++ * @category Requests
++ */
++export interface LedgerAcceptRequest extends BaseRequest {
++  command: 'ledger_accept'
++}
++
++/**
++ * Response expected from a {@link LedgerAcceptRequest}.
++ *
++ * @category Responses
++ */
++export interface LedgerAcceptResponse extends BaseResponse {
++  result: {
++    /** The ledger index of the newly created "current" ledger. */
++    ledger_current_index: number
++  }
++}
+diff --git a/packages/xrpl/test/client/request.test.ts b/packages/xrpl/test/client/request.test.ts
+index 8ac05fb44b..c0f2dd0faa 100644
+--- a/packages/xrpl/test/client/request.test.ts
++++ b/packages/xrpl/test/client/request.test.ts
+@@ -1,3 +1,6 @@
++import { assert } from 'chai'
++
++import type { Client } from '../../src'
+ import responses from '../fixtures/responses'
+ import rippled from '../fixtures/rippled'
+ import {
+@@ -52,4 +55,88 @@ describe('client.request', function () {
+       })
+     })
+   })
++
++  it('request ledger_accept (admin, stand-alone mode)', async function () {
++    testContext.mockRippled!.addResponse('ledger_accept', {
++      id: 0,
++      status: 'success',
++      type: 'response',
++      result: { ledger_current_index: 5 },
++    })
++    const response = await testContext.client.request({
++      command: 'ledger_accept',
++    })
++
++    // `ledger_accept` is a typed request: its result is typed, not `unknown`.
++    const index: number = response.result.ledger_current_index
++    assert.strictEqual(index, 5)
++  })
++
++  it('request with a command xrpl.js has no types for', async function () {
++    testContext.mockRippled!.addResponse('log_level', {
++      id: 0,
++      status: 'success',
++      type: 'response',
++      result: { status: 'success' },
++    })
++    const response = await testContext.client.request({
++      command: 'log_level',
++      severity: 'debug',
++    })
++
++    // An untyped command resolves to `BaseResponse`, whose result is `unknown`.
++    const result: unknown = response.result
++    assert.deepStrictEqual(result, { status: 'success' })
++    // @ts-expect-error -- `result` is `unknown` on BaseResponse; it must be narrowed before use
++    assert.isUndefined(response.result.severity)
++  })
++
++  it('request with a command xrpl.js has no types for and a response type', async function () {
++    interface LogLevelResponse {
++      id: number | string
++      type: 'response'
++      result: { status: string }
++    }
++    testContext.mockRippled!.addResponse('log_level', {
++      id: 0,
++      status: 'success',
++      type: 'response',
++      result: { status: 'success' },
++    })
++    const response = await testContext.client.request<
++      { command: 'log_level'; severity: string },
++      LogLevelResponse
++    >({ command: 'log_level', severity: 'debug' })
++
++    const status: string = response.result.status
++    assert.strictEqual(status, 'success')
++  })
++
++  it('request rejects keys the command does not declare at compile time', function () {
++    // Never called: these calls exist so that the type checker fails the
++    // suite if a misspelled request key compiles again. rippled ignores
++    // unknown keys, so each of these would otherwise silently do the wrong
++    // thing (read the current ledger, return every object).
++    async function misspelledKeys(client: Client): Promise<void> {
++      await client.request({
++        // @ts-expect-error -- `ledger_indx` is not a key of LedgerEntryRequest
++        command: 'ledger_entry',
++        mpt_issuance: '0000',
++        ledger_indx: 'validated',
++      })
++      await client.request({
++        // @ts-expect-error -- `typ` is not a key of AccountObjectsRequest
++        command: 'account_objects',
++        account: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',
++        typ: 'mptoken',
++      })
++      await client.request({
++        // @ts-expect-error -- `limt` is not a key of AccountTxRequest
++        command: 'account_tx',
++        account: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',
++        limt: 5,
++      })
++    }
++    assert.isFunction(misspelledKeys)
++  })
+ })
+diff --git a/packages/xrpl/test/client/subscribe.test.ts b/packages/xrpl/test/client/subscribe.test.ts
+index 0b989b6731..203e962f02 100644
+--- a/packages/xrpl/test/client/subscribe.test.ts
++++ b/packages/xrpl/test/client/subscribe.test.ts
+@@ -135,8 +135,10 @@ describe('Client subscription', function () {
+ 
+   it('Emits manifestReceived', async function () {
+     await new Promise<void>((resolve) => {
+-      // @es-expect-error Seems like a valid method
+       testContext.client.on('manifestReceived', (path) => {
++        // @ts-expect-error -- `manifestReceived` listeners are declared as
++        // `(manifest: ManifestRequest) => void`, but rippled sends the manifest
++        // stream message, which has a `type` field. Tracked as a follow-up.
+         assert(path.type === 'manifestReceived')
+         resolve()
+       })
+diff --git a/packages/xrpl/test/connection.test.ts b/packages/xrpl/test/connection.test.ts
+index 085e49be7a..0bbb626e76 100644
+--- a/packages/xrpl/test/connection.test.ts
++++ b/packages/xrpl/test/connection.test.ts
+@@ -334,7 +334,6 @@ describe('Connection', function () {
+     'DisconnectedError',
+     async () => {
+       await clientContext.client
+-        // @ts-expect-error -- Intentionally invalid command
+         .request({ command: 'test_command', data: { closeServer: true } })
+         .then(() => {
+           assert.fail('Should throw DisconnectedError')
+@@ -445,7 +444,6 @@ describe('Connection', function () {
+     async () => {
+       await clientContext.client
+         .request({
+-          // @ts-expect-error -- Intentionally invalid command
+           command: 'test_command',
+           data: { unrecognizedResponse: true },
+         })
+diff --git a/packages/xrpl/test/integration/requests/getAggregatePrice.test.ts b/packages/xrpl/test/integration/requests/getAggregatePrice.test.ts
+index e7b374ab79..174a6e66d0 100644
+--- a/packages/xrpl/test/integration/requests/getAggregatePrice.test.ts
++++ b/packages/xrpl/test/integration/requests/getAggregatePrice.test.ts
+@@ -56,7 +56,6 @@ describe('get_aggregate_price', function () {
+       // confirm that the Oracle was actually created
+       const getAggregatePriceResponse = await testContext.client.request({
+         command: 'get_aggregate_price',
+-        account: testContext.wallet.classicAddress,
+         base_asset: 'XRP',
+         quote_asset: 'USD',
+         trim: 20,
+diff --git a/packages/xrpl/test/integration/requests/ripplePathFind.test.ts b/packages/xrpl/test/integration/requests/ripplePathFind.test.ts
+index 6464f652c2..1a41cb70f5 100644
+--- a/packages/xrpl/test/integration/requests/ripplePathFind.test.ts
++++ b/packages/xrpl/test/integration/requests/ripplePathFind.test.ts
+@@ -26,7 +26,6 @@ describe('ripple_path_find', function () {
+       const wallet2 = await generateFundedWallet(testContext.client)
+       const ripplePathFind: RipplePathFindRequest = {
+         command: 'ripple_path_find',
+-        subcommand: 'create',
+         source_account: testContext.wallet.classicAddress,
+         destination_account: wallet2.classicAddress,
+         destination_amount: '100',
+diff --git a/packages/xrpl/test/integration/utils.ts b/packages/xrpl/test/integration/utils.ts
+index 43266526e1..904a951d43 100644
+--- a/packages/xrpl/test/integration/utils.ts
++++ b/packages/xrpl/test/integration/utils.ts
+@@ -14,6 +14,7 @@ import {
+   ECDSA,
+   AccountLinesRequest,
+   IssuedCurrency,
++  LedgerAcceptResponse,
+   XRP,
+ } from '../../src'
+ import {
+@@ -31,8 +32,10 @@ import { hashSignedTx } from '../../src/utils/hashes'
+ export const GENESIS_ACCOUNT = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh'
+ const GENESIS_SECRET = 'snoPBrXtMeMyMHUVTgbuqAfg1SUTb'
+ 
+-export async function sendLedgerAccept(client: Client): Promise<unknown> {
+-  return client.connection.request({ command: 'ledger_accept' })
++export async function sendLedgerAccept(
++  client: Client,
++): Promise<LedgerAcceptResponse> {
++  return client.request({ command: 'ledger_accept' })
+ }
+ 
+ /**

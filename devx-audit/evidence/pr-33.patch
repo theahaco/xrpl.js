@@ -1,0 +1,689 @@
+diff --git a/packages/xrpl/HISTORY.md b/packages/xrpl/HISTORY.md
+index 81df487f97..66a5531034 100644
+--- a/packages/xrpl/HISTORY.md
++++ b/packages/xrpl/HISTORY.md
+@@ -6,6 +6,10 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
+ 
+ ### Added
+ * Add `LendingProtocolV1_1` support.
++* Add `MPToken`, `DID`, `NFTokenOffer` and `NFTokenPage` to the `LedgerEntry` union so `LedgerEntryType` checks narrow to them; add `MPTokenFlags`/`parseMPTokenFlags` and `CredentialFlags`/`parseCredentialFlags` for the `lsfMPTLocked`, `lsfMPTAuthorized` and `lsfAccepted` ledger flags; re-export the non-colliding ledger entry types (`MPToken`, `MPTokenIssuance`, `AccountRoot`, ...) at the package root alongside the existing `LedgerEntry` namespace.
++
++### Fixed
++* Fix the `MPToken` ledger type to match rippled: add the required `Account` field, make `MPTAmount` optional (rippled omits it when the balance is zero) and `OwnerNode` required. Add the synthetic `mpt_issuance_id` rippled returns on every `MPTokenIssuance` JSON view. Type `Credential.Flags` as a `number` (the ledger never returns a flags object).
+ ## 5.2.0 (2026-09-11)
+ 
+ ### BREAKING CHANGES
+diff --git a/packages/xrpl/src/models/index.ts b/packages/xrpl/src/models/index.ts
+index 9e1fb36afb..3b5e3916aa 100644
+--- a/packages/xrpl/src/models/index.ts
++++ b/packages/xrpl/src/models/index.ts
+@@ -5,10 +5,74 @@
+  * response, the client won't need to import the type. If it is required to use
+  * a Ledger Entry, import `LedgerEntry`, and access individual ledger entry
+  * types on the `LedgerEntry` namespace.
++ *
++ * Every ledger entry type whose name does not collide with a transaction or
++ * common type (`DepositPreauth`, `NFToken`) or with the namespace itself
++ * (`LedgerEntry`) is additionally re-exported at the package root below, so
++ * `import { MPToken, MPTokenIssuance } from 'xrpl'` works.
+  */
+ export * as LedgerEntry from './ledger'
++export {
++  AccountRoot,
++  AccountRootFlags,
++  AccountRootFlagsInterface,
++  AMENDMENTS_ID,
++  Amendments,
++  AMM,
++  Bridge,
++  Check,
++  Credential,
++  CredentialFlags,
++  CredentialFlagsInterface,
++  Delegate,
++  DirectoryNode,
++  DID,
++  Escrow,
++  FEE_SETTINGS_ID,
++  FeeSettings,
++  FeeSettingsPreAmendmentFields,
++  FeeSettingsPostAmendmentFields,
++  Ledger,
++  LedgerV1,
++  LedgerEntryFilter,
++  LedgerHashes,
++  Loan,
++  LoanFlags,
++  LoanBroker,
++  Majority,
++  NEGATIVE_UNL_ID,
++  NegativeUNL,
++  MPTokenIssuance,
++  MPTokenIssuanceFlags,
++  MPTokenIssuanceFlagsInterface,
++  MPTokenIssuanceImmutableFlags,
++  MPTokenIssuanceImmutableFlagsInterface,
++  MPToken,
++  MPTokenFlags,
++  MPTokenFlagsInterface,
++  NFTokenOffer,
++  NFTokenPage,
++  Offer,
++  OfferFlags,
++  Oracle,
++  PayChannel,
++  RippleState,
++  RippleStateFlags,
++  SignerList,
++  SignerListFlags,
++  Sponsorship,
++  SponsorshipFlags,
++  Ticket,
++  Vault,
++  VaultFlags,
++  VoteSlot,
++  XChainOwnedClaimID,
++  XChainOwnedCreateAccountClaimID,
++} from './ledger'
+ export {
+   parseAccountRootFlags,
++  parseCredentialFlags,
++  parseMPTokenFlags,
+   parseMPTokenIssuanceFlags,
+   parseMPTokenIssuanceImmutableFlags,
+   setTransactionFlagsToNumber,
+diff --git a/packages/xrpl/src/models/ledger/Credential.ts b/packages/xrpl/src/models/ledger/Credential.ts
+index 2051276ec8..8b19885023 100644
+--- a/packages/xrpl/src/models/ledger/Credential.ts
++++ b/packages/xrpl/src/models/ledger/Credential.ts
+@@ -1,11 +1,18 @@
+-import { GlobalFlagsInterface } from '../transactions/common'
+-
+ import { BaseLedgerEntry, HasPreviousTxnID } from './BaseLedgerEntry'
+ 
+-export interface CredentialFlags extends GlobalFlagsInterface {
++export interface CredentialFlagsInterface {
++  /**
++   * The subject has accepted the credential via CredentialAccept. An
++   * unaccepted credential does not satisfy any PermissionedDomain or
++   * DepositPreauth credential check.
++   */
+   lsfAccepted?: boolean
+ }
+ 
++export enum CredentialFlags {
++  lsfAccepted = 0x00010000,
++}
++
+ /**
+  *
+  * A Credential object describes a credential, similar to a passport, which is an issuable identity verifier
+@@ -16,9 +23,10 @@ export interface CredentialFlags extends GlobalFlagsInterface {
+ export default interface Credential extends BaseLedgerEntry, HasPreviousTxnID {
+   LedgerEntryType: 'Credential'
+   /**
+-   * A bit-map of boolean flags
++   * A bit-map of boolean `lsf*` flags. Use `parseCredentialFlags` to read it
++   * as a {@link CredentialFlagsInterface}.
+    */
+-  Flags: number | CredentialFlags
++  Flags: number
+ 
+   /** The account that the credential is for. */
+   Subject: string
+diff --git a/packages/xrpl/src/models/ledger/LedgerEntry.ts b/packages/xrpl/src/models/ledger/LedgerEntry.ts
+index c27e24b499..02620446e1 100644
+--- a/packages/xrpl/src/models/ledger/LedgerEntry.ts
++++ b/packages/xrpl/src/models/ledger/LedgerEntry.ts
+@@ -6,14 +6,18 @@ import Check from './Check'
+ import Credential from './Credential'
+ import Delegate from './Delegate'
+ import DepositPreauth from './DepositPreauth'
++import DID from './DID'
+ import DirectoryNode from './DirectoryNode'
+ import Escrow from './Escrow'
+ import FeeSettings from './FeeSettings'
+ import LedgerHashes from './LedgerHashes'
+ import Loan from './Loan'
+ import LoanBroker from './LoanBroker'
++import { MPToken } from './MPToken'
+ import { MPTokenIssuance } from './MPTokenIssuance'
+ import NegativeUNL from './NegativeUNL'
++import { NFTokenOffer } from './NFTokenOffer'
++import { NFTokenPage } from './NFTokenPage'
+ import Offer from './Offer'
+ import Oracle from './Oracle'
+ import PayChannel from './PayChannel'
+@@ -35,13 +39,18 @@ type LedgerEntry =
+   | Credential
+   | Delegate
+   | DepositPreauth
++  | DID
+   | DirectoryNode
+   | Escrow
+   | FeeSettings
+   | LedgerHashes
+   | Loan
+   | LoanBroker
++  | MPToken
++  | MPTokenIssuance
+   | NegativeUNL
++  | NFTokenOffer
++  | NFTokenPage
+   | Offer
+   | Oracle
+   | PayChannel
+@@ -53,7 +62,6 @@ type LedgerEntry =
+   | Vault
+   | XChainOwnedClaimID
+   | XChainOwnedCreateAccountClaimID
+-  | MPTokenIssuance
+ 
+ type LedgerEntryFilter =
+   | 'account'
+diff --git a/packages/xrpl/src/models/ledger/MPToken.ts b/packages/xrpl/src/models/ledger/MPToken.ts
+index 211c39468b..ebb71c0630 100644
+--- a/packages/xrpl/src/models/ledger/MPToken.ts
++++ b/packages/xrpl/src/models/ledger/MPToken.ts
+@@ -1,11 +1,39 @@
+ import { BaseLedgerEntry, HasPreviousTxnID } from './BaseLedgerEntry'
+ 
++/**
++ * An MPToken object represents one account's holding of one Multi-Purpose
++ * Token issuance. It is created by MPTokenAuthorize (or by the first payment
++ * of the token to the holder) and deleted when the holder's balance is zero
++ * and they de-authorize.
++ *
++ * @category Ledger Entries
++ */
+ export interface MPToken extends BaseLedgerEntry, HasPreviousTxnID {
+   LedgerEntryType: 'MPToken'
++  /** The address of the account that holds this MPToken. */
++  Account: string
++  /** The 192-bit MPTokenIssuanceID of the issuance this MPToken belongs to. */
+   MPTokenIssuanceID: string
+-  MPTAmount: string
++  /**
++   * The holder's balance, in the issuance's fractional units. This field is
++   * omitted by rippled when the balance is zero (for example on a holder that
++   * has only authorized, or one whose balance has been fully clawed back).
++   */
++  MPTAmount?: string
++  /**
++   * A bit-map of boolean `lsfMPT*` flags. Use `parseMPTokenFlags` to read it
++   * as an {@link MPTokenFlagsInterface}.
++   */
+   Flags: number
+-  OwnerNode?: string
++  /**
++   * A hint indicating which page of the holder's owner directory links to
++   * this object, in case the directory consists of multiple pages.
++   */
++  OwnerNode: string
++  /**
++   * The amount of this holder's balance that is currently locked in Escrow or
++   * PaymentChannel objects.
++   */
+   LockedAmount?: string
+   /** ElGamal ciphertext of the holder's pending confidential inbox balance. */
+   ConfidentialBalanceInbox?: string
+@@ -26,3 +54,22 @@ export interface MPToken extends BaseLedgerEntry, HasPreviousTxnID {
+    */
+   Sponsor?: string
+ }
++
++export interface MPTokenFlagsInterface {
++  /**
++   * The holder's balance is locked by the issuer; payments of this MPT to or
++   * from the holder fail with `tecLOCKED`.
++   */
++  lsfMPTLocked?: boolean
++  /**
++   * The issuer has authorized this holder via MPTokenAuthorize. Required for
++   * the holder to receive or send the token when the issuance has
++   * `lsfMPTRequireAuth` set.
++   */
++  lsfMPTAuthorized?: boolean
++}
++
++export enum MPTokenFlags {
++  lsfMPTLocked = 0x00000001,
++  lsfMPTAuthorized = 0x00000002,
++}
+diff --git a/packages/xrpl/src/models/ledger/MPTokenIssuance.ts b/packages/xrpl/src/models/ledger/MPTokenIssuance.ts
+index 7b1129718e..9cf4f2e405 100644
+--- a/packages/xrpl/src/models/ledger/MPTokenIssuance.ts
++++ b/packages/xrpl/src/models/ledger/MPTokenIssuance.ts
+@@ -98,6 +98,13 @@ export interface MPTokenIssuance extends BaseLedgerEntry, HasPreviousTxnID {
+    * this object instead of the owner.
+    */
+   Sponsor?: string
++  /**
++   * The 192-bit MPTokenIssuanceID (`Sequence` ‖ `Issuer` AccountID) of this
++   * issuance. It is not stored on the ledger; rippled adds it to every JSON
++   * view of the entry (`ledger_entry`, `account_objects`, `ledger_data`).
++   * Use it as `MPTokenIssuanceID` / `mpt_issuance_id` in later transactions.
++   */
++  mpt_issuance_id: string
+ }
+ 
+ export interface MPTokenIssuanceFlagsInterface {
+diff --git a/packages/xrpl/src/models/ledger/index.ts b/packages/xrpl/src/models/ledger/index.ts
+index 18eb06e7f8..32b01457a1 100644
+--- a/packages/xrpl/src/models/ledger/index.ts
++++ b/packages/xrpl/src/models/ledger/index.ts
+@@ -6,7 +6,10 @@ import Amendments, { Majority, AMENDMENTS_ID } from './Amendments'
+ import AMM, { VoteSlot } from './AMM'
+ import Bridge from './Bridge'
+ import Check from './Check'
+-import Credential from './Credential'
++import Credential, {
++  CredentialFlags,
++  CredentialFlagsInterface,
++} from './Credential'
+ import Delegate from './Delegate'
+ import DepositPreauth from './DepositPreauth'
+ import DID from './DID'
+@@ -22,7 +25,7 @@ import { LedgerEntry, LedgerEntryFilter } from './LedgerEntry'
+ import LedgerHashes from './LedgerHashes'
+ import Loan, { LoanFlags } from './Loan'
+ import LoanBroker from './LoanBroker'
+-import { MPToken } from './MPToken'
++import { MPToken, MPTokenFlags, MPTokenFlagsInterface } from './MPToken'
+ import {
+   MPTokenIssuance,
+   MPTokenIssuanceFlags,
+@@ -54,6 +57,8 @@ export {
+   Bridge,
+   Check,
+   Credential,
++  CredentialFlags,
++  CredentialFlagsInterface,
+   Delegate,
+   DepositPreauth,
+   DirectoryNode,
+@@ -80,6 +85,8 @@ export {
+   MPTokenIssuanceImmutableFlags,
+   MPTokenIssuanceImmutableFlagsInterface,
+   MPToken,
++  MPTokenFlags,
++  MPTokenFlagsInterface,
+   NFTokenOffer,
+   NFTokenPage,
+   NFToken,
+diff --git a/packages/xrpl/src/models/utils/flags.ts b/packages/xrpl/src/models/utils/flags.ts
+index c56f11635e..b46a48ebd2 100644
+--- a/packages/xrpl/src/models/utils/flags.ts
++++ b/packages/xrpl/src/models/utils/flags.ts
+@@ -4,6 +4,8 @@ import {
+   AccountRootFlagsInterface,
+   AccountRootFlags,
+ } from '../ledger/AccountRoot'
++import { CredentialFlags, CredentialFlagsInterface } from '../ledger/Credential'
++import { MPTokenFlags, MPTokenFlagsInterface } from '../ledger/MPToken'
+ import {
+   MPTokenIssuanceFlags,
+   MPTokenIssuanceFlagsInterface,
+@@ -60,6 +62,49 @@ export function parseAccountRootFlags(
+   return flagsInterface
+ }
+ 
++/**
++ * Convert the `Flags` field of a `Credential` ledger object into a typed
++ * boolean view of its `lsf*` flags.
++ *
++ * @param flags - The numeric value of `Credential.Flags`.
++ * @returns An interface with each set flag as `true` (`lsfAccepted` once the
++ * subject has run CredentialAccept).
++ */
++export function parseCredentialFlags(flags: number): CredentialFlagsInterface {
++  const flagsInterface: CredentialFlagsInterface = {}
++
++  Object.values(CredentialFlags).forEach((flag) => {
++    if (
++      typeof flag === 'string' &&
++      isFlagEnabled(flags, CredentialFlags[flag])
++    ) {
++      flagsInterface[flag] = true
++    }
++  })
++
++  return flagsInterface
++}
++
++/**
++ * Convert the `Flags` field of a holder-side `MPToken` ledger object into a
++ * typed boolean view of the `lsfMPT*` flags (`lsfMPTLocked`,
++ * `lsfMPTAuthorized`).
++ *
++ * @param flags - The numeric value of `MPToken.Flags`.
++ * @returns An interface with each set `lsfMPT*` flag as `true`.
++ */
++export function parseMPTokenFlags(flags: number): MPTokenFlagsInterface {
++  const flagsInterface: MPTokenFlagsInterface = {}
++
++  Object.values(MPTokenFlags).forEach((flag) => {
++    if (typeof flag === 'string' && isFlagEnabled(flags, MPTokenFlags[flag])) {
++      flagsInterface[flag] = true
++    }
++  })
++
++  return flagsInterface
++}
++
+ /**
+  * Convert the `Flags` field of an `MPTokenIssuance` ledger object into a typed
+  * boolean view of the `lsfMPT*` flags.
+diff --git a/packages/xrpl/test/integration/transactions/clawback.test.ts b/packages/xrpl/test/integration/transactions/clawback.test.ts
+index 58935a2782..7383095ccd 100644
+--- a/packages/xrpl/test/integration/transactions/clawback.test.ts
++++ b/packages/xrpl/test/integration/transactions/clawback.test.ts
+@@ -171,11 +171,9 @@ describe('Clawback', function () {
+           },
+         })
+ 
+-      assert.equal(
+-        // @ts-expect-error: Known issue with unknown object type
+-        ledgerEntryResponse.result.node.MPTAmount,
+-        '9223372036854775807',
+-      )
++      let holderToken = ledgerEntryResponse.result.node
++      assert(holderToken?.LedgerEntryType === 'MPToken')
++      assert.equal(holderToken.MPTAmount, '9223372036854775807')
+ 
+       // actual test - clawback
+       const clawTx: Clawback = {
+@@ -197,11 +195,9 @@ describe('Clawback', function () {
+         },
+       })
+ 
+-      assert.equal(
+-        // @ts-expect-error: Known issue with unknown object type
+-        ledgerEntryResponse.result.node.MPTAmount,
+-        '9223372036854775307',
+-      )
++      holderToken = ledgerEntryResponse.result.node
++      assert(holderToken?.LedgerEntryType === 'MPToken')
++      assert.equal(holderToken.MPTAmount, '9223372036854775307')
+     },
+     TIMEOUT,
+   )
+diff --git a/packages/xrpl/test/integration/transactions/mptokenIssuanceCreate.test.ts b/packages/xrpl/test/integration/transactions/mptokenIssuanceCreate.test.ts
+index 01ad164a6b..4b2cec9418 100644
+--- a/packages/xrpl/test/integration/transactions/mptokenIssuanceCreate.test.ts
++++ b/packages/xrpl/test/integration/transactions/mptokenIssuanceCreate.test.ts
+@@ -3,6 +3,7 @@ import { assert } from 'chai'
+ import {
+   decodeMPTokenMetadata,
+   encodeMPTokenMetadata,
++  MPTokenIssuance,
+   MPTokenIssuanceCreate,
+   MPTokenIssuanceCreateFlags,
+   MPTokenIssuanceCreateImmutableFlags,
+@@ -11,7 +12,6 @@ import {
+   parseMPTokenIssuanceImmutableFlags,
+   TransactionMetadata,
+ } from '../../../src'
+-import type { MPTokenIssuance } from '../../../src/models/ledger/MPTokenIssuance'
+ import serverUrl from '../serverUrl'
+ import {
+   setupClient,
+@@ -83,17 +83,13 @@ describe('MPTokenIssuanceCreate', function () {
+         1,
+         'Should be exactly one issuance on the ledger',
+       )
+-      assert.equal(
+-        // @ts-expect-error: Known issue with unknown object type
+-        accountObjectsResponse.result.account_objects[0].MaximumAmount,
+-        `9223372036854775807`,
+-      )
++      const issuance = accountObjectsResponse.result.account_objects[0]
++      assert(issuance.LedgerEntryType === 'MPTokenIssuance')
++      assert.equal(issuance.MaximumAmount, `9223372036854775807`)
+ 
++      assert(issuance.MPTokenMetadata != null)
+       assert.deepStrictEqual(
+-        decodeMPTokenMetadata(
+-          // @ts-expect-error: Known issue with unknown object type
+-          accountObjectsResponse.result.account_objects[0].MPTokenMetadata,
+-        ),
++        decodeMPTokenMetadata(issuance.MPTokenMetadata),
+         metadata,
+       )
+     },
+diff --git a/packages/xrpl/test/integration/transactions/mptokenIssuanceSet.test.ts b/packages/xrpl/test/integration/transactions/mptokenIssuanceSet.test.ts
+index 62c7594c9a..284e942e23 100644
+--- a/packages/xrpl/test/integration/transactions/mptokenIssuanceSet.test.ts
++++ b/packages/xrpl/test/integration/transactions/mptokenIssuanceSet.test.ts
+@@ -2,9 +2,11 @@ import { stringToHex } from '@xrplf/isomorphic/utils'
+ import { assert } from 'chai'
+ 
+ import {
++  MPTokenIssuance,
+   MPTokenIssuanceCreate,
+   MPTokenIssuanceSet,
+   MPTokenIssuanceCreateFlags,
++  MPTokenIssuanceFlagsInterface,
+   MPTokenIssuanceSetFlags,
+   PermissionedDomainSet,
+   TransactionMetadata,
+@@ -12,10 +14,6 @@ import {
+   parseMPTokenIssuanceFlags,
+   parseMPTokenIssuanceImmutableFlags,
+ } from '../../../src'
+-import type {
+-  MPTokenIssuance,
+-  MPTokenIssuanceFlagsInterface,
+-} from '../../../src/models/ledger/MPTokenIssuance'
+ import type PermissionedDomain from '../../../src/models/ledger/PermissionedDomain'
+ import serverUrl from '../serverUrl'
+ import {
+@@ -473,10 +471,11 @@ async function readMPTokenIssuance(
+   })
+   const issuanceNode = accountObjectsResponse.result.account_objects.find(
+     (node) =>
+-      (node as { mpt_issuance_id?: string }).mpt_issuance_id === issuanceId,
+-  ) as MPTokenIssuance | undefined
+-  assert.exists(
+-    issuanceNode,
++      node.LedgerEntryType === 'MPTokenIssuance' &&
++      node.mpt_issuance_id === issuanceId,
++  )
++  assert(
++    issuanceNode?.LedgerEntryType === 'MPTokenIssuance',
+     `MPTokenIssuance with id ${issuanceId} not found in account_objects`,
+   )
+   return issuanceNode
+diff --git a/packages/xrpl/test/models/ledgerEntries.test.ts b/packages/xrpl/test/models/ledgerEntries.test.ts
+new file mode 100644
+index 0000000000..fa6b2bec2f
+--- /dev/null
++++ b/packages/xrpl/test/models/ledgerEntries.test.ts
+@@ -0,0 +1,187 @@
++/* eslint-disable no-bitwise -- flags require bitwise operations */
++import { assert } from 'chai'
++
++import {
++  Credential,
++  CredentialFlags,
++  LedgerEntry,
++  LedgerEntryFilter,
++  MPToken,
++  MPTokenFlags,
++  MPTokenIssuance,
++  parseCredentialFlags,
++  parseMPTokenFlags,
++} from '../../src'
++
++/**
++ * Widen a concrete entry to the union the way an RPC response does, so the
++ * tests below exercise narrowing rather than assignment-based inference.
++ *
++ * @param entry - Any ledger entry.
++ * @returns The same entry typed as the `LedgerEntry` union.
++ */
++function asLedgerEntry(
++  entry: LedgerEntry.LedgerEntry,
++): LedgerEntry.LedgerEntry {
++  return entry
++}
++
++/**
++ * Compile-time checks that the MPT and Credential ledger-entry types match
++ * the JSON rippled actually returns, that they are members of the
++ * `LedgerEntry` union, and that they are importable from the package root.
++ */
++describe('Ledger entry types', function () {
++  // `ledger_entry` + `mptoken` for a holder that has only authorized (no
++  // balance yet): rippled omits the default-valued `MPTAmount`.
++  const freshMPToken: MPToken = {
++    Account: 'rJSAsZm9mrs7kdAxfswswBimT8DKgwWWwT',
++    Flags: 0,
++    LedgerEntryType: 'MPToken',
++    MPTokenIssuanceID: '0000000CB3120458230058B528D813A6FAAE0C01743E7453',
++    OwnerNode: '0',
++    PreviousTxnID:
++      'FF8964708994E4868056B4E40B2651D972FE8235F1EBDB3BC8E5B4921887876C',
++    PreviousTxnLgrSeq: 22,
++    index: '3E0EF1A38D33CECF97A8510C45CE6027632A00FFCEEC3A33DE4D5DC737332F20',
++  }
++
++  // The same entry once funded, locked by the issuer and authorized.
++  const fundedMPToken: MPToken = {
++    ...freshMPToken,
++    MPTAmount: '100',
++    Flags: MPTokenFlags.lsfMPTLocked | MPTokenFlags.lsfMPTAuthorized,
++  }
++
++  // `ledger_entry` + `mpt_issuance`: `mpt_issuance_id` is injected by rippled.
++  const issuance: MPTokenIssuance = {
++    Flags: 0,
++    Issuer: 'rJSAsZm9mrs7kdAxfswswBimT8DKgwWWwT',
++    LedgerEntryType: 'MPTokenIssuance',
++    OutstandingAmount: '0',
++    OwnerNode: '0',
++    PreviousTxnID:
++      'FF8964708994E4868056B4E40B2651D972FE8235F1EBDB3BC8E5B4921887876C',
++    PreviousTxnLgrSeq: 21,
++    Sequence: 7,
++    index: '910ED7E8D1ECC5687209DB58B66CC76E282398BDACA4F5E3C263531E90B775CC',
++    mpt_issuance_id: '000000077EEF664B7A629066730123E42508AA854744FFE7',
++  }
++
++  // A Credential after CredentialAccept: `Flags` is a plain number, 0x00010000.
++  const acceptedCredential: Credential = {
++    CredentialType: '6D795F63726564656E7469616C',
++    Flags: 65536,
++    Issuer: 'rJSAsZm9mrs7kdAxfswswBimT8DKgwWWwT',
++    IssuerNode: '0',
++    LedgerEntryType: 'Credential',
++    PreviousTxnID:
++      'FF8964708994E4868056B4E40B2651D972FE8235F1EBDB3BC8E5B4921887876C',
++    PreviousTxnLgrSeq: 23,
++    Subject: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
++    SubjectNode: '0',
++    index: '3E0EF1A38D33CECF97A8510C45CE6027632A00FFCEEC3A33DE4D5DC737332F20',
++  }
++
++  it('MPToken narrows from the LedgerEntry union', function () {
++    const entry = asLedgerEntry(fundedMPToken)
++    assert(entry.LedgerEntryType === 'MPToken')
++    assert.equal(entry.Account, 'rJSAsZm9mrs7kdAxfswswBimT8DKgwWWwT')
++    assert.equal(entry.MPTAmount, '100')
++
++    // Type-level: the union member for 'MPToken' is exactly `MPToken`.
++    const narrowed: Extract<
++      LedgerEntry.LedgerEntry,
++      { LedgerEntryType: 'MPToken' }
++    > = freshMPToken
++    const roundTrip: MPToken = narrowed
++    assert.isUndefined(roundTrip.MPTAmount)
++  })
++
++  it('MPTokenIssuance carries the injected mpt_issuance_id', function () {
++    const entry = asLedgerEntry(issuance)
++    assert(entry.LedgerEntryType === 'MPTokenIssuance')
++    assert.equal(
++      entry.mpt_issuance_id,
++      '000000077EEF664B7A629066730123E42508AA854744FFE7',
++    )
++  })
++
++  it('every LedgerEntryFilter has a matching LedgerEntry union member', function () {
++    // Fails to compile if a filter has no union member with that LedgerEntryType.
++    const filterToType: Record<
++      LedgerEntryFilter,
++      LedgerEntry.LedgerEntry['LedgerEntryType']
++    > = {
++      account: 'AccountRoot',
++      amendments: 'Amendments',
++      amm: 'AMM',
++      bridge: 'Bridge',
++      check: 'Check',
++      credential: 'Credential',
++      delegate: 'Delegate',
++      deposit_preauth: 'DepositPreauth',
++      did: 'DID',
++      directory: 'DirectoryNode',
++      escrow: 'Escrow',
++      fee: 'FeeSettings',
++      hashes: 'LedgerHashes',
++      loan: 'Loan',
++      loan_broker: 'LoanBroker',
++      mpt_issuance: 'MPTokenIssuance',
++      mptoken: 'MPToken',
++      nft_offer: 'NFTokenOffer',
++      nft_page: 'NFTokenPage',
++      offer: 'Offer',
++      oracle: 'Oracle',
++      payment_channel: 'PayChannel',
++      permissioned_domain: 'PermissionedDomain',
++      signer_list: 'SignerList',
++      sponsorship: 'Sponsorship',
++      state: 'RippleState',
++      ticket: 'Ticket',
++      vault: 'Vault',
++      xchain_owned_create_account_claim_id: 'XChainOwnedCreateAccountClaimID',
++      xchain_owned_claim_id: 'XChainOwnedClaimID',
++    }
++    assert.equal(filterToType.mptoken, 'MPToken')
++  })
++
++  describe('parseMPTokenFlags', function () {
++    it('reads lsfMPTLocked and lsfMPTAuthorized', function () {
++      assert.equal(MPTokenFlags.lsfMPTLocked, 0x00000001)
++      assert.equal(MPTokenFlags.lsfMPTAuthorized, 0x00000002)
++      assert.deepEqual(parseMPTokenFlags(3), {
++        lsfMPTLocked: true,
++        lsfMPTAuthorized: true,
++      })
++      assert.deepEqual(parseMPTokenFlags(fundedMPToken.Flags), {
++        lsfMPTLocked: true,
++        lsfMPTAuthorized: true,
++      })
++      assert.deepEqual(parseMPTokenFlags(1), { lsfMPTLocked: true })
++      assert.deepEqual(parseMPTokenFlags(2), { lsfMPTAuthorized: true })
++    })
++
++    it('returns an empty interface for 0', function () {
++      assert.deepEqual(parseMPTokenFlags(freshMPToken.Flags), {})
++    })
++  })
++
++  describe('parseCredentialFlags', function () {
++    it('reads lsfAccepted', function () {
++      assert.equal(CredentialFlags.lsfAccepted, 0x00010000)
++      assert.deepEqual(parseCredentialFlags(0x10000), { lsfAccepted: true })
++      assert.deepEqual(parseCredentialFlags(acceptedCredential.Flags), {
++        lsfAccepted: true,
++      })
++      assert.isTrue(
++        (acceptedCredential.Flags & CredentialFlags.lsfAccepted) !== 0,
++      )
++    })
++
++    it('returns an empty interface for 0', function () {
++      assert.deepEqual(parseCredentialFlags(0), {})
++    })
++  })
++})

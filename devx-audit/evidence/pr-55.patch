@@ -1,0 +1,841 @@
+diff --git a/packages/xrpl/HISTORY.md b/packages/xrpl/HISTORY.md
+index fc59f3d437..daf64ff6a5 100644
+--- a/packages/xrpl/HISTORY.md
++++ b/packages/xrpl/HISTORY.md
+@@ -8,12 +8,14 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
+ * Add `LendingProtocolV1_1` support.
+ * Add `getTransactionResultCode` and `isTesSuccess` utility functions to make it easier to check whether a transaction succeeded, since `submitAndWait` resolves normally for transactions that reached a validated ledger even when they failed on-ledger (e.g. `tec*` results).
+ * Add `TransactionFailedError` (extends `XrplError`) with typed `engineResult`, `engineResultMessage` and `phase` (`'submit'` | `'expired'`) properties. `submitAndWait` now throws it for a terminal preliminary result and when `LastLedgerSequence` passes, instead of a plain `XrplError` with the code embedded in the message.
++* Add `ValidatedTxResponse<T>`, `SignedBlob<T>` and `Autofilled<T>` so the submit path keeps the transaction type: `submitAndWait` resolves with `ValidatedTxResponse<T>` (`result.meta` is decoded, transaction-specific metadata, never `string | undefined`, and `result.validated` is `true`), `Wallet.sign` returns a `tx_blob` branded with the transaction type it signed (still a plain string at runtime) that `submitAndWait` and `simulate` infer `T` from, and `autofill` returns `Autofilled<T>`, whose `Sequence`, `Fee` and `LastLedgerSequence` are no longer optional and whose `Flags` is a number.
+ 
+ ### Fixed
+ * `submitAndWait` no longer reports a transaction as expired when it was validated in its last allowed ledger (`LastLedgerSequence`) but two or more ledgers closed between polls: the transaction is looked up before expiry is declared.
+ * `submitAndWait` throws immediately for `tef*` / `tel*` preliminary results (e.g. `tefPAST_SEQ` from concurrent submissions) that rippled does not already know, rather than polling until `LastLedgerSequence` passes. Re-submitting a signed blob that an earlier submission got validated still resolves with the validated transaction.
+ * Errors other than `txnNotFound` raised while `submitAndWait` polls for the transaction (`TimeoutError`, `DisconnectedError`, `RippledError` such as `tooBusy`) propagate with their original class and `data` instead of being re-thrown as a plain `Error` whose message starts with `undefined`.
+ * `submitAndWait`'s `@throws` documentation now states that validated `tec*` results resolve normally (with the fee charged) and that concurrent submissions from one account collide on `Sequence`.
++* `Client.simulate` threads the transaction type through to `result.tx_json` and `result.meta` instead of widening them to the whole `Transaction` union, and normalises the transaction the way `autofill` does before sending it: `Flags` given in interface form is converted to a number (rippled answered `Field 'tx_json.Flags' has bad type.`) and a Payment's `DeliverMax` is folded into `Amount` (`Field 'tx_json.DeliverMax' is unknown.`). The caller's transaction object is not modified.
+ ## 5.2.0 (2026-09-11)
+ 
+ ### BREAKING CHANGES
+diff --git a/packages/xrpl/src/Wallet/index.ts b/packages/xrpl/src/Wallet/index.ts
+index 32bae138cf..02b9e8f495 100644
+--- a/packages/xrpl/src/Wallet/index.ts
++++ b/packages/xrpl/src/Wallet/index.ts
+@@ -23,6 +23,21 @@ import { computeSignature, validateEntropy } from './utils'
+ const DEFAULT_ALGORITHM: ECDSA = ECDSA.ed25519
+ const DEFAULT_DERIVATION_PATH = "m/44'/144'/0'/0/0"
+ 
++/**
++ * A signed transaction blob that remembers which transaction type produced it.
++ *
++ * At runtime this is exactly the hex string `Wallet.sign` returns — `__xrplTx` is an optional
++ * phantom property that is never populated — so a `SignedBlob<T>` can be used anywhere a `string`
++ * is expected. The brand lets {@link Client.submitAndWait} and {@link Client.simulate} infer `T`
++ * from a blob instead of falling back to the whole `SubmittableTransaction` union, which in turn
++ * narrows `result.meta` and `result.tx_json`.
++ *
++ * @category Signing
++ */
++export type SignedBlob<T extends Transaction = Transaction> = string & {
++  readonly __xrplTx?: T
++}
++
+ type ValidHDKey = HDKey & {
+   privateKey: Uint8Array
+   publicKey: Uint8Array
+@@ -372,12 +387,12 @@ export class Wallet {
+    * @throws XrplError if the issued currency being signed is XRP ignoring case.
+    */
+   // eslint-disable-next-line max-lines-per-function -- introduced more checks to support both string and boolean inputs.
+-  public sign(
++  public sign<T extends Transaction>(
+     this: Wallet,
+-    transaction: Transaction,
++    transaction: T,
+     multisign?: boolean | string,
+   ): {
+-    tx_blob: string
++    tx_blob: SignedBlob<T>
+     hash: string
+   } {
+     let multisignAddress: boolean | string = false
+@@ -435,7 +450,12 @@ export class Wallet {
+ 
+     const serialized = encode(txToSignAndEncode)
+     return {
+-      tx_blob: serialized,
++      /*
++       * `encode` returns a plain string; the brand is an optional phantom property that is never
++       * populated at runtime, so this only records which transaction type produced the blob.
++       */
++      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- see above
++      tx_blob: serialized as SignedBlob<T>,
+       hash: hashSignedTx(serialized),
+     }
+   }
+diff --git a/packages/xrpl/src/client/index.ts b/packages/xrpl/src/client/index.ts
+index e9e006e96c..46cf6b289d 100644
+--- a/packages/xrpl/src/client/index.ts
++++ b/packages/xrpl/src/client/index.ts
+@@ -32,7 +32,7 @@ import {
+   // ledger methods
+   LedgerDataRequest,
+   LedgerDataResponse,
+-  TxResponse,
++  ValidatedTxResponse,
+ } from '../models/methods'
+ import type {
+   RequestResponseMap,
+@@ -51,7 +51,7 @@ import type {
+   EventTypes,
+   OnEventToListenerMap,
+ } from '../models/methods/subscribe'
+-import type { SubmittableTransaction } from '../models/transactions'
++import type { Autofilled, SubmittableTransaction } from '../models/transactions'
+ import { convertTxFlagsToNumber } from '../models/utils/flags'
+ import {
+   ensureClassicAddress,
+@@ -70,6 +70,7 @@ import {
+   autofillBatchTxn,
+   handleDeliverMax,
+   getTransactionFee,
++  normalizeForSimulate,
+ } from '../sugar/autofill'
+ import { formatBalances } from '../sugar/balances'
+ import {
+@@ -83,7 +84,7 @@ import {
+   sortAndLimitOffers,
+ } from '../sugar/getOrderbook'
+ import { dropsToXrp, hashes, isValidClassicAddress } from '../utils'
+-import { Wallet } from '../Wallet'
++import { SignedBlob, Wallet } from '../Wallet'
+ import {
+   type FaucetRequestBody,
+   FundingOptions,
+@@ -687,7 +688,7 @@ class Client extends EventEmitter<EventTypes> {
+     transaction: T,
+     signersCount?: number,
+     sponsorSignersCount?: number,
+-  ): Promise<T> {
++  ): Promise<Autofilled<T>> {
+     const tx = { ...transaction }
+ 
+     setValidAddresses(tx)
+@@ -716,41 +717,58 @@ class Client extends EventEmitter<EventTypes> {
+       handleDeliverMax(tx)
+     }
+ 
+-    return Promise.all(promises).then(() => tx)
++    /*
++     * Every field `Autofilled` adds is either already present on `tx` or set by one of the
++     * promises above, but TypeScript cannot see that through the mutating helpers.
++     */
++    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- see above
++    return Promise.all(promises).then(() => tx as Autofilled<T>)
+   }
+ 
+   /**
+-   * Simulates an unsigned transaction.
+-   * Steps performed on a transaction:
+-   *    1. Autofill.
+-   *    2. Sign & Encode.
+-   *    3. Submit.
++   * Simulates a transaction against the current open ledger without submitting it, reporting the
++   * result and the metadata it would produce. The transaction is neither signed nor applied.
++   *
++   * The transaction is normalised the way `autofill` would normalise it before being sent:
++   * `Flags` given in interface form (`{ tfPartialPayment: true }`) is converted to its numeric
++   * form, and a Payment's `DeliverMax` is folded into `Amount`. rippled rejects both SDK-level
++   * conveniences outright, so without this a transaction `submitAndWait` accepts could not be
++   * simulated. Nothing that needs the network (`Sequence`, `Fee`, `LastLedgerSequence`) is filled
++   * in: `simulate` does not require those fields.
+    *
+    * @category Core
+    *
+-   * @param transaction - A transaction to autofill, sign & encode, and submit.
+-   * @param opts - (Optional) Options used to sign and submit a transaction.
+-   * @param opts.binary - If true, return the metadata in a binary encoding.
++   * @param transaction - The transaction to simulate, as JSON or as an encoded blob.
++   * @param opts - (Optional) Options for the simulation.
++   * @param opts.binary - If true, return the transaction and metadata in a binary encoding.
+    *
+    * @returns A promise that contains SimulateResponse.
+    * @throws RippledError if the simulate request fails.
++   * @throws ValidationError if `Flags` is given in interface form and contains an unknown flag.
+    */
+ 
+-  public async simulate<Binary extends boolean = false>(
+-    transaction: SubmittableTransaction | string,
++  public async simulate<
++    T extends SubmittableTransaction = SubmittableTransaction,
++    Binary extends boolean = false,
++  >(
++    transaction: T | SignedBlob<T> | string,
+     opts?: {
+       // If true, return the binary-encoded representation of the results.
+       binary?: Binary
+     },
+   ): Promise<
+-    Binary extends true ? SimulateBinaryResponse : SimulateJsonResponse
++    Binary extends true ? SimulateBinaryResponse : SimulateJsonResponse<T>
+   > {
+     // send request
+     const binary = opts?.binary ?? false
+     const request: SimulateRequest =
+       typeof transaction === 'string'
+         ? { command: 'simulate', tx_blob: transaction, binary }
+-        : { command: 'simulate', tx_json: transaction, binary }
++        : {
++            command: 'simulate',
++            tx_json: normalizeForSimulate(transaction),
++            binary,
++          }
+     return this.request(request)
+   }
+ 
+@@ -873,12 +891,13 @@ class Client extends EventEmitter<EventTypes> {
+    * while submitting or polling. The transaction may still have been submitted: look it up by hash before
+    * re-submitting.
+    * @throws {RippledError} If a request other than the submission fails on the server (e.g. `tooBusy`) while polling.
+-   * @returns A promise that contains TxResponse, that will return when the transaction has been validated.
++   * @returns A promise that resolves with the validated transaction: `result.meta` is decoded
++   * metadata (never a hex string, never `undefined`) and `result.validated` is `true`.
+    */
+   public async submitAndWait<
+     T extends SubmittableTransaction = SubmittableTransaction,
+   >(
+-    transaction: T | string,
++    transaction: T | SignedBlob<T> | string,
+     opts?: {
+       // If true, autofill a transaction.
+       autofill?: boolean
+@@ -887,7 +906,7 @@ class Client extends EventEmitter<EventTypes> {
+       // A wallet to sign a transaction. It must be provided when submitting an unsigned transaction.
+       wallet?: Wallet
+     },
+-  ): Promise<TxResponse<T>> {
++  ): Promise<ValidatedTxResponse<T>> {
+     const signedTx = await getSignedTx(this, transaction, opts)
+ 
+     const lastLedger = getLastLedgerSequence(signedTx)
+diff --git a/packages/xrpl/src/models/methods/index.ts b/packages/xrpl/src/models/methods/index.ts
+index 1bcffa12af..8d4a644422 100644
+--- a/packages/xrpl/src/models/methods/index.ts
++++ b/packages/xrpl/src/models/methods/index.ts
+@@ -195,7 +195,13 @@ import {
+   TransactionEntryRequest,
+   TransactionEntryResponse,
+ } from './transactionEntry'
+-import { TxRequest, TxResponse, TxV1Response, TxVersionResponseMap } from './tx'
++import {
++  TxRequest,
++  TxResponse,
++  TxV1Response,
++  TxVersionResponseMap,
++  ValidatedTxResponse,
++} from './tx'
+ import {
+   UnsubscribeBook,
+   UnsubscribeRequest,
+@@ -605,6 +611,7 @@ export {
+   TxRequest,
+   TxResponse,
+   TxV1Response,
++  ValidatedTxResponse,
+   // path and order book methods with types
+   BookOffersRequest,
+   BookOffer,
+diff --git a/packages/xrpl/src/models/methods/tx.ts b/packages/xrpl/src/models/methods/tx.ts
+index 9de8a8afc0..92a4209502 100644
+--- a/packages/xrpl/src/models/methods/tx.ts
++++ b/packages/xrpl/src/models/methods/tx.ts
+@@ -55,6 +55,7 @@ export interface TxRequest extends BaseRequest {
+ interface BaseTxResult<
+   Version extends APIVersion = typeof DEFAULT_API_VERSION,
+   T extends BaseTransaction = Transaction,
++  Binary extends boolean = boolean,
+ > {
+   /** The SHA-512 hash of the transaction. */
+   hash: string
+@@ -71,8 +72,10 @@ interface BaseTxResult<
+     ? TransactionMetadata<T> | string
+     : never
+   /** Transaction metadata, which describes the results of the transaction.
+-   *  Can be undefined if a transaction has not been validated yet. */
+-  meta?: TransactionMetadata<T> | string
++   *  Can be undefined if a transaction has not been validated yet. It is a hex string
++   *  when the request set `binary: true`, and decoded metadata otherwise. `Binary` defaults
++   *  to `boolean`, which keeps both shapes for callers that do not pin it down. */
++  meta?: Binary extends true ? string : TransactionMetadata<T>
+   /**
+    * If true, this data comes from a validated ledger version; if omitted or.
+    * Set to false, this data is not final.
+@@ -95,8 +98,9 @@ interface BaseTxResult<
+  */
+ export interface TxResponse<
+   T extends BaseTransaction = Transaction,
++  Binary extends boolean = boolean,
+ > extends BaseResponse {
+-  result: BaseTxResult<typeof RIPPLED_API_V2, T> & { tx_json: T }
++  result: BaseTxResult<typeof RIPPLED_API_V2, T, Binary> & { tx_json: T }
+   /**
+    * If true, the server was able to search all of the specified ledger
+    * versions, and the transaction was in none of them. If false, the server did
+@@ -124,6 +128,21 @@ export interface TxV1Response<
+   searched_all?: boolean
+ }
+ 
++/**
++ * The shape a `tx` lookup has once the transaction is known to be in a validated ledger and the
++ * metadata was requested as JSON: `meta` is present and decoded, and `validated` is `true`.
++ *
++ * This is what {@link Client.submitAndWait} resolves with. Neither `undefined` (the transaction is
++ * validated) nor `string` (the sugar never sets `binary`) can occur on that path, so callers can
++ * read `result.meta.TransactionResult` without a guard or a cast.
++ *
++ * @category Responses
++ */
++export type ValidatedTxResponse<T extends BaseTransaction = Transaction> =
++  TxResponse<T, false> & {
++    result: { meta: TransactionMetadata<T>; validated: true }
++  }
++
+ /**
+  * Type to map between the API version and the response type.
+  *
+diff --git a/packages/xrpl/src/models/transactions/index.ts b/packages/xrpl/src/models/transactions/index.ts
+index 0b9b1676eb..ca913acb6f 100644
+--- a/packages/xrpl/src/models/transactions/index.ts
++++ b/packages/xrpl/src/models/transactions/index.ts
+@@ -7,6 +7,7 @@ export {
+ } from './common'
+ export {
+   validate,
++  Autofilled,
+   PseudoTransaction,
+   SubmittableTransaction,
+   TransactionAndMetadata,
+diff --git a/packages/xrpl/src/models/transactions/transaction.ts b/packages/xrpl/src/models/transactions/transaction.ts
+index 3bfd01ed4b..a1b7c25808 100644
+--- a/packages/xrpl/src/models/transactions/transaction.ts
++++ b/packages/xrpl/src/models/transactions/transaction.ts
+@@ -269,6 +269,27 @@ export type PseudoTransaction = EnableAmendment | SetFee | UNLModify
+  */
+ export type Transaction = SubmittableTransaction | PseudoTransaction
+ 
++/**
++ * A transaction that has been through {@link Client.autofill}.
++ *
++ * `autofill` fills `Sequence`, `Fee` and `LastLedgerSequence` when they are absent and converts
++ * `Flags` from its interface form to a number, so after the call those fields are no longer
++ * optional (and `Flags` is no longer a union). Accounts submitting with a Ticket keep
++ * `Sequence: 0`, which still satisfies `number`.
++ *
++ * The intersection is assignable to `T`, so this widens nothing for existing callers.
++ *
++ * @category Transaction Models
++ */
++export type Autofilled<
++  T extends SubmittableTransaction = SubmittableTransaction,
++> = T & {
++  Sequence: number
++  Fee: string
++  LastLedgerSequence: number
++  Flags?: number
++}
++
+ /**
+  * @category Transaction Models
+  */
+diff --git a/packages/xrpl/src/sugar/autofill.ts b/packages/xrpl/src/sugar/autofill.ts
+index 6610ee6d5d..ab5ac4a258 100644
+--- a/packages/xrpl/src/sugar/autofill.ts
++++ b/packages/xrpl/src/sugar/autofill.ts
+@@ -11,8 +11,14 @@ import {
+   AccountObjectsRequest,
+   LedgerEntryRequest,
+ } from '../models/methods'
+-import { Batch, Payment, Transaction } from '../models/transactions'
++import {
++  Batch,
++  Payment,
++  SubmittableTransaction,
++  Transaction,
++} from '../models/transactions'
+ import { Account, areAddressesEqual } from '../models/transactions/common'
++import { convertTxFlagsToNumber } from '../models/utils/flags'
+ import { xrpToDrops } from '../utils'
+ 
+ import getFeeXrp from './getFeeXrp'
+@@ -600,6 +606,30 @@ export function handleDeliverMax(tx: Payment): void {
+   }
+ }
+ 
++/**
++ * Applies the normalisations `autofill` performs that do not need the network, so a transaction the
++ * SDK would happily submit can also be simulated.
++ *
++ * rippled rejects both of the SDK-level conveniences this removes: `Flags` in interface form
++ * (`Field 'tx_json.Flags' has bad type.`) and a Payment's `DeliverMax`, which is an RPC alias the
++ * `simulate` command does not accept (`Field 'tx_json.DeliverMax' is unknown.`).
++ *
++ * @param transaction - The transaction to normalise. It is not modified; a copy is returned.
++ * @returns A copy of the transaction with numeric `Flags` and no `DeliverMax`.
++ * @throws ValidationError if `Flags` is in interface form and names a flag the transaction type
++ * does not have, or if a Payment sets both `Amount` and `DeliverMax` to different values.
++ */
++export function normalizeForSimulate<T extends SubmittableTransaction>(
++  transaction: T,
++): T {
++  const tx = { ...transaction }
++  tx.Flags = convertTxFlagsToNumber(tx)
++  if (tx.TransactionType === 'Payment' && tx.DeliverMax != null) {
++    handleDeliverMax(tx)
++  }
++  return tx
++}
++
+ /**
+  * Autofills all the relevant `x` fields.
+  *
+diff --git a/packages/xrpl/src/sugar/submit.ts b/packages/xrpl/src/sugar/submit.ts
+index 51c9ba306c..97679ce4c9 100644
+--- a/packages/xrpl/src/sugar/submit.ts
++++ b/packages/xrpl/src/sugar/submit.ts
+@@ -13,7 +13,7 @@ import {
+   XrplError,
+ } from '../errors'
+ import { Signer } from '../models/common'
+-import { TxResponse } from '../models/methods'
++import { TxResponse, ValidatedTxResponse } from '../models/methods'
+ import { BaseTransaction } from '../models/transactions/common'
+ import { decode, encode } from '../utils'
+ 
+@@ -105,6 +105,32 @@ async function lookupTransaction(
+   }
+ }
+ 
++/**
++ * Narrows a `tx` lookup to the validated, JSON-metadata shape `submitAndWait` promises.
++ *
++ * A validated `tx` response always carries decoded metadata — the lookups here never set
++ * `binary` — but the general `TxResponse` type has to allow a pending transaction (`meta`
++ * absent) and a hex blob (`binary: true`), so both are checked rather than asserted away.
++ *
++ * @template T - The transaction type the caller submitted.
++ * @param response - A `tx` lookup result, or `undefined` if the transaction was not found.
++ * @returns The validated response, or `undefined` if it is not validated yet.
++ */
++function asValidatedTxResponse<T extends BaseTransaction>(
++  response: TxResponse | undefined,
++): ValidatedTxResponse<T> | undefined {
++  if (!response?.result.validated || typeof response.result.meta !== 'object') {
++    return undefined
++  }
++  /*
++   * The `tx` command types its result as the whole transaction union; `T` is the type the caller
++   * submitted, which no runtime check here can confirm. Everything else the type claims —
++   * `validated: true` and decoded `meta` — was just verified above.
++   */
++  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- see above
++  return response as unknown as ValidatedTxResponse<T>
++}
++
+ function isTxnNotFound(data: unknown): boolean {
+   return (
+     typeof data === 'object' &&
+@@ -200,7 +226,7 @@ export async function waitForFinalTransactionOutcome<
+   txHash: string,
+   lastLedger: number,
+   submissionResult: string,
+-): Promise<TxResponse<T>> {
++): Promise<ValidatedTxResponse<T>> {
+   await sleep(LEDGER_CLOSE_TIME)
+ 
+   // Read the validated ledger index before the lookup: if it is already past `lastLedger`, every ledger
+@@ -209,10 +235,9 @@ export async function waitForFinalTransactionOutcome<
+ 
+   const txResponse = await lookupTransaction(client, txHash, submissionResult)
+ 
+-  if (txResponse?.result.validated) {
+-    // TODO: resolve the type assertion below
+-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- we know that txResponse is of type TxResponse
+-    return txResponse as TxResponse<T>
++  const validated = asValidatedTxResponse<T>(txResponse)
++  if (validated) {
++    return validated
+   }
+ 
+   if (lastLedger < latestLedger) {
+@@ -257,7 +282,7 @@ export async function handleTerminalSubmission<
+   client: Client,
+   response: SubmitResponse,
+   txHash: string,
+-): Promise<TxResponse<T> | undefined> {
++): Promise<ValidatedTxResponse<T> | undefined> {
+   const {
+     engine_result: engineResult,
+     engine_result_message: engineResultMessage,
+@@ -277,9 +302,9 @@ export async function handleTerminalSubmission<
+   }
+ 
+   const txResponse = await lookupTransaction(client, txHash, engineResult)
+-  if (txResponse?.result.validated) {
+-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- we know that txResponse is of type TxResponse
+-    return txResponse as TxResponse<T>
++  const validated = asValidatedTxResponse<T>(txResponse)
++  if (validated) {
++    return validated
+   }
+   throw failure
+ }
+diff --git a/packages/xrpl/test/client/submitPathTypes.test.ts b/packages/xrpl/test/client/submitPathTypes.test.ts
+new file mode 100644
+index 0000000000..cebfddabae
+--- /dev/null
++++ b/packages/xrpl/test/client/submitPathTypes.test.ts
+@@ -0,0 +1,261 @@
++import { assert } from 'chai'
++
++import type {
++  Autofilled,
++  MPTokenIssuanceCreate,
++  MPTokenIssuanceSet,
++  Payment,
++  Request,
++  SignedBlob,
++  SimulateRequest,
++} from '../../src'
++import { MPTokenIssuanceCreateFlags, Wallet } from '../../src'
++// Not re-exported from the package root; see the follow-ups in the pull request description.
++import type { MPTokenIssuanceCreateMetadata } from '../../src/models/transactions/MPTokenIssuanceCreate'
++import rippled from '../fixtures/rippled'
++import {
++  setupClient,
++  teardownClient,
++  type XrplTestContext,
++} from '../setupClient'
++
++/**
++ * Type-level coverage for the submit path (audit findings 001, 002, 030, 033).
++ *
++ * The assignments below are the assertions: each one only compiles once the corresponding
++ * signature carries the transaction type through. They are paired with runtime assertions so a
++ * regression that keeps the types but breaks the values still fails.
++ */
++describe('submit path typing', function () {
++  let testContext: XrplTestContext
++
++  beforeEach(async () => {
++    testContext = await setupClient()
++  })
++  afterEach(async () => teardownClient(testContext))
++
++  const wallet = Wallet.fromSeed('spkcsko6Ag3RbCSVXV2FJ8Pd4Zac1')
++
++  const issuanceCreate: MPTokenIssuanceCreate = {
++    TransactionType: 'MPTokenIssuanceCreate',
++    Account: wallet.classicAddress,
++    AssetScale: 2,
++    Fee: '12',
++    Sequence: 1,
++    LastLedgerSequence: 12312,
++    // Numeric so the transaction can be signed as-is, without a round trip through autofill.
++    Flags: MPTokenIssuanceCreateFlags.tfMPTCanLock,
++  }
++
++  const MPT_ISSUANCE_ID = '00000BB8194E6CFB8BDB5C2F1E5B3A73E0E9A4C4E0A0A5F1'
++
++  /**
++   * Builds a validated `tx` response for the MPTokenIssuanceCreate above.
++   *
++   * @returns A mock rippled `tx` response carrying decoded MPTokenIssuanceCreate metadata.
++   */
++  function validatedIssuanceCreate(): Record<string, unknown> {
++    return {
++      ...rippled.tx.Payment,
++      result: {
++        ...rippled.tx.Payment.result,
++        validated: true,
++        tx_json: issuanceCreate,
++        meta: {
++          ...rippled.tx.Payment.result.meta,
++          TransactionResult: 'tesSUCCESS',
++          mpt_issuance_id: MPT_ISSUANCE_ID,
++        },
++      },
++    }
++  }
++
++  function mockValidatedSubmission(): void {
++    testContext.mockRippled!.addResponse('submit', rippled.submit.success)
++    testContext.mockRippled!.addResponse('ledger', rippled.ledger.normal)
++    testContext.mockRippled!.addResponse('tx', validatedIssuanceCreate())
++  }
++
++  describe('001: submitAndWait resolves with decoded, validated metadata', function () {
++    it('types meta as the transaction-specific metadata, with no guard or cast', async function () {
++      mockValidatedSubmission()
++
++      const response = await testContext.client.submitAndWait(issuanceCreate, {
++        wallet,
++        autofill: false,
++      })
++
++      // Neither `string` nor `undefined` occurs on this path, so no narrowing is needed.
++      const meta: MPTokenIssuanceCreateMetadata = response.result.meta
++      const validated: true = response.result.validated
++      const txJson: MPTokenIssuanceCreate = response.result.tx_json
++
++      assert.strictEqual(meta.TransactionResult, 'tesSUCCESS')
++      assert.strictEqual(meta.mpt_issuance_id, MPT_ISSUANCE_ID)
++      assert.strictEqual(validated, true)
++      assert.strictEqual(txJson.TransactionType, 'MPTokenIssuanceCreate')
++    })
++
++    it('keeps polling while a lookup is validated but carries no decoded metadata', async function () {
++      // `meta` being a hex string or absent is what forced the old union; the sugar now treats
++      // such a response as "not final yet" instead of returning something typed as decoded.
++      const withoutMeta = validatedIssuanceCreate()
++      let txLookups = 0
++      testContext.mockRippled!.addResponse('submit', rippled.submit.success)
++      testContext.mockRippled!.addResponse('ledger', {
++        ...rippled.ledger.normal,
++        result: { ...rippled.ledger.normal.result, ledger_index: 12300 },
++      })
++      testContext.mockRippled!.addResponse('tx', () => {
++        txLookups += 1
++        if (txLookups < 2) {
++          return {
++            ...withoutMeta,
++            result: {
++              ...(withoutMeta.result as Record<string, unknown>),
++              meta: 'DEADBEEF',
++            },
++          }
++        }
++        return validatedIssuanceCreate()
++      })
++
++      const response = await testContext.client.submitAndWait(issuanceCreate, {
++        wallet,
++        autofill: false,
++      })
++
++      assert.strictEqual(txLookups, 2)
++      assert.strictEqual(response.result.meta.mpt_issuance_id, MPT_ISSUANCE_ID)
++    })
++  })
++
++  describe('002: a signed blob remembers its transaction type', function () {
++    it('infers T from wallet.sign(...).tx_blob without an explicit type argument', async function () {
++      mockValidatedSubmission()
++
++      const { tx_blob: txBlob } = wallet.sign(issuanceCreate)
++
++      // The brand is a phantom property: a SignedBlob is still just a string at runtime.
++      const asString: string = txBlob
++      const asBlob: SignedBlob<MPTokenIssuanceCreate> = txBlob
++      assert.isString(asString)
++      assert.strictEqual(asBlob, asString)
++
++      const response = await testContext.client.submitAndWait(txBlob)
++      const meta: MPTokenIssuanceCreateMetadata = response.result.meta
++
++      assert.strictEqual(meta.mpt_issuance_id, MPT_ISSUANCE_ID)
++    })
++  })
++
++  describe('030: simulate threads the transaction type and normalises the request', function () {
++    /**
++     * Answers `simulate` with a canned response and records the request that was sent.
++     *
++     * @returns A getter for the `simulate` request the client actually sent.
++     */
++    function captureSimulate(): () => SimulateRequest {
++      let captured: SimulateRequest | undefined
++      testContext.mockRippled!.addResponse('simulate', (request: Request) => {
++        captured = request as SimulateRequest
++        return {
++          id: request.id,
++          status: 'success',
++          type: 'response',
++          result: {
++            applied: false,
++            engine_result: 'tesSUCCESS',
++            engine_result_code: 0,
++            engine_result_message: 'The simulated transaction would succeed.',
++            ledger_index: 12312,
++            tx_json: (request as SimulateRequest).tx_json,
++            meta: { ...rippled.tx.Payment.result.meta },
++          },
++        }
++      })
++      return () => {
++        assert.isDefined(captured, 'simulate was never requested')
++        return captured
++      }
++    }
++
++    it('narrows tx_json to the simulated transaction type', async function () {
++      const getRequest = captureSimulate()
++      const set: MPTokenIssuanceSet = {
++        TransactionType: 'MPTokenIssuanceSet',
++        Account: wallet.classicAddress,
++        MPTokenIssuanceID: MPT_ISSUANCE_ID,
++        Flags: { tfMPTLock: true },
++      }
++
++      const response = await testContext.client.simulate(set)
++
++      // `T` defaulted to the whole SubmittableTransaction union before.
++      const issuanceId: string = response.result.tx_json.MPTokenIssuanceID
++      assert.strictEqual(issuanceId, MPT_ISSUANCE_ID)
++
++      // rippled rejects the interface form: `Field 'tx_json.Flags' has bad type.`
++      assert.strictEqual(getRequest().tx_json?.Flags, 0x00000001)
++      // The caller's object is not mutated.
++      assert.deepEqual(set.Flags, { tfMPTLock: true })
++    })
++
++    it('folds a Payment DeliverMax into Amount, as autofill does', async function () {
++      const getRequest = captureSimulate()
++      const payment: Payment = {
++        TransactionType: 'Payment',
++        Account: wallet.classicAddress,
++        Destination: 'rfkE1aSy9G8Upk4JssnwBxhEv5p4mn2KTy',
++        Amount: '1234',
++        DeliverMax: '1234',
++      }
++      // @ts-expect-error -- DeliverMax is a non-protocol, RPC level field in Payment transactions
++      delete payment.Amount
++
++      await testContext.client.simulate(payment)
++
++      // `DeliverMax` is an RPC-only alias: `Field 'tx_json.DeliverMax' is unknown.`
++      const sent = getRequest().tx_json
++      assert.strictEqual(sent?.TransactionType, 'Payment')
++      assert.strictEqual(sent?.Amount, '1234')
++      assert.strictEqual('DeliverMax' in (sent ?? {}), false)
++      assert.strictEqual(payment.DeliverMax, '1234')
++    })
++  })
++
++  describe('033: autofill reports the fields it filled as present', function () {
++    it('makes Sequence, Fee and LastLedgerSequence non-optional and Flags a number', async function () {
++      testContext.mockRippled!.addResponse(
++        'account_info',
++        rippled.account_info.normal,
++      )
++      testContext.mockRippled!.addResponse(
++        'server_info',
++        rippled.server_info.normal,
++      )
++      testContext.mockRippled!.addResponse('ledger', rippled.ledger.normal)
++
++      const filled: Autofilled<MPTokenIssuanceCreate> =
++        await testContext.client.autofill({
++          TransactionType: 'MPTokenIssuanceCreate',
++          Account: 'rGWrZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf',
++          AssetScale: 2,
++          Flags: { tfMPTCanLock: true },
++        })
++
++      const sequence: number = filled.Sequence
++      const fee: string = filled.Fee
++      const lastLedgerSequence: number = filled.LastLedgerSequence
++      const flags: number | undefined = filled.Flags
++
++      assert.isNumber(sequence)
++      assert.isString(fee)
++      assert.isNumber(lastLedgerSequence)
++      assert.strictEqual(flags, 0x00000002)
++      // The intersection is still assignable to the input type.
++      const asInput: MPTokenIssuanceCreate = filled
++      assert.strictEqual(asInput.TransactionType, 'MPTokenIssuanceCreate')
++    })
++  })
++})
+diff --git a/packages/xrpl/test/integration/requests/simulate.test.ts b/packages/xrpl/test/integration/requests/simulate.test.ts
+index d6ea013996..e7f59b4559 100644
+--- a/packages/xrpl/test/integration/requests/simulate.test.ts
++++ b/packages/xrpl/test/integration/requests/simulate.test.ts
+@@ -1,6 +1,12 @@
+ import { assert } from 'chai'
+ 
+-import { AccountSet, SimulateRequest } from '../../../src'
++import {
++  AccountSet,
++  AccountSetTfFlags,
++  Payment,
++  SimulateRequest,
++  Wallet,
++} from '../../../src'
+ import { SimulateBinaryRequest } from '../../../src/models/methods/simulate'
+ import serverUrl from '../serverUrl'
+ import {
+@@ -82,4 +88,51 @@ describe('simulate', function () {
+     },
+     TIMEOUT,
+   )
++
++  it(
++    'sugar: accepts Flags in interface form',
++    async () => {
++      // rippled answers `Field 'tx_json.Flags' has bad type.` for the object form, so the sugar
++      // converts it the way autofill does before sending.
++      const tx: AccountSet = {
++        TransactionType: 'AccountSet',
++        Account: testContext.wallet.address,
++        Flags: { tfRequireDestTag: true },
++      }
++      const simulateResponse = await testContext.client.simulate(tx)
++
++      assert.equal(simulateResponse.result.engine_result, 'tesSUCCESS')
++      assert.strictEqual(
++        simulateResponse.result.tx_json.Flags,
++        AccountSetTfFlags.tfRequireDestTag,
++      )
++      // The caller's transaction is left alone.
++      assert.deepEqual(tx.Flags, { tfRequireDestTag: true })
++    },
++    TIMEOUT,
++  )
++
++  it(
++    'sugar: accepts a Payment that only sets DeliverMax',
++    async () => {
++      // `DeliverMax` is an RPC-level alias `simulate` does not know:
++      // `Field 'tx_json.DeliverMax' is unknown.` autofill folds it into `Amount`; so does this.
++      const tx: Payment = {
++        TransactionType: 'Payment',
++        Account: testContext.wallet.address,
++        Destination: Wallet.generate().classicAddress,
++        Amount: '20000000',
++        DeliverMax: '20000000',
++      }
++      // @ts-expect-error -- DeliverMax is a non-protocol, RPC level field in Payment transactions
++      delete tx.Amount
++
++      const simulateResponse = await testContext.client.simulate(tx)
++
++      assert.equal(simulateResponse.result.engine_result, 'tesSUCCESS')
++      assert.strictEqual(simulateResponse.result.tx_json.Amount, '20000000')
++      assert.isFalse('DeliverMax' in simulateResponse.result.tx_json)
++    },
++    TIMEOUT,
++  )
+ })
+diff --git a/packages/xrpl/test/integration/submitAndWait.test.ts b/packages/xrpl/test/integration/submitAndWait.test.ts
+index 6d1d7ea651..d8c9ded392 100644
+--- a/packages/xrpl/test/integration/submitAndWait.test.ts
++++ b/packages/xrpl/test/integration/submitAndWait.test.ts
+@@ -203,7 +203,7 @@ describe('client.submitAndWait', function () {
+       }
+       const autofilled = await testContext.client.autofill(accountSet)
+       const stale = await signAccountSet({
+-        Sequence: (autofilled.Sequence ?? 1) - 1,
++        Sequence: autofilled.Sequence - 1,
+       })
+ 
+       const started = Date.now()

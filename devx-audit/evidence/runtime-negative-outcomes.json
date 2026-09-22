@@ -1,0 +1,92 @@
+{
+  "timestamp": "2026-09-22T16:36:25.525Z",
+  "endpoint": "ws://127.0.0.1:16006",
+  "container": "aha-devx-audit-20260922",
+  "image": "rippleci/xrpld@sha256:898feb090a777fddce725b6e4af776194bbead943a02e8cc80b4b0c4556d2a52",
+  "node": "v25.9.0",
+  "scope": "Two actual Send XRP example runs against an isolated standalone ledger. The sender has only the account reserve, so its requested 1 XRP payment cannot succeed. No public networks, production accounts, or real assets are involved. This checks one validated tec outcome, not all finality branches.",
+  "script": "harness/run-local-negative-outcomes.mjs",
+  "results": [
+    {
+      "label": "baseline",
+      "sdk": "published xrpl@5.3.0",
+      "sdkEntry": "harness/node_modules/xrpl/dist/npm/index.js",
+      "sdkEntrySha256": "10bdd91368b8a0ca217c3e3f037853167c0c31f15ecd1b249005e3f2085925c3",
+      "sample": "send-xrp/ts/dist/send-xrp.js",
+      "sampleSha256": "11c60f53469409794e4fe39416e333418f5ec1b6c47396d94e61b72c6ac4d26c",
+      "passed": true,
+      "preliminaryResult": "tecUNFUNDED_PAYMENT",
+      "sdkResolved": true,
+      "validated": true,
+      "metadataKind": "decoded object",
+      "finalResult": "tecUNFUNDED_PAYMENT",
+      "transactionHash": "EB783108CD7966F7EC4771222E88E2A70227274F835DA2267BB1293A07669967",
+      "ledgerIndex": 67,
+      "requestedAmountDrops": "1000000",
+      "feeDrops": "12",
+      "balancesDrops": {
+        "before": {
+          "sender": "10000000",
+          "receiver": "99999985989999820"
+        },
+        "after": {
+          "sender": "9999988",
+          "receiver": "99999985989999820"
+        }
+      },
+      "senderChargedOnlyFee": true,
+      "receiverUnchanged": true,
+      "exampleRejected": true,
+      "exampleError": "Payment failed: tecUNFUNDED_PAYMENT",
+      "elapsedMs": 2168
+    },
+    {
+      "label": "prototype",
+      "sdk": "built aha DevX prototype",
+      "sdkEntry": "worktrees/xrpl.js/packages/xrpl/dist/npm/index.js",
+      "sdkEntrySha256": "a1148bcee6a92034af71ea5df9111fa93f95eb80cd5880b432b16eb76b4efffc",
+      "sample": "devx-after/dist/send-xrp.js",
+      "sampleSha256": "f63d9e99ee00b9ba75925818ed6b2bad3b5531a1f88e55e35ba825f2cab09014",
+      "passed": true,
+      "preliminaryResult": "tecUNFUNDED_PAYMENT",
+      "sdkResolved": true,
+      "validated": true,
+      "metadataKind": "decoded object",
+      "finalResult": "tecUNFUNDED_PAYMENT",
+      "transactionHash": "1F48337A7C7C0C0EEEDFCCCCF2EF889AB645D8F4C89C05A179046E38B85E64FE",
+      "ledgerIndex": 71,
+      "requestedAmountDrops": "1000000",
+      "feeDrops": "12",
+      "balancesDrops": {
+        "before": {
+          "sender": "10000000",
+          "receiver": "99999985979999808"
+        },
+        "after": {
+          "sender": "9999988",
+          "receiver": "99999985979999808"
+        }
+      },
+      "senderChargedOnlyFee": true,
+      "receiverUnchanged": true,
+      "exampleRejected": true,
+      "exampleError": "Payment failed: tecUNFUNDED_PAYMENT",
+      "elapsedMs": 2140
+    }
+  ],
+  "advanceErrors": [],
+  "server": {
+    "build_version": "3.4.0-rc1",
+    "validated_ledger": {
+      "age": 295,
+      "base_fee_xrp": 0.00001,
+      "hash": "6998A5D4CA2AAF1538E519D82D0F51788698E24DE6CB62F27FE45FEE9ECAF709",
+      "reserve_base_xrp": 10,
+      "reserve_inc_xrp": 2,
+      "seq": 64
+    }
+  },
+  "senderFundingDrops": "10000000",
+  "scriptSha256": "d90bff0eec97f2b6ee3388c43c4795103c045a3b8d08c7584144f8d664fb2ea3",
+  "passed": true
+}

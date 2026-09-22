@@ -1,0 +1,37 @@
+[
+  {
+    "family": "get-started/ts",
+    "exitCode": 0,
+    "output": ""
+  },
+  {
+    "family": "create-amm/ts",
+    "exitCode": 0,
+    "output": ""
+  },
+  {
+    "family": "claim-payment-channel/js",
+    "exitCode": 0,
+    "output": ""
+  },
+  {
+    "family": "get-tx/js",
+    "exitCode": 0,
+    "output": ""
+  },
+  {
+    "family": "partial-payment/js",
+    "exitCode": 0,
+    "output": ""
+  },
+  {
+    "family": "paths/js",
+    "exitCode": 0,
+    "output": ""
+  },
+  {
+    "family": "reliable-tx-submission/js",
+    "exitCode": 0,
+    "output": ""
+  }
+]
