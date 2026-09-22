@@ -1,7 +1,54 @@
-To run integration tests:
-1. Run rippled in standalone node, either in a docker container (preferred) or by installing rippled.
-  * Go to the top-level of the `xrpl.js` repo, just above the `packages` folder.
-  * With docker, run `docker run  -p 6006:6006 --rm -it --name rippled_standalone --volume $PWD/.ci-config:/etc/opt/ripple/ --entrypoint bash rippleci/rippled:2.3.0-rc1 -c 'rippled -a'`
-  * Or [download and build rippled](https://xrpl.org/install-rippled.html) and run `./rippled -a --start`
-    * If you'd like to use the latest rippled amendments, you should modify your `rippled.cfg` file to enable amendments in the `[amendments]` section. You can view `.ci-config/rippled.cfg` in the top level folder as an example of this.
-2. Run `npm run test:integration` or `npm run test:browser`
+# Integration tests
+
+These tests run against a standalone `xrpld` node started from the config in
+`.ci-config/xrpld.cfg` at the top level of this repository. CI starts that node from the
+`rippleci/xrpld:develop` image (see `.github/workflows/nodejs.yml`), so running the same
+image locally is what reproduces a CI failure.
+
+From the top level of the repo (one level above `packages`):
+
+```bash
+npm install
+docker run \
+  --detach \
+  --publish 6006:6006 \
+  --volume "$PWD/.ci-config:/etc/xrpld/" \
+  --name xrpld-service \
+  rippleci/xrpld:develop --standalone
+npm run build
+npm run test:integration
+```
+
+When you are done: `docker rm -f xrpld-service`.
+
+`CONTRIBUTING.md` explains each flag of the `docker run` command, how to point CI at a
+private image, and how to add newly supported amendments to `.ci-config/xrpld.cfg`.
+
+## Notes on the standalone node
+
+- **Ledgers only close when asked.** A standalone node closes a ledger on the admin
+  `ledger_accept` RPC and never on its own. `setupClient` starts a ticker that calls it
+  every second for the lifetime of the test context, so `submitAndWait` and anything else
+  that waits for validation makes progress; `ledgerAccept` in `utils.ts` closes one
+  on demand.
+- **`feature` cannot tell you what is active.** The `[features]` stanza of `xrpld.cfg` is
+  applied as a set of rules in force from the genesis ledger rather than written to the
+  ledger's `Amendments` object, so the `feature` RPC reports *every* amendment as
+  `enabled: false`. Use `isAmendmentEnabled` from `utils.ts`, which probes the behaviour
+  with `simulate`, and never the `enabled` flag.
+- **The amendment list is checked for you.** `setupClient` fails with the missing names if
+  the node supports a non-retired amendment that `xrpld.cfg` does not list.
+
+## Choosing a port
+
+`PORT` overrides the port the tests connect to on `localhost` (default `6006`), which is
+how you run against a container of your own:
+
+```bash
+docker run --detach --publish 6124:6006 \
+  --volume "$PWD/.ci-config/:/etc/xrpld/" \
+  --name my-xrpld rippleci/xrpld:develop --standalone
+cd packages/xrpl && PORT=6124 npm run test:integration
+```
+
+`HOST` (default `0.0.0.0`) is honoured too; see `test/integration/serverUrl.ts`.
