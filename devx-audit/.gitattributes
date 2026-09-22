@@ -1,0 +1,5 @@
+output/*.pdf binary
+output/*.pptx binary
+# Preserve exact downloaded patches and tracked baseline evidence.
+evidence/*.patch -whitespace
+evidence/portal-tracked-baseline/** -whitespace

@@ -22,7 +22,7 @@ import {
   Wallet,
   XRP,
 } from '../../../src'
-import { MPTokenIssuance, Vault, VaultFlags } from '../../../src/models/ledger'
+import { MPTokenIssuance, VaultFlags } from '../../../src/models/ledger'
 import { MPTokenIssuanceCreateMetadata } from '../../../src/models/transactions/MPTokenIssuanceCreate'
 import serverUrl from '../serverUrl'
 import {
@@ -120,7 +120,7 @@ describe('Single Asset Vault', function () {
         account: vaultOwnerWallet.classicAddress,
         type: 'vault',
       })
-      const vault = result.result.account_objects[0] as Vault
+      const vault = result.result.account_objects[0]
       const vaultId = vault.index
       const asset = vault.Asset as XRP
       const assetsMaximum = vault.AssetsMaximum as string
@@ -181,7 +181,7 @@ describe('Single Asset Vault', function () {
         account: vaultOwnerWallet.classicAddress,
         type: 'vault',
       })
-      const updatedVault = updatedResult.result.account_objects[0] as Vault
+      const updatedVault = updatedResult.result.account_objects[0]
 
       assert.equal(updatedVault.AssetsMaximum, '1000')
       assert.equal(updatedVault.Data, stringToHex('updated metadata'))
@@ -209,8 +209,7 @@ describe('Single Asset Vault', function () {
         account: vaultOwnerWallet.classicAddress,
         type: 'vault',
       })
-      const afterDepositVault = afterDepositResult.result
-        .account_objects[0] as Vault
+      const afterDepositVault = afterDepositResult.result.account_objects[0]
 
       // Should have new balance after deposit (this assumes AssetsTotal tracks deposits)
       assert.equal(
@@ -244,8 +243,7 @@ describe('Single Asset Vault', function () {
         account: vaultOwnerWallet.classicAddress,
         type: 'vault',
       })
-      const afterWithdrawVault = afterWithdrawResult.result
-        .account_objects[0] as Vault
+      const afterWithdrawVault = afterWithdrawResult.result.account_objects[0]
 
       // Should have reduced balance after withdrawal (should be 0 if all withdrawn)
       assert.equal(
@@ -281,8 +279,7 @@ describe('Single Asset Vault', function () {
         type: 'vault',
       })
 
-      const afterClawbackVault = afterClawbackResult.result
-        .account_objects[0] as Vault
+      const afterClawbackVault = afterClawbackResult.result.account_objects[0]
 
       assert.equal(
         afterClawbackVault.AssetsTotal ?? '0',
@@ -392,7 +389,7 @@ describe('Single Asset Vault', function () {
         account: vaultOwnerWallet.classicAddress,
         type: 'vault',
       })
-      const vault = result.result.account_objects[0] as Vault
+      const vault = result.result.account_objects[0]
       const vaultId = vault.index
       const asset = vault.Asset as MPTCurrency
       const assetsMaximum = vault.AssetsMaximum as string
@@ -453,7 +450,7 @@ describe('Single Asset Vault', function () {
         account: vaultOwnerWallet.classicAddress,
         type: 'vault',
       })
-      const updatedVault = updatedResult.result.account_objects[0] as Vault
+      const updatedVault = updatedResult.result.account_objects[0]
 
       assert.equal(updatedVault.AssetsMaximum, '1000')
       assert.equal(updatedVault.Data, stringToHex('updated metadata'))
@@ -480,8 +477,7 @@ describe('Single Asset Vault', function () {
         account: vaultOwnerWallet.classicAddress,
         type: 'vault',
       })
-      const afterDepositVault = afterDepositResult.result
-        .account_objects[0] as Vault
+      const afterDepositVault = afterDepositResult.result.account_objects[0]
 
       // Should have new balance after deposit (this assumes AssetsTotal tracks deposits)
       assert.equal(
@@ -512,8 +508,7 @@ describe('Single Asset Vault', function () {
         account: vaultOwnerWallet.classicAddress,
         type: 'vault',
       })
-      const afterWithdrawVault = afterWithdrawResult.result
-        .account_objects[0] as Vault
+      const afterWithdrawVault = afterWithdrawResult.result.account_objects[0]
 
       // Should have reduced balance after withdrawal (should be 0 if all withdrawn)
       assert.equal(
@@ -547,8 +542,7 @@ describe('Single Asset Vault', function () {
         account: vaultOwnerWallet.classicAddress,
         type: 'vault',
       })
-      const afterClawbackVault = afterClawbackResult.result
-        .account_objects[0] as Vault
+      const afterClawbackVault = afterClawbackResult.result.account_objects[0]
 
       assert.equal(
         afterClawbackVault.AssetsTotal ?? '0',

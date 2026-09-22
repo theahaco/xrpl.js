@@ -1,0 +1,59 @@
+Account sequence: 19
+Payment confirmed: 112F04363851492B6BF339729D89C84FF354F0D53F67086EDF14ADCD007F7487
+Prepared fee: 12
+Payment confirmed: 52B5421A272BF3FB1CC34B963CE02E5133511B0E3AA08F2E83F2DC9B33468691
+Confirmed destination: r4gfBZxaciVNhSrve1yRkHZEZMtgu4Bo2F
+Receiver balance: 1001 XRP
+Issuer: rEbKbUL7VbKMjhAdedajak6sXcCQVCutRR
+MPT created: https://devnet.xrpl.org/mpt/0000001FA00F6BE582E9AE55ACF755316999B1F584697BDB
+Metadata: {
+  asset_class: 'rwa',
+  additional_info: { interest_rate: '5.00%', maturity_date: '2045-06-30' },
+  asset_subclass: 'treasury',
+  desc: 'Demonstration token backed by fictional short-term Treasuries.',
+  icon: 'https://example.org/tbill-icon.png',
+  issuer_name: 'Example Yield Co.',
+  name: 'T-Bill Yield Token',
+  ticker: 'TBILL',
+  uris: [
+    {
+      category: 'website',
+      title: 'Product',
+      uri: 'https://example.org/tbill'
+    }
+  ]
+}
+Transfer fee: 10
+Updated metadata: {
+  asset_class: 'rwa',
+  additional_info: { interest_rate: '4.75%', maturity_date: '2045-06-30' },
+  asset_subclass: 'treasury',
+  desc: 'Demonstration token backed by fictional short-term Treasuries.',
+  icon: 'https://example.org/tbill-icon.png',
+  issuer_name: 'Example Yield Co.',
+  name: 'T-Bill Yield Token',
+  ticker: 'TBILL',
+  uris: [
+    {
+      category: 'website',
+      title: 'Product',
+      uri: 'https://example.org/tbill'
+    }
+  ]
+}
+AMM created: https://devnet.xrpl.org/transactions/8A4DAB3F4188BF99B72CEE1F32C120C4C8F8733578AF0E0A9FEDFC3F464DD041
+Pool: 100 FOO.rsEoLFwd5SwsJEYKA5coyRyxaft4L8t4AE / 10 XRP
+LP tokens: 31622.77660168379 031D4857BE920E5830EF5EC8DD77C29050FCD8F9
+LP-token trust lines: [
+  {
+    account: 'rGyZrHiMAh4DJ2gTrpjGXcobgbzzZqGHZ8',
+    balance: '31622.77660168379',
+    currency: '031D4857BE920E5830EF5EC8DD77C29050FCD8F9',
+    limit: '0',
+    limit_peer: '0',
+    no_ripple: true,
+    quality_in: 0,
+    quality_out: 0
+  }
+]
+4/4 example workflows completed

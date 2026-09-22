@@ -1,0 +1,22 @@
+[
+  {
+    "family": "get-started/ts",
+    "exitCode": 0,
+    "output": ""
+  },
+  {
+    "family": "create-amm/ts",
+    "exitCode": 0,
+    "output": ""
+  },
+  {
+    "family": "issue-mpt-with-metadata/ts",
+    "exitCode": 0,
+    "output": ""
+  },
+  {
+    "family": "send-xrp/ts",
+    "exitCode": 0,
+    "output": ""
+  }
+]

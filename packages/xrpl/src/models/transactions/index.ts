@@ -7,6 +7,9 @@ export {
 } from './common'
 export {
   validate,
+  Autofilled,
+  LenientTransaction,
+  StrictTransaction,
   PseudoTransaction,
   SubmittableTransaction,
   TransactionAndMetadata,

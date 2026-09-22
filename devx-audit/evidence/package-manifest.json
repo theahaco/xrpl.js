@@ -1,0 +1,5846 @@
+[
+  {
+    "id": "xrpl@5.3.0-aha.devx.0",
+    "name": "xrpl",
+    "version": "5.3.0-aha.devx.0",
+    "size": 569398,
+    "unpackedSize": 2896107,
+    "shasum": "929bfce8a8a7e45a17dc6ccbeeef06149ebdcf06",
+    "integrity": "sha512-fB2WcjbDdHD5POOZm/4ojsuer4rhxbOmHExUu2eSc2+JGlIvXcWDCci8aUiiiAT4ULCN2vM59mqz84qhZ9YidQ==",
+    "filename": "xrpl-5.3.0-aha.devx.0.tgz",
+    "files": [
+      {
+        "path": "LICENSE",
+        "size": 756,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/connection.d.ts",
+        "size": 5247,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/connection.d.ts.map",
+        "size": 1900,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/connection.js",
+        "size": 19762,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/connection.js.map",
+        "size": 10402,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/ConnectionManager.d.ts",
+        "size": 713,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/ConnectionManager.d.ts.map",
+        "size": 358,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/ConnectionManager.js",
+        "size": 1970,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/ConnectionManager.js.map",
+        "size": 786,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/ExponentialBackoff.d.ts",
+        "size": 951,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/ExponentialBackoff.d.ts.map",
+        "size": 557,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/ExponentialBackoff.js",
+        "size": 2511,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/ExponentialBackoff.js.map",
+        "size": 886,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/index.d.ts",
+        "size": 30713,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/index.d.ts.map",
+        "size": 5745,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/index.js",
+        "size": 39979,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/index.js.map",
+        "size": 12725,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/partialPayment.d.ts",
+        "size": 1020,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/partialPayment.d.ts.map",
+        "size": 650,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/partialPayment.js",
+        "size": 6411,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/partialPayment.js.map",
+        "size": 3899,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/RequestManager.d.ts",
+        "size": 3011,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/RequestManager.d.ts.map",
+        "size": 1188,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/RequestManager.js",
+        "size": 8157,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/client/RequestManager.js.map",
+        "size": 3844,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/batch.d.ts",
+        "size": 2064,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/batch.d.ts.map",
+        "size": 396,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/batch.js",
+        "size": 29216,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/batch.js.map",
+        "size": 14299,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/convert.d.ts",
+        "size": 2273,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/convert.d.ts.map",
+        "size": 660,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/convert.js",
+        "size": 9597,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/convert.js.map",
+        "size": 4626,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/index.d.ts",
+        "size": 1412,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/index.d.ts.map",
+        "size": 686,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/index.js",
+        "size": 3157,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/index.js.map",
+        "size": 522,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/keys.d.ts",
+        "size": 1195,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/keys.d.ts.map",
+        "size": 259,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/keys.js",
+        "size": 2017,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/keys.js.map",
+        "size": 556,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/ledger.d.ts",
+        "size": 8120,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/ledger.d.ts.map",
+        "size": 1659,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/ledger.js",
+        "size": 12975,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/ledger.js.map",
+        "size": 3352,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/loader.d.ts",
+        "size": 871,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/loader.d.ts.map",
+        "size": 251,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/loader.js",
+        "size": 3086,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/loader.js.map",
+        "size": 521,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/transfer.d.ts",
+        "size": 1595,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/transfer.d.ts.map",
+        "size": 520,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/transfer.js",
+        "size": 9834,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/transfer.js.map",
+        "size": 5128,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/types.d.ts",
+        "size": 10629,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/types.d.ts.map",
+        "size": 2888,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/types.js",
+        "size": 351,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/confidential/types.js.map",
+        "size": 134,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/ECDSA.d.ts",
+        "size": 139,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/ECDSA.d.ts.map",
+        "size": 180,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/ECDSA.js",
+        "size": 271,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/ECDSA.js.map",
+        "size": 228,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/errors.d.ts",
+        "size": 5093,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/errors.d.ts.map",
+        "size": 1470,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/errors.js",
+        "size": 6033,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/errors.js.map",
+        "size": 1899,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/index.d.ts",
+        "size": 570,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/index.d.ts.map",
+        "size": 518,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/index.js",
+        "size": 2766,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/index.js.map",
+        "size": 443,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/common/index.d.ts",
+        "size": 9646,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/common/index.d.ts.map",
+        "size": 4027,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/common/index.js",
+        "size": 308,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/common/index.js.map",
+        "size": 222,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/index.d.ts",
+        "size": 2111,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/index.d.ts.map",
+        "size": 1070,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/index.js",
+        "size": 6562,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/index.js.map",
+        "size": 828,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/AccountRoot.d.ts",
+        "size": 8965,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/AccountRoot.d.ts.map",
+        "size": 2573,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/AccountRoot.js",
+        "size": 3429,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/AccountRoot.js.map",
+        "size": 686,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Amendments.d.ts",
+        "size": 1461,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Amendments.d.ts.map",
+        "size": 596,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Amendments.js",
+        "size": 351,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Amendments.js.map",
+        "size": 181,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/AMM.d.ts",
+        "size": 2601,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/AMM.d.ts.map",
+        "size": 975,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/AMM.js",
+        "size": 108,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/AMM.js.map",
+        "size": 121,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/BaseLedgerEntry.d.ts",
+        "size": 989,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/BaseLedgerEntry.d.ts.map",
+        "size": 421,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/BaseLedgerEntry.js",
+        "size": 120,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/BaseLedgerEntry.js.map",
+        "size": 145,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Bridge.d.ts",
+        "size": 2578,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Bridge.d.ts.map",
+        "size": 692,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Bridge.js",
+        "size": 111,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Bridge.js.map",
+        "size": 127,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Check.d.ts",
+        "size": 2666,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Check.d.ts.map",
+        "size": 886,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Check.js",
+        "size": 110,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Check.js.map",
+        "size": 125,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Credential.d.ts",
+        "size": 1936,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Credential.d.ts.map",
+        "size": 757,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Credential.js",
+        "size": 350,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Credential.js.map",
+        "size": 223,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Delegate.d.ts",
+        "size": 1256,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Delegate.d.ts.map",
+        "size": 561,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Delegate.js",
+        "size": 113,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Delegate.js.map",
+        "size": 131,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/DepositPreauth.d.ts",
+        "size": 1297,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/DepositPreauth.d.ts.map",
+        "size": 597,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/DepositPreauth.js",
+        "size": 119,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/DepositPreauth.js.map",
+        "size": 143,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/DID.d.ts",
+        "size": 361,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/DID.d.ts.map",
+        "size": 424,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/DID.js",
+        "size": 108,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/DID.js.map",
+        "size": 121,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/DirectoryNode.d.ts",
+        "size": 1793,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/DirectoryNode.d.ts.map",
+        "size": 767,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/DirectoryNode.js",
+        "size": 118,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/DirectoryNode.js.map",
+        "size": 141,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Escrow.d.ts",
+        "size": 2875,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Escrow.d.ts.map",
+        "size": 858,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Escrow.js",
+        "size": 111,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Escrow.js.map",
+        "size": 127,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/FeeSettings.d.ts",
+        "size": 1920,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/FeeSettings.d.ts.map",
+        "size": 789,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/FeeSettings.js",
+        "size": 352,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/FeeSettings.js.map",
+        "size": 183,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/index.d.ts",
+        "size": 2741,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/index.d.ts.map",
+        "size": 2260,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/index.js",
+        "size": 2909,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/index.js.map",
+        "size": 683,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Ledger.d.ts",
+        "size": 3536,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Ledger.d.ts.map",
+        "size": 1269,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Ledger.js",
+        "size": 111,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Ledger.js.map",
+        "size": 127,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/LedgerEntry.d.ts",
+        "size": 2195,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/LedgerEntry.d.ts.map",
+        "size": 1880,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/LedgerEntry.js",
+        "size": 116,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/LedgerEntry.js.map",
+        "size": 137,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/LedgerHashes.d.ts",
+        "size": 821,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/LedgerHashes.d.ts.map",
+        "size": 396,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/LedgerHashes.js",
+        "size": 117,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/LedgerHashes.js.map",
+        "size": 139,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Loan.d.ts",
+        "size": 4175,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Loan.d.ts.map",
+        "size": 1478,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Loan.js",
+        "size": 671,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Loan.js.map",
+        "size": 281,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/LoanBroker.d.ts",
+        "size": 2689,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/LoanBroker.d.ts.map",
+        "size": 973,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/LoanBroker.js",
+        "size": 115,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/LoanBroker.js.map",
+        "size": 135,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/MPToken.d.ts",
+        "size": 2950,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/MPToken.d.ts.map",
+        "size": 1009,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/MPToken.js",
+        "size": 398,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/MPToken.js.map",
+        "size": 236,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/MPTokenIssuance.d.ts",
+        "size": 6146,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/MPTokenIssuance.d.ts.map",
+        "size": 2096,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/MPTokenIssuance.js",
+        "size": 2364,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/MPTokenIssuance.js.map",
+        "size": 606,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/NegativeUNL.d.ts",
+        "size": 1167,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/NegativeUNL.d.ts.map",
+        "size": 539,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/NegativeUNL.js",
+        "size": 345,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/NegativeUNL.js.map",
+        "size": 183,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/NFTokenOffer.d.ts",
+        "size": 425,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/NFTokenOffer.d.ts.map",
+        "size": 506,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/NFTokenOffer.js",
+        "size": 117,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/NFTokenOffer.js.map",
+        "size": 139,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/NFTokenPage.d.ts",
+        "size": 481,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/NFTokenPage.d.ts.map",
+        "size": 543,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/NFTokenPage.js",
+        "size": 116,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/NFTokenPage.js.map",
+        "size": 137,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Offer.d.ts",
+        "size": 2108,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Offer.d.ts.map",
+        "size": 946,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Offer.js",
+        "size": 427,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Offer.js.map",
+        "size": 250,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Oracle.d.ts",
+        "size": 1067,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Oracle.d.ts.map",
+        "size": 547,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Oracle.js",
+        "size": 111,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Oracle.js.map",
+        "size": 127,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/PayChannel.d.ts",
+        "size": 4536,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/PayChannel.d.ts.map",
+        "size": 869,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/PayChannel.js",
+        "size": 115,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/PayChannel.js.map",
+        "size": 135,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/PermissionedDomain.d.ts",
+        "size": 427,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/PermissionedDomain.d.ts.map",
+        "size": 475,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/PermissionedDomain.js",
+        "size": 123,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/PermissionedDomain.js.map",
+        "size": 151,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/RippleState.d.ts",
+        "size": 3415,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/RippleState.d.ts.map",
+        "size": 1046,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/RippleState.js",
+        "size": 1524,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/RippleState.js.map",
+        "size": 496,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/SignerList.d.ts",
+        "size": 1772,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/SignerList.d.ts.map",
+        "size": 611,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/SignerList.js",
+        "size": 398,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/SignerList.js.map",
+        "size": 237,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Sponsorship.d.ts",
+        "size": 2700,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Sponsorship.d.ts.map",
+        "size": 710,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Sponsorship.js",
+        "size": 917,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Sponsorship.js.map",
+        "size": 288,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Ticket.d.ts",
+        "size": 927,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Ticket.d.ts.map",
+        "size": 434,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Ticket.js",
+        "size": 111,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Ticket.js.map",
+        "size": 127,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Vault.d.ts",
+        "size": 2831,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Vault.d.ts.map",
+        "size": 1167,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Vault.js",
+        "size": 381,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/Vault.js.map",
+        "size": 225,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/XChainOwnedClaimID.d.ts",
+        "size": 2521,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/XChainOwnedClaimID.d.ts.map",
+        "size": 891,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/XChainOwnedClaimID.js",
+        "size": 123,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/XChainOwnedClaimID.js.map",
+        "size": 151,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/XChainOwnedCreateAccountClaimID.d.ts",
+        "size": 1998,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/XChainOwnedCreateAccountClaimID.d.ts.map",
+        "size": 824,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/XChainOwnedCreateAccountClaimID.js",
+        "size": 136,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/ledger/XChainOwnedCreateAccountClaimID.js.map",
+        "size": 177,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountChannels.d.ts",
+        "size": 5483,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountChannels.d.ts.map",
+        "size": 1367,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountChannels.js",
+        "size": 120,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountChannels.js.map",
+        "size": 146,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountCurrencies.d.ts",
+        "size": 1593,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountCurrencies.d.ts.map",
+        "size": 675,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountCurrencies.js",
+        "size": 122,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountCurrencies.js.map",
+        "size": 150,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountInfo.d.ts",
+        "size": 8417,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountInfo.d.ts.map",
+        "size": 2524,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountInfo.js",
+        "size": 116,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountInfo.js.map",
+        "size": 138,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountLines.d.ts",
+        "size": 5623,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountLines.d.ts.map",
+        "size": 1444,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountLines.js",
+        "size": 117,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountLines.js.map",
+        "size": 140,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountNFTs.d.ts",
+        "size": 2345,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountNFTs.d.ts.map",
+        "size": 1022,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountNFTs.js",
+        "size": 116,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountNFTs.js.map",
+        "size": 138,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountObjects.d.ts",
+        "size": 5494,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountObjects.d.ts.map",
+        "size": 2530,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountObjects.js",
+        "size": 119,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountObjects.js.map",
+        "size": 144,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountOffers.d.ts",
+        "size": 3459,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountOffers.d.ts.map",
+        "size": 1102,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountOffers.js",
+        "size": 118,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountOffers.js.map",
+        "size": 142,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountSponsoring.d.ts",
+        "size": 3361,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountSponsoring.d.ts.map",
+        "size": 1030,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountSponsoring.js",
+        "size": 122,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountSponsoring.js.map",
+        "size": 150,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountTx.d.ts",
+        "size": 5264,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountTx.d.ts.map",
+        "size": 2017,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountTx.js",
+        "size": 114,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/accountTx.js.map",
+        "size": 134,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ammInfo.d.ts",
+        "size": 5041,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ammInfo.d.ts.map",
+        "size": 1484,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ammInfo.js",
+        "size": 112,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ammInfo.js.map",
+        "size": 130,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/baseMethod.d.ts",
+        "size": 1801,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/baseMethod.d.ts.map",
+        "size": 1264,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/baseMethod.js",
+        "size": 115,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/baseMethod.js.map",
+        "size": 136,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/bookOffers.d.ts",
+        "size": 3594,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/bookOffers.d.ts.map",
+        "size": 1166,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/bookOffers.js",
+        "size": 115,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/bookOffers.js.map",
+        "size": 136,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/channelVerify.d.ts",
+        "size": 1293,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/channelVerify.d.ts.map",
+        "size": 544,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/channelVerify.js",
+        "size": 118,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/channelVerify.js.map",
+        "size": 142,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/depositAuthorized.d.ts",
+        "size": 2442,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/depositAuthorized.d.ts.map",
+        "size": 858,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/depositAuthorized.js",
+        "size": 122,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/depositAuthorized.js.map",
+        "size": 150,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/feature.d.ts",
+        "size": 1115,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/feature.d.ts.map",
+        "size": 848,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/feature.js",
+        "size": 112,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/feature.js.map",
+        "size": 130,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/fee.d.ts",
+        "size": 3258,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/fee.d.ts.map",
+        "size": 890,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/fee.js",
+        "size": 108,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/fee.js.map",
+        "size": 122,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/gatewayBalances.d.ts",
+        "size": 2848,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/gatewayBalances.d.ts.map",
+        "size": 1035,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/gatewayBalances.js",
+        "size": 120,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/gatewayBalances.js.map",
+        "size": 146,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/getAggregatePrice.d.ts",
+        "size": 3117,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/getAggregatePrice.d.ts.map",
+        "size": 1102,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/getAggregatePrice.js",
+        "size": 122,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/getAggregatePrice.js.map",
+        "size": 150,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/index.d.ts",
+        "size": 15431,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/index.d.ts.map",
+        "size": 10446,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/index.js",
+        "size": 110,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/index.js.map",
+        "size": 126,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledger.d.ts",
+        "size": 8604,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledger.d.ts.map",
+        "size": 3117,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledger.js",
+        "size": 111,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledger.js.map",
+        "size": 128,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledgerAccept.d.ts",
+        "size": 951,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledgerAccept.d.ts.map",
+        "size": 399,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledgerAccept.js",
+        "size": 117,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledgerAccept.js.map",
+        "size": 140,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledgerClosed.d.ts",
+        "size": 750,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledgerClosed.d.ts.map",
+        "size": 407,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledgerClosed.js",
+        "size": 117,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledgerClosed.js.map",
+        "size": 140,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledgerCurrent.d.ts",
+        "size": 784,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledgerCurrent.d.ts.map",
+        "size": 399,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledgerCurrent.js",
+        "size": 118,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledgerCurrent.js.map",
+        "size": 142,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledgerData.d.ts",
+        "size": 2325,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledgerData.d.ts.map",
+        "size": 1027,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledgerData.js",
+        "size": 115,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledgerData.js.map",
+        "size": 136,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledgerEntry.d.ts",
+        "size": 10648,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledgerEntry.d.ts.map",
+        "size": 4978,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledgerEntry.js",
+        "size": 116,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ledgerEntry.js.map",
+        "size": 138,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/manifest.d.ts",
+        "size": 1639,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/manifest.d.ts.map",
+        "size": 612,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/manifest.js",
+        "size": 113,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/manifest.js.map",
+        "size": 132,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/nftBuyOffers.d.ts",
+        "size": 1556,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/nftBuyOffers.d.ts.map",
+        "size": 695,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/nftBuyOffers.js",
+        "size": 117,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/nftBuyOffers.js.map",
+        "size": 140,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/nftHistory.d.ts",
+        "size": 3780,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/nftHistory.d.ts.map",
+        "size": 1311,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/nftHistory.js",
+        "size": 115,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/nftHistory.js.map",
+        "size": 136,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/nftInfo.d.ts",
+        "size": 603,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/nftInfo.d.ts.map",
+        "size": 434,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/nftInfo.js",
+        "size": 112,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/nftInfo.js.map",
+        "size": 130,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/nftsByIssuer.d.ts",
+        "size": 2073,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/nftsByIssuer.d.ts.map",
+        "size": 782,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/nftsByIssuer.js",
+        "size": 117,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/nftsByIssuer.js.map",
+        "size": 140,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/nftSellOffers.d.ts",
+        "size": 1566,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/nftSellOffers.d.ts.map",
+        "size": 697,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/nftSellOffers.js",
+        "size": 118,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/nftSellOffers.js.map",
+        "size": 142,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/norippleCheck.d.ts",
+        "size": 3034,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/norippleCheck.d.ts.map",
+        "size": 876,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/norippleCheck.js",
+        "size": 118,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/norippleCheck.js.map",
+        "size": 142,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/pathFind.d.ts",
+        "size": 4333,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/pathFind.d.ts.map",
+        "size": 1510,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/pathFind.js",
+        "size": 113,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/pathFind.js.map",
+        "size": 132,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ping.d.ts",
+        "size": 587,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ping.d.ts.map",
+        "size": 393,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ping.js",
+        "size": 109,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ping.js.map",
+        "size": 124,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/random.d.ts",
+        "size": 580,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/random.d.ts.map",
+        "size": 356,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/random.js",
+        "size": 111,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/random.js.map",
+        "size": 128,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ripplePathFind.d.ts",
+        "size": 2967,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ripplePathFind.d.ts.map",
+        "size": 1199,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ripplePathFind.js",
+        "size": 119,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/ripplePathFind.js.map",
+        "size": 144,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/serverDefinitions.d.ts",
+        "size": 2563,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/serverDefinitions.d.ts.map",
+        "size": 1692,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/serverDefinitions.js",
+        "size": 122,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/serverDefinitions.js.map",
+        "size": 150,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/serverInfo.d.ts",
+        "size": 10664,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/serverInfo.d.ts.map",
+        "size": 3083,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/serverInfo.js",
+        "size": 115,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/serverInfo.js.map",
+        "size": 136,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/serverState.d.ts",
+        "size": 2437,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/serverState.d.ts.map",
+        "size": 1711,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/serverState.js",
+        "size": 116,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/serverState.js.map",
+        "size": 138,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/simulate.d.ts",
+        "size": 1753,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/simulate.d.ts.map",
+        "size": 1303,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/simulate.js",
+        "size": 113,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/simulate.js.map",
+        "size": 132,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/submit.d.ts",
+        "size": 3585,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/submit.d.ts.map",
+        "size": 1049,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/submit.js",
+        "size": 111,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/submit.js.map",
+        "size": 128,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/submitMultisigned.d.ts",
+        "size": 2552,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/submitMultisigned.d.ts.map",
+        "size": 1107,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/submitMultisigned.js",
+        "size": 122,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/submitMultisigned.js.map",
+        "size": 150,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/subscribe.d.ts",
+        "size": 18756,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/subscribe.d.ts.map",
+        "size": 6693,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/subscribe.js",
+        "size": 114,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/subscribe.js.map",
+        "size": 134,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/transactionEntry.d.ts",
+        "size": 1521,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/transactionEntry.d.ts.map",
+        "size": 684,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/transactionEntry.js",
+        "size": 121,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/transactionEntry.js.map",
+        "size": 148,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/tx.d.ts",
+        "size": 5591,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/tx.d.ts.map",
+        "size": 2019,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/tx.js",
+        "size": 107,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/tx.js.map",
+        "size": 120,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/unsubscribe.d.ts",
+        "size": 1416,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/unsubscribe.d.ts.map",
+        "size": 729,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/unsubscribe.js",
+        "size": 116,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/unsubscribe.js.map",
+        "size": 138,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/vaultInfo.d.ts",
+        "size": 7304,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/vaultInfo.d.ts.map",
+        "size": 2168,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/vaultInfo.js",
+        "size": 114,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/methods/vaultInfo.js.map",
+        "size": 134,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/accountDelete.d.ts",
+        "size": 1352,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/accountDelete.d.ts.map",
+        "size": 502,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/accountDelete.js",
+        "size": 787,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/accountDelete.js.map",
+        "size": 479,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/accountSet.d.ts",
+        "size": 5595,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/accountSet.d.ts.map",
+        "size": 1781,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/accountSet.js",
+        "size": 6804,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/accountSet.js.map",
+        "size": 2637,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMBid.d.ts",
+        "size": 1803,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMBid.d.ts.map",
+        "size": 623,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMBid.js",
+        "size": 2692,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMBid.js.map",
+        "size": 1916,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMClawback.d.ts",
+        "size": 2460,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMClawback.d.ts.map",
+        "size": 742,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMClawback.js",
+        "size": 1900,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMClawback.js.map",
+        "size": 1134,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMCreate.d.ts",
+        "size": 1906,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMCreate.d.ts.map",
+        "size": 545,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMCreate.js",
+        "size": 1542,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMCreate.js.map",
+        "size": 1018,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMDelete.d.ts",
+        "size": 1389,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMDelete.d.ts.map",
+        "size": 472,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMDelete.js",
+        "size": 1023,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMDelete.js.map",
+        "size": 667,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMDeposit.d.ts",
+        "size": 2223,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMDeposit.d.ts.map",
+        "size": 1039,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMDeposit.js",
+        "size": 2915,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMDeposit.js.map",
+        "size": 1765,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMVote.d.ts",
+        "size": 1088,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMVote.d.ts.map",
+        "size": 499,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMVote.js",
+        "size": 1508,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMVote.js.map",
+        "size": 994,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMWithdraw.d.ts",
+        "size": 2121,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMWithdraw.d.ts.map",
+        "size": 1086,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMWithdraw.js",
+        "size": 2882,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/AMMWithdraw.js.map",
+        "size": 1672,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/batch.d.ts",
+        "size": 1383,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/batch.d.ts.map",
+        "size": 998,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/batch.js",
+        "size": 4736,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/batch.js.map",
+        "size": 2848,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/checkCancel.d.ts",
+        "size": 844,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/checkCancel.d.ts.map",
+        "size": 396,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/checkCancel.js",
+        "size": 679,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/checkCancel.js.map",
+        "size": 400,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/checkCash.d.ts",
+        "size": 1360,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/checkCash.d.ts.map",
+        "size": 519,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/checkCash.js",
+        "size": 1546,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/checkCash.js.map",
+        "size": 1000,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/checkCreate.d.ts",
+        "size": 1577,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/checkCreate.d.ts.map",
+        "size": 616,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/checkCreate.js",
+        "size": 1309,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/checkCreate.js.map",
+        "size": 879,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/clawback.d.ts",
+        "size": 1139,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/clawback.d.ts.map",
+        "size": 509,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/clawback.js",
+        "size": 1488,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/clawback.js.map",
+        "size": 1084,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/common.d.ts",
+        "size": 17044,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/common.d.ts.map",
+        "size": 5211,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/common.js",
+        "size": 36742,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/common.js.map",
+        "size": 17711,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ConfidentialMPTClawback.d.ts",
+        "size": 1135,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ConfidentialMPTClawback.d.ts.map",
+        "size": 548,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ConfidentialMPTClawback.js",
+        "size": 1415,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ConfidentialMPTClawback.js.map",
+        "size": 796,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ConfidentialMPTConvert.d.ts",
+        "size": 1906,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ConfidentialMPTConvert.d.ts.map",
+        "size": 711,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ConfidentialMPTConvert.js",
+        "size": 2605,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ConfidentialMPTConvert.js.map",
+        "size": 1303,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ConfidentialMPTConvertBack.d.ts",
+        "size": 1903,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ConfidentialMPTConvertBack.d.ts.map",
+        "size": 707,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ConfidentialMPTConvertBack.js",
+        "size": 2052,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ConfidentialMPTConvertBack.js.map",
+        "size": 1080,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ConfidentialMPTMergeInbox.d.ts",
+        "size": 825,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ConfidentialMPTMergeInbox.d.ts.map",
+        "size": 428,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ConfidentialMPTMergeInbox.js",
+        "size": 994,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ConfidentialMPTMergeInbox.js.map",
+        "size": 502,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ConfidentialMPTSend.d.ts",
+        "size": 2405,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ConfidentialMPTSend.d.ts.map",
+        "size": 838,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ConfidentialMPTSend.js",
+        "size": 2583,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ConfidentialMPTSend.js.map",
+        "size": 1510,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/CredentialAccept.d.ts",
+        "size": 1070,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/CredentialAccept.d.ts.map",
+        "size": 487,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/CredentialAccept.js",
+        "size": 718,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/CredentialAccept.js.map",
+        "size": 428,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/CredentialCreate.d.ts",
+        "size": 955,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/CredentialCreate.d.ts.map",
+        "size": 571,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/CredentialCreate.js",
+        "size": 1571,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/CredentialCreate.js.map",
+        "size": 1044,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/CredentialDelete.d.ts",
+        "size": 929,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/CredentialDelete.d.ts.map",
+        "size": 535,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/CredentialDelete.js",
+        "size": 989,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/CredentialDelete.js.map",
+        "size": 613,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/delegateSet.d.ts",
+        "size": 858,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/delegateSet.d.ts.map",
+        "size": 522,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/delegateSet.js",
+        "size": 3072,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/delegateSet.js.map",
+        "size": 1723,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/depositPreauth.d.ts",
+        "size": 1225,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/depositPreauth.d.ts.map",
+        "size": 599,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/depositPreauth.js",
+        "size": 2258,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/depositPreauth.js.map",
+        "size": 1559,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/DIDDelete.d.ts",
+        "size": 440,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/DIDDelete.d.ts.map",
+        "size": 349,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/DIDDelete.js",
+        "size": 467,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/DIDDelete.js.map",
+        "size": 257,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/DIDSet.d.ts",
+        "size": 482,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/DIDSet.d.ts.map",
+        "size": 433,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/DIDSet.js",
+        "size": 932,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/DIDSet.js.map",
+        "size": 595,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/enableAmendment.d.ts",
+        "size": 961,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/enableAmendment.d.ts.map",
+        "size": 444,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/enableAmendment.js",
+        "size": 835,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/enableAmendment.js.map",
+        "size": 304,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/escrowCancel.d.ts",
+        "size": 777,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/escrowCancel.d.ts.map",
+        "size": 454,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/escrowCancel.js",
+        "size": 980,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/escrowCancel.js.map",
+        "size": 630,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/escrowCreate.d.ts",
+        "size": 1925,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/escrowCreate.d.ts.map",
+        "size": 682,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/escrowCreate.js",
+        "size": 1665,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/escrowCreate.js.map",
+        "size": 1075,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/escrowFinish.d.ts",
+        "size": 1247,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/escrowFinish.d.ts.map",
+        "size": 587,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/escrowFinish.js",
+        "size": 1452,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/escrowFinish.js.map",
+        "size": 973,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/index.d.ts",
+        "size": 5792,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/index.d.ts.map",
+        "size": 4498,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/index.js",
+        "size": 7228,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/index.js.map",
+        "size": 1199,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanBrokerCoverClawback.d.ts",
+        "size": 1366,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanBrokerCoverClawback.d.ts.map",
+        "size": 539,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanBrokerCoverClawback.js",
+        "size": 1561,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanBrokerCoverClawback.js.map",
+        "size": 860,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanBrokerCoverDeposit.d.ts",
+        "size": 847,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanBrokerCoverDeposit.d.ts.map",
+        "size": 517,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanBrokerCoverDeposit.js",
+        "size": 952,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanBrokerCoverDeposit.js.map",
+        "size": 523,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanBrokerCoverWithdraw.d.ts",
+        "size": 1317,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanBrokerCoverWithdraw.d.ts.map",
+        "size": 661,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanBrokerCoverWithdraw.js",
+        "size": 1247,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanBrokerCoverWithdraw.js.map",
+        "size": 740,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanBrokerDelete.d.ts",
+        "size": 642,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanBrokerDelete.d.ts.map",
+        "size": 406,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanBrokerDelete.js",
+        "size": 824,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanBrokerDelete.js.map",
+        "size": 451,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanBrokerSet.d.ts",
+        "size": 1651,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanBrokerSet.d.ts.map",
+        "size": 664,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanBrokerSet.js",
+        "size": 3851,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanBrokerSet.js.map",
+        "size": 2284,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanDelete.d.ts",
+        "size": 581,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanDelete.d.ts.map",
+        "size": 389,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanDelete.js",
+        "size": 752,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanDelete.js.map",
+        "size": 439,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanManage.d.ts",
+        "size": 1364,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanManage.d.ts.map",
+        "size": 708,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanManage.js",
+        "size": 2303,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanManage.js.map",
+        "size": 1156,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanPay.d.ts",
+        "size": 1585,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanPay.d.ts.map",
+        "size": 810,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanPay.js",
+        "size": 2775,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanPay.js.map",
+        "size": 1428,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanSet.d.ts",
+        "size": 3893,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanSet.d.ts.map",
+        "size": 1502,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanSet.js",
+        "size": 4845,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/loanSet.js.map",
+        "size": 3106,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/metadata.d.ts",
+        "size": 2894,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/metadata.d.ts.map",
+        "size": 2139,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/metadata.js",
+        "size": 1091,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/metadata.js.map",
+        "size": 554,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/MPTokenAuthorize.d.ts",
+        "size": 1926,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/MPTokenAuthorize.d.ts.map",
+        "size": 673,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/MPTokenAuthorize.js",
+        "size": 1609,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/MPTokenAuthorize.js.map",
+        "size": 515,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/MPTokenIssuanceCreate.d.ts",
+        "size": 8593,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/MPTokenIssuanceCreate.d.ts.map",
+        "size": 2190,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/MPTokenIssuanceCreate.js",
+        "size": 10410,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/MPTokenIssuanceCreate.js.map",
+        "size": 3873,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/MPTokenIssuanceDestroy.d.ts",
+        "size": 1032,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/MPTokenIssuanceDestroy.d.ts.map",
+        "size": 423,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/MPTokenIssuanceDestroy.js",
+        "size": 658,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/MPTokenIssuanceDestroy.js.map",
+        "size": 346,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/MPTokenIssuanceSet.d.ts",
+        "size": 5456,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/MPTokenIssuanceSet.d.ts.map",
+        "size": 1500,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/MPTokenIssuanceSet.js",
+        "size": 9899,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/MPTokenIssuanceSet.js.map",
+        "size": 4170,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenAcceptOffer.d.ts",
+        "size": 3012,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenAcceptOffer.d.ts.map",
+        "size": 701,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenAcceptOffer.js",
+        "size": 1481,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenAcceptOffer.js.map",
+        "size": 895,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenBurn.d.ts",
+        "size": 1549,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenBurn.d.ts.map",
+        "size": 491,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenBurn.js",
+        "size": 636,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenBurn.js.map",
+        "size": 380,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenCancelOffer.d.ts",
+        "size": 1481,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenCancelOffer.d.ts.map",
+        "size": 550,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenCancelOffer.js",
+        "size": 874,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenCancelOffer.js.map",
+        "size": 495,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenCreateOffer.d.ts",
+        "size": 2909,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenCreateOffer.d.ts.map",
+        "size": 968,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenCreateOffer.js",
+        "size": 3183,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenCreateOffer.js.map",
+        "size": 1876,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenMint.d.ts",
+        "size": 4794,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenMint.d.ts.map",
+        "size": 1327,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenMint.js",
+        "size": 2978,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenMint.js.map",
+        "size": 1392,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenModify.d.ts",
+        "size": 1547,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenModify.d.ts.map",
+        "size": 509,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenModify.js",
+        "size": 1149,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/NFTokenModify.js.map",
+        "size": 745,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/offerCancel.d.ts",
+        "size": 844,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/offerCancel.d.ts.map",
+        "size": 395,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/offerCancel.js",
+        "size": 808,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/offerCancel.js.map",
+        "size": 460,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/offerCreate.d.ts",
+        "size": 4025,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/offerCreate.d.ts.map",
+        "size": 1090,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/offerCreate.js",
+        "size": 3906,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/offerCreate.js.map",
+        "size": 1518,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/oracleDelete.d.ts",
+        "size": 608,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/oracleDelete.d.ts.map",
+        "size": 396,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/oracleDelete.js",
+        "size": 575,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/oracleDelete.js.map",
+        "size": 325,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/oracleSet.d.ts",
+        "size": 2215,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/oracleSet.d.ts.map",
+        "size": 646,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/oracleSet.js",
+        "size": 4991,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/oracleSet.js.map",
+        "size": 2659,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/payment.d.ts",
+        "size": 6307,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/payment.d.ts.map",
+        "size": 1552,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/payment.js",
+        "size": 7450,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/payment.js.map",
+        "size": 4454,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/paymentChannelClaim.d.ts",
+        "size": 5642,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/paymentChannelClaim.d.ts.map",
+        "size": 980,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/paymentChannelClaim.js",
+        "size": 3216,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/paymentChannelClaim.js.map",
+        "size": 1234,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/paymentChannelCreate.d.ts",
+        "size": 2101,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/paymentChannelCreate.d.ts.map",
+        "size": 633,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/paymentChannelCreate.js",
+        "size": 1770,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/paymentChannelCreate.js.map",
+        "size": 1099,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/paymentChannelFund.d.ts",
+        "size": 1580,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/paymentChannelFund.d.ts.map",
+        "size": 499,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/paymentChannelFund.js",
+        "size": 1286,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/paymentChannelFund.js.map",
+        "size": 786,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/permissionedDomainDelete.d.ts",
+        "size": 502,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/permissionedDomainDelete.d.ts.map",
+        "size": 399,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/permissionedDomainDelete.js",
+        "size": 638,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/permissionedDomainDelete.js.map",
+        "size": 347,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/permissionedDomainSet.d.ts",
+        "size": 584,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/permissionedDomainSet.d.ts.map",
+        "size": 476,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/permissionedDomainSet.js",
+        "size": 1094,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/permissionedDomainSet.js.map",
+        "size": 558,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/setFee.d.ts",
+        "size": 1479,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/setFee.d.ts.map",
+        "size": 630,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/setFee.js",
+        "size": 111,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/setFee.js.map",
+        "size": 133,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/setRegularKey.d.ts",
+        "size": 859,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/setRegularKey.d.ts.map",
+        "size": 404,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/setRegularKey.js",
+        "size": 713,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/setRegularKey.js.map",
+        "size": 404,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/signerListSet.d.ts",
+        "size": 1284,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/signerListSet.d.ts.map",
+        "size": 491,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/signerListSet.js",
+        "size": 1903,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/signerListSet.js.map",
+        "size": 1196,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/sponsorshipSet.d.ts",
+        "size": 4670,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/sponsorshipSet.d.ts.map",
+        "size": 1110,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/sponsorshipSet.js",
+        "size": 11950,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/sponsorshipSet.js.map",
+        "size": 5326,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/sponsorshipTransfer.d.ts",
+        "size": 2653,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/sponsorshipTransfer.d.ts.map",
+        "size": 837,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/sponsorshipTransfer.js",
+        "size": 7457,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/sponsorshipTransfer.js.map",
+        "size": 3721,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ticketCreate.d.ts",
+        "size": 762,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ticketCreate.d.ts.map",
+        "size": 398,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ticketCreate.js",
+        "size": 1077,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/ticketCreate.js.map",
+        "size": 658,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/transaction.d.ts",
+        "size": 8313,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/transaction.d.ts.map",
+        "size": 5777,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/transaction.js",
+        "size": 15463,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/transaction.js.map",
+        "size": 7190,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/trustSet.d.ts",
+        "size": 4278,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/trustSet.d.ts.map",
+        "size": 1237,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/trustSet.js",
+        "size": 2670,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/trustSet.js.map",
+        "size": 1031,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/UNLModify.d.ts",
+        "size": 777,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/UNLModify.d.ts.map",
+        "size": 385,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/UNLModify.js",
+        "size": 114,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/UNLModify.js.map",
+        "size": 139,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultClawback.d.ts",
+        "size": 1360,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultClawback.d.ts.map",
+        "size": 528,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultClawback.js",
+        "size": 755,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultClawback.js.map",
+        "size": 444,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultCreate.d.ts",
+        "size": 3600,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultCreate.d.ts.map",
+        "size": 1177,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultCreate.js",
+        "size": 8804,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultCreate.js.map",
+        "size": 4477,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultDelete.d.ts",
+        "size": 782,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultDelete.d.ts.map",
+        "size": 435,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultDelete.js",
+        "size": 1404,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultDelete.js.map",
+        "size": 772,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultDeposit.d.ts",
+        "size": 790,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultDeposit.d.ts.map",
+        "size": 491,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultDeposit.js",
+        "size": 664,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultDeposit.js.map",
+        "size": 382,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultSet.d.ts",
+        "size": 1080,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultSet.d.ts.map",
+        "size": 521,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultSet.js",
+        "size": 1365,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultSet.js.map",
+        "size": 860,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultWithdraw.d.ts",
+        "size": 1247,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultWithdraw.d.ts.map",
+        "size": 634,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultWithdraw.js",
+        "size": 958,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/vaultWithdraw.js.map",
+        "size": 597,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainAccountCreateCommit.d.ts",
+        "size": 1780,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainAccountCreateCommit.d.ts.map",
+        "size": 604,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainAccountCreateCommit.js",
+        "size": 920,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainAccountCreateCommit.js.map",
+        "size": 529,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainAddAccountCreateAttestation.d.ts",
+        "size": 2297,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainAddAccountCreateAttestation.d.ts.map",
+        "size": 906,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainAddAccountCreateAttestation.js",
+        "size": 1652,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainAddAccountCreateAttestation.js.map",
+        "size": 1106,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainAddClaimAttestation.d.ts",
+        "size": 2116,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainAddClaimAttestation.d.ts.map",
+        "size": 856,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainAddClaimAttestation.js",
+        "size": 1494,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainAddClaimAttestation.js.map",
+        "size": 1026,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainClaim.d.ts",
+        "size": 1611,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainClaim.d.ts.map",
+        "size": 623,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainClaim.js",
+        "size": 938,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainClaim.js.map",
+        "size": 639,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainCommit.d.ts",
+        "size": 1821,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainCommit.d.ts.map",
+        "size": 593,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainCommit.js",
+        "size": 874,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainCommit.js.map",
+        "size": 580,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainCreateBridge.d.ts",
+        "size": 1389,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainCreateBridge.d.ts.map",
+        "size": 548,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainCreateBridge.js",
+        "size": 800,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainCreateBridge.js.map",
+        "size": 457,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainCreateClaimID.d.ts",
+        "size": 1196,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainCreateClaimID.d.ts.map",
+        "size": 552,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainCreateClaimID.js",
+        "size": 803,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainCreateClaimID.js.map",
+        "size": 459,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainModifyBridge.d.ts",
+        "size": 1836,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainModifyBridge.d.ts.map",
+        "size": 773,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainModifyBridge.js",
+        "size": 1300,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/transactions/XChainModifyBridge.js.map",
+        "size": 577,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/utils/flags.d.ts",
+        "size": 3369,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/utils/flags.d.ts.map",
+        "size": 963,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/utils/flags.js",
+        "size": 10439,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/utils/flags.js.map",
+        "size": 5026,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/utils/index.d.ts",
+        "size": 1401,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/utils/index.d.ts.map",
+        "size": 625,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/utils/index.js",
+        "size": 1926,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/utils/index.js.map",
+        "size": 998,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/utils/mptokenMetadata.d.ts",
+        "size": 1519,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/utils/mptokenMetadata.d.ts.map",
+        "size": 487,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/utils/mptokenMetadata.js",
+        "size": 17177,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/models/utils/mptokenMetadata.js.map",
+        "size": 11971,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/autofill.d.ts",
+        "size": 3147,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/autofill.d.ts.map",
+        "size": 1008,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/autofill.js",
+        "size": 26614,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/autofill.js.map",
+        "size": 12307,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/balances.d.ts",
+        "size": 399,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/balances.d.ts.map",
+        "size": 253,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/balances.js",
+        "size": 600,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/balances.js.map",
+        "size": 359,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/getFeeXrp.d.ts",
+        "size": 425,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/getFeeXrp.d.ts.map",
+        "size": 280,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/getFeeXrp.js",
+        "size": 2532,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/getFeeXrp.js.map",
+        "size": 1036,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/getOrderbook.d.ts",
+        "size": 3547,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/getOrderbook.d.ts.map",
+        "size": 1498,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/getOrderbook.js",
+        "size": 7134,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/getOrderbook.js.map",
+        "size": 3325,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/index.d.ts",
+        "size": 125,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/index.d.ts.map",
+        "size": 179,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/index.js",
+        "size": 934,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/index.js.map",
+        "size": 167,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/submit.d.ts",
+        "size": 6297,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/submit.d.ts.map",
+        "size": 1043,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/submit.js",
+        "size": 12237,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/submit.js.map",
+        "size": 3707,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/utils.d.ts",
+        "size": 337,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/utils.d.ts.map",
+        "size": 186,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/utils.js",
+        "size": 1180,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/utils.js.map",
+        "size": 463,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/validateSponsorship.d.ts",
+        "size": 2561,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/validateSponsorship.d.ts.map",
+        "size": 647,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/validateSponsorship.js",
+        "size": 11927,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/sugar/validateSponsorship.js.map",
+        "size": 4252,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/collections.d.ts",
+        "size": 1196,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/collections.d.ts.map",
+        "size": 625,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/collections.js",
+        "size": 1922,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/collections.js.map",
+        "size": 1037,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/derive.d.ts",
+        "size": 728,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/derive.d.ts.map",
+        "size": 377,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/derive.js",
+        "size": 1295,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/derive.js.map",
+        "size": 406,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/getBalanceChanges.d.ts",
+        "size": 465,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/getBalanceChanges.d.ts.map",
+        "size": 353,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/getBalanceChanges.js",
+        "size": 5416,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/getBalanceChanges.js.map",
+        "size": 3667,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/getNFTokenID.d.ts",
+        "size": 519,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/getNFTokenID.d.ts.map",
+        "size": 292,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/getNFTokenID.js",
+        "size": 4199,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/getNFTokenID.js.map",
+        "size": 1985,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/getTransactionResultCode.d.ts",
+        "size": 1041,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/getTransactionResultCode.d.ts.map",
+        "size": 312,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/getTransactionResultCode.js",
+        "size": 2135,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/getTransactionResultCode.js.map",
+        "size": 733,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/getXChainClaimID.d.ts",
+        "size": 580,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/getXChainClaimID.d.ts.map",
+        "size": 303,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/getXChainClaimID.js",
+        "size": 2121,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/getXChainClaimID.js.map",
+        "size": 1007,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/hashLedger.d.ts",
+        "size": 1936,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/hashLedger.d.ts.map",
+        "size": 849,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/hashLedger.js",
+        "size": 8346,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/hashLedger.js.map",
+        "size": 4636,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/HashPrefix.d.ts",
+        "size": 831,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/HashPrefix.d.ts.map",
+        "size": 331,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/HashPrefix.js",
+        "size": 1641,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/HashPrefix.js.map",
+        "size": 490,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/index.d.ts",
+        "size": 4642,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/index.d.ts.map",
+        "size": 1182,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/index.js",
+        "size": 9977,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/index.js.map",
+        "size": 3962,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/ledgerSpaces.d.ts",
+        "size": 879,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/ledgerSpaces.d.ts.map",
+        "size": 229,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/ledgerSpaces.js",
+        "size": 998,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/ledgerSpaces.js.map",
+        "size": 652,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/sha512Half.d.ts",
+        "size": 235,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/sha512Half.d.ts.map",
+        "size": 221,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/sha512Half.js",
+        "size": 530,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/sha512Half.js.map",
+        "size": 381,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/SHAMap/index.d.ts",
+        "size": 812,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/SHAMap/index.d.ts.map",
+        "size": 458,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/SHAMap/index.js",
+        "size": 1879,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/SHAMap/index.js.map",
+        "size": 574,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/SHAMap/InnerNode.d.ts",
+        "size": 1314,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/SHAMap/InnerNode.d.ts.map",
+        "size": 702,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/SHAMap/InnerNode.js",
+        "size": 3744,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/SHAMap/InnerNode.js.map",
+        "size": 2407,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/SHAMap/LeafNode.d.ts",
+        "size": 934,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/SHAMap/LeafNode.d.ts.map",
+        "size": 530,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/SHAMap/LeafNode.js",
+        "size": 2448,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/SHAMap/LeafNode.js.map",
+        "size": 1329,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/SHAMap/node.d.ts",
+        "size": 341,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/SHAMap/node.d.ts.map",
+        "size": 349,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/SHAMap/node.js",
+        "size": 593,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/hashes/SHAMap/node.js.map",
+        "size": 316,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/index.d.ts",
+        "size": 5957,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/index.d.ts.map",
+        "size": 2761,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/index.js",
+        "size": 11768,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/index.js.map",
+        "size": 2916,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/isTesSuccess.d.ts",
+        "size": 811,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/isTesSuccess.d.ts.map",
+        "size": 217,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/isTesSuccess.js",
+        "size": 929,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/isTesSuccess.js.map",
+        "size": 231,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/parseNFTokenID.d.ts",
+        "size": 1256,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/parseNFTokenID.d.ts.map",
+        "size": 386,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/parseNFTokenID.js",
+        "size": 3975,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/parseNFTokenID.js.map",
+        "size": 1516,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/quality.d.ts",
+        "size": 2282,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/quality.d.ts.map",
+        "size": 556,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/quality.js",
+        "size": 5799,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/quality.js.map",
+        "size": 3177,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/signPaymentChannelClaim.d.ts",
+        "size": 525,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/signPaymentChannelClaim.d.ts.map",
+        "size": 286,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/signPaymentChannelClaim.js",
+        "size": 959,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/signPaymentChannelClaim.js.map",
+        "size": 449,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/stringConversion.d.ts",
+        "size": 861,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/stringConversion.d.ts.map",
+        "size": 341,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/stringConversion.js",
+        "size": 1156,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/stringConversion.js.map",
+        "size": 405,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/timeConversion.d.ts",
+        "size": 1199,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/timeConversion.d.ts.map",
+        "size": 491,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/timeConversion.js",
+        "size": 1771,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/timeConversion.js.map",
+        "size": 791,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/verifyPaymentChannelClaim.d.ts",
+        "size": 645,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/verifyPaymentChannelClaim.d.ts.map",
+        "size": 312,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/verifyPaymentChannelClaim.js",
+        "size": 1139,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/verifyPaymentChannelClaim.js.map",
+        "size": 489,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/xrpConversion.d.ts",
+        "size": 652,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/xrpConversion.d.ts.map",
+        "size": 322,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/xrpConversion.js",
+        "size": 3615,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/utils/xrpConversion.js.map",
+        "size": 1914,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/authorizeChannel.d.ts",
+        "size": 613,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/authorizeChannel.d.ts.map",
+        "size": 297,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/authorizeChannel.js",
+        "size": 1000,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/authorizeChannel.js.map",
+        "size": 400,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/batchSigner.d.ts",
+        "size": 1447,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/batchSigner.d.ts.map",
+        "size": 502,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/batchSigner.js",
+        "size": 9654,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/batchSigner.js.map",
+        "size": 4831,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/counterpartySigner.d.ts",
+        "size": 2511,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/counterpartySigner.d.ts.map",
+        "size": 641,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/counterpartySigner.js",
+        "size": 7418,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/counterpartySigner.js.map",
+        "size": 3301,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/defaultFaucets.d.ts",
+        "size": 1163,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/defaultFaucets.d.ts.map",
+        "size": 705,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/defaultFaucets.js",
+        "size": 2054,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/defaultFaucets.js.map",
+        "size": 1097,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/fundWallet.d.ts",
+        "size": 4935,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/fundWallet.d.ts.map",
+        "size": 1297,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/fundWallet.js",
+        "size": 8959,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/fundWallet.js.map",
+        "size": 3537,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/index.d.ts",
+        "size": 12937,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/index.d.ts.map",
+        "size": 2119,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/index.js",
+        "size": 21489,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/index.js.map",
+        "size": 6065,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/rfc1751.d.ts",
+        "size": 766,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/rfc1751.d.ts.map",
+        "size": 305,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/rfc1751.js",
+        "size": 7325,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/rfc1751.js.map",
+        "size": 5678,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/rfc1751Words.json",
+        "size": 16727,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/signer.d.ts",
+        "size": 1493,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/signer.d.ts.map",
+        "size": 408,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/signer.js",
+        "size": 4886,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/signer.js.map",
+        "size": 2197,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/sponsorSigner.d.ts",
+        "size": 3651,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/sponsorSigner.d.ts.map",
+        "size": 765,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/sponsorSigner.js",
+        "size": 10917,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/sponsorSigner.js.map",
+        "size": 4825,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/utils.d.ts",
+        "size": 3278,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/utils.d.ts.map",
+        "size": 888,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/utils.js",
+        "size": 8352,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/utils.js.map",
+        "size": 3674,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/walletFromSecretNumbers.d.ts",
+        "size": 1236,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/walletFromSecretNumbers.d.ts.map",
+        "size": 404,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/walletFromSecretNumbers.js",
+        "size": 2181,
+        "mode": 420
+      },
+      {
+        "path": "dist/npm/Wallet/walletFromSecretNumbers.js.map",
+        "size": 705,
+        "mode": 420
+      },
+      {
+        "path": "package.json",
+        "size": 2879,
+        "mode": 420
+      },
+      {
+        "path": "src/client/connection.ts",
+        "size": 17488,
+        "mode": 420
+      },
+      {
+        "path": "src/client/ConnectionManager.ts",
+        "size": 1125,
+        "mode": 420
+      },
+      {
+        "path": "src/client/ExponentialBackoff.ts",
+        "size": 2460,
+        "mode": 420
+      },
+      {
+        "path": "src/client/index.ts",
+        "size": 46106,
+        "mode": 420
+      },
+      {
+        "path": "src/client/partialPayment.ts",
+        "size": 6633,
+        "mode": 420
+      },
+      {
+        "path": "src/client/RequestManager.ts",
+        "size": 7654,
+        "mode": 420
+      },
+      {
+        "path": "src/confidential/batch.ts",
+        "size": 28174,
+        "mode": 420
+      },
+      {
+        "path": "src/confidential/convert.ts",
+        "size": 8255,
+        "mode": 420
+      },
+      {
+        "path": "src/confidential/index.ts",
+        "size": 1416,
+        "mode": 420
+      },
+      {
+        "path": "src/confidential/keys.ts",
+        "size": 1617,
+        "mode": 420
+      },
+      {
+        "path": "src/confidential/ledger.ts",
+        "size": 11182,
+        "mode": 420
+      },
+      {
+        "path": "src/confidential/loader.ts",
+        "size": 1382,
+        "mode": 420
+      },
+      {
+        "path": "src/confidential/README.md",
+        "size": 9767,
+        "mode": 420
+      },
+      {
+        "path": "src/confidential/transfer.ts",
+        "size": 8278,
+        "mode": 420
+      },
+      {
+        "path": "src/confidential/types.ts",
+        "size": 10411,
+        "mode": 420
+      },
+      {
+        "path": "src/ECDSA.ts",
+        "size": 93,
+        "mode": 420
+      },
+      {
+        "path": "src/errors.ts",
+        "size": 5780,
+        "mode": 420
+      },
+      {
+        "path": "src/index.ts",
+        "size": 898,
+        "mode": 420
+      },
+      {
+        "path": "src/models/common/index.ts",
+        "size": 9176,
+        "mode": 420
+      },
+      {
+        "path": "src/models/index.ts",
+        "size": 2201,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/AccountRoot.ts",
+        "size": 8446,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/Amendments.ts",
+        "size": 1345,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/AMM.ts",
+        "size": 2375,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/BaseLedgerEntry.ts",
+        "size": 895,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/Bridge.ts",
+        "size": 2441,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/Check.ts",
+        "size": 2488,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/Credential.ts",
+        "size": 1819,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/Delegate.ts",
+        "size": 1159,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/DepositPreauth.ts",
+        "size": 1202,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/DID.ts",
+        "size": 332,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/DirectoryNode.ts",
+        "size": 1665,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/Escrow.ts",
+        "size": 2685,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/FeeSettings.ts",
+        "size": 1832,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/index.ts",
+        "size": 2818,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/Ledger.ts",
+        "size": 3357,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/LedgerEntry.ts",
+        "size": 2249,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/LedgerHashes.ts",
+        "size": 749,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/Loan.ts",
+        "size": 3909,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/LoanBroker.ts",
+        "size": 2512,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/MPToken.ts",
+        "size": 2796,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/MPTokenIssuance.ts",
+        "size": 5862,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/NegativeUNL.ts",
+        "size": 1076,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/NFTokenOffer.ts",
+        "size": 359,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/NFTokenPage.ts",
+        "size": 399,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/Offer.ts",
+        "size": 1953,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/Oracle.ts",
+        "size": 978,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/PayChannel.ts",
+        "size": 4301,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/PermissionedDomain.ts",
+        "size": 923,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/RippleState.ts",
+        "size": 3533,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/SignerList.ts",
+        "size": 1692,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/Sponsorship.ts",
+        "size": 2543,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/Ticket.ts",
+        "size": 856,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/Vault.ts",
+        "size": 2623,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/XChainOwnedClaimID.ts",
+        "size": 2363,
+        "mode": 420
+      },
+      {
+        "path": "src/models/ledger/XChainOwnedCreateAccountClaimID.ts",
+        "size": 1849,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/accountChannels.ts",
+        "size": 5136,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/accountCurrencies.ts",
+        "size": 1466,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/accountInfo.ts",
+        "size": 7857,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/accountLines.ts",
+        "size": 5238,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/accountNFTs.ts",
+        "size": 2109,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/accountObjects.ts",
+        "size": 5227,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/accountOffers.ts",
+        "size": 3196,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/accountSponsoring.ts",
+        "size": 3087,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/accountTx.ts",
+        "size": 4995,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/ammInfo.ts",
+        "size": 4340,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/baseMethod.ts",
+        "size": 1651,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/bookOffers.ts",
+        "size": 3350,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/channelVerify.ts",
+        "size": 1190,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/depositAuthorized.ts",
+        "size": 2231,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/feature.ts",
+        "size": 1430,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/fee.ts",
+        "size": 2873,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/gatewayBalances.ts",
+        "size": 2568,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/getAggregatePrice.ts",
+        "size": 2725,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/index.ts",
+        "size": 20096,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/ledger.ts",
+        "size": 8420,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/ledgerAccept.ts",
+        "size": 893,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/ledgerClosed.ts",
+        "size": 691,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/ledgerCurrent.ts",
+        "size": 725,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/ledgerData.ts",
+        "size": 2169,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/ledgerEntry.ts",
+        "size": 10738,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/manifest.ts",
+        "size": 1496,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/nftBuyOffers.ts",
+        "size": 1406,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/nftHistory.ts",
+        "size": 3480,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/nftInfo.ts",
+        "size": 552,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/nftsByIssuer.ts",
+        "size": 1891,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/nftSellOffers.ts",
+        "size": 1415,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/norippleCheck.ts",
+        "size": 2854,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/pathFind.ts",
+        "size": 4025,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/ping.ts",
+        "size": 527,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/random.ts",
+        "size": 532,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/ripplePathFind.ts",
+        "size": 2753,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/serverDefinitions.ts",
+        "size": 2513,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/serverInfo.ts",
+        "size": 9492,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/serverState.ts",
+        "size": 2300,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/simulate.ts",
+        "size": 1655,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/submit.ts",
+        "size": 3239,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/submitMultisigned.ts",
+        "size": 2400,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/subscribe.ts",
+        "size": 18357,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/transactionEntry.ts",
+        "size": 1393,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/tx.ts",
+        "size": 5393,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/unsubscribe.ts",
+        "size": 1318,
+        "mode": 420
+      },
+      {
+        "path": "src/models/methods/vaultInfo.ts",
+        "size": 6047,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/accountDelete.ts",
+        "size": 1690,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/accountSet.ts",
+        "size": 7182,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/AMMBid.ts",
+        "size": 3782,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/AMMClawback.ts",
+        "size": 3476,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/AMMCreate.ts",
+        "size": 2751,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/AMMDelete.ts",
+        "size": 1870,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/AMMDeposit.ts",
+        "size": 3669,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/AMMVote.ts",
+        "size": 2006,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/AMMWithdraw.ts",
+        "size": 3417,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/batch.ts",
+        "size": 4643,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/checkCancel.ts",
+        "size": 1023,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/checkCash.ts",
+        "size": 2331,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/checkCreate.ts",
+        "size": 2333,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/clawback.ts",
+        "size": 2054,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/common.ts",
+        "size": 38079,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/ConfidentialMPTClawback.ts",
+        "size": 1990,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/ConfidentialMPTConvert.ts",
+        "size": 3973,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/ConfidentialMPTConvertBack.ts",
+        "size": 3360,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/ConfidentialMPTMergeInbox.ts",
+        "size": 1229,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/ConfidentialMPTSend.ts",
+        "size": 4331,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/CredentialAccept.ts",
+        "size": 1257,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/CredentialCreate.ts",
+        "size": 1945,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/CredentialDelete.ts",
+        "size": 1385,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/delegateSet.ts",
+        "size": 3334,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/depositPreauth.ts",
+        "size": 3024,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/DIDDelete.ts",
+        "size": 468,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/DIDSet.ts",
+        "size": 965,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/enableAmendment.ts",
+        "size": 898,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/escrowCancel.ts",
+        "size": 1248,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/escrowCreate.ts",
+        "size": 2998,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/escrowFinish.ts",
+        "size": 2178,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/index.ts",
+        "size": 5805,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/loanBrokerCoverClawback.ts",
+        "size": 2145,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/loanBrokerCoverDeposit.ts",
+        "size": 1227,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/loanBrokerCoverWithdraw.ts",
+        "size": 2010,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/loanBrokerDelete.ts",
+        "size": 966,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/loanBrokerSet.ts",
+        "size": 4572,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/loanDelete.ts",
+        "size": 887,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/loanManage.ts",
+        "size": 2495,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/loanPay.ts",
+        "size": 3052,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/loanSet.ts",
+        "size": 7430,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/metadata.ts",
+        "size": 3033,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/MPTokenAuthorize.ts",
+        "size": 2080,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/MPTokenIssuanceCreate.ts",
+        "size": 13319,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/MPTokenIssuanceDestroy.ts",
+        "size": 1125,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/MPTokenIssuanceSet.ts",
+        "size": 12286,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/NFTokenAcceptOffer.ts",
+        "size": 3908,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/NFTokenBurn.ts",
+        "size": 1700,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/NFTokenCancelOffer.ts",
+        "size": 1788,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/NFTokenCreateOffer.ts",
+        "size": 4859,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/NFTokenMint.ts",
+        "size": 5786,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/NFTokenModify.ts",
+        "size": 2092,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/offerCancel.ts",
+        "size": 1131,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/offerCreate.ts",
+        "size": 5195,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/oracleDelete.ts",
+        "size": 707,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/oracleSet.ts",
+        "size": 6552,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/payment.ts",
+        "size": 11360,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/paymentChannelClaim.ts",
+        "size": 6644,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/paymentChannelCreate.ts",
+        "size": 3196,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/paymentChannelFund.ts",
+        "size": 2201,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/permissionedDomainDelete.ts",
+        "size": 679,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/permissionedDomainSet.ts",
+        "size": 1504,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/setFee.ts",
+        "size": 1378,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/setRegularKey.ts",
+        "size": 1054,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/signerListSet.ts",
+        "size": 2605,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/sponsorshipSet.ts",
+        "size": 14121,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/sponsorshipTransfer.ts",
+        "size": 8362,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/ticketCreate.ts",
+        "size": 1306,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/transaction.ts",
+        "size": 18063,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/trustSet.ts",
+        "size": 4789,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/UNLModify.ts",
+        "size": 708,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/vaultClawback.ts",
+        "size": 1598,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/vaultCreate.ts",
+        "size": 10025,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/vaultDelete.ts",
+        "size": 1655,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/vaultDeposit.ts",
+        "size": 983,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/vaultSet.ts",
+        "size": 1877,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/vaultWithdraw.ts",
+        "size": 1752,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/XChainAccountCreateCommit.ts",
+        "size": 2040,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/XChainAddAccountCreateAttestation.ts",
+        "size": 3090,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/XChainAddClaimAttestation.ts",
+        "size": 2879,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/XChainClaim.ts",
+        "size": 2051,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/XChainCommit.ts",
+        "size": 2215,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/XChainCreateBridge.ts",
+        "size": 1628,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/XChainCreateClaimID.ts",
+        "size": 1423,
+        "mode": 420
+      },
+      {
+        "path": "src/models/transactions/XChainModifyBridge.ts",
+        "size": 2068,
+        "mode": 420
+      },
+      {
+        "path": "src/models/utils/flags.ts",
+        "size": 9443,
+        "mode": 420
+      },
+      {
+        "path": "src/models/utils/index.ts",
+        "size": 1796,
+        "mode": 420
+      },
+      {
+        "path": "src/models/utils/mptokenMetadata.ts",
+        "size": 15106,
+        "mode": 420
+      },
+      {
+        "path": "src/sugar/autofill.ts",
+        "size": 23616,
+        "mode": 420
+      },
+      {
+        "path": "src/sugar/balances.ts",
+        "size": 499,
+        "mode": 420
+      },
+      {
+        "path": "src/sugar/getFeeXrp.ts",
+        "size": 1278,
+        "mode": 420
+      },
+      {
+        "path": "src/sugar/getOrderbook.ts",
+        "size": 6264,
+        "mode": 420
+      },
+      {
+        "path": "src/sugar/index.ts",
+        "size": 89,
+        "mode": 420
+      },
+      {
+        "path": "src/sugar/submit.ts",
+        "size": 11386,
+        "mode": 420
+      },
+      {
+        "path": "src/sugar/utils.ts",
+        "size": 926,
+        "mode": 420
+      },
+      {
+        "path": "src/sugar/validateSponsorship.ts",
+        "size": 9624,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/collections.ts",
+        "size": 2057,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/derive.ts",
+        "size": 877,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/getBalanceChanges.ts",
+        "size": 5312,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/getNFTokenID.ts",
+        "size": 3803,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/getTransactionResultCode.ts",
+        "size": 2148,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/getXChainClaimID.ts",
+        "size": 2093,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/hashes/hashLedger.ts",
+        "size": 6899,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/hashes/HashPrefix.ts",
+        "size": 1077,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/hashes/index.ts",
+        "size": 7536,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/hashes/ledgerSpaces.ts",
+        "size": 831,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/hashes/README.md",
+        "size": 3270,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/hashes/sha512Half.ts",
+        "size": 395,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/hashes/SHAMap/index.ts",
+        "size": 925,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/hashes/SHAMap/InnerNode.ts",
+        "size": 3244,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/hashes/SHAMap/LeafNode.ts",
+        "size": 1975,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/hashes/SHAMap/node.ts",
+        "size": 293,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/index.ts",
+        "size": 6498,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/isTesSuccess.ts",
+        "size": 809,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/parseNFTokenID.ts",
+        "size": 3624,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/quality.ts",
+        "size": 4846,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/signPaymentChannelClaim.ts",
+        "size": 760,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/stringConversion.ts",
+        "size": 939,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/timeConversion.ts",
+        "size": 1479,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/verifyPaymentChannelClaim.ts",
+        "size": 951,
+        "mode": 420
+      },
+      {
+        "path": "src/utils/xrpConversion.ts",
+        "size": 3112,
+        "mode": 420
+      },
+      {
+        "path": "src/Wallet/authorizeChannel.ts",
+        "size": 805,
+        "mode": 420
+      },
+      {
+        "path": "src/Wallet/batchSigner.ts",
+        "size": 9091,
+        "mode": 420
+      },
+      {
+        "path": "src/Wallet/counterpartySigner.ts",
+        "size": 6681,
+        "mode": 420
+      },
+      {
+        "path": "src/Wallet/defaultFaucets.ts",
+        "size": 1852,
+        "mode": 420
+      },
+      {
+        "path": "src/Wallet/fundWallet.ts",
+        "size": 9337,
+        "mode": 420
+      },
+      {
+        "path": "src/Wallet/index.ts",
+        "size": 20073,
+        "mode": 420
+      },
+      {
+        "path": "src/Wallet/rfc1751.ts",
+        "size": 6891,
+        "mode": 420
+      },
+      {
+        "path": "src/Wallet/rfc1751Words.json",
+        "size": 16245,
+        "mode": 420
+      },
+      {
+        "path": "src/Wallet/signer.ts",
+        "size": 4590,
+        "mode": 420
+      },
+      {
+        "path": "src/Wallet/sponsorSigner.ts",
+        "size": 10160,
+        "mode": 420
+      },
+      {
+        "path": "src/Wallet/utils.ts",
+        "size": 8054,
+        "mode": 420
+      },
+      {
+        "path": "src/Wallet/walletFromSecretNumbers.ts",
+        "size": 1783,
+        "mode": 420
+      }
+    ],
+    "entryCount": 1166,
+    "bundled": []
+  }
+]

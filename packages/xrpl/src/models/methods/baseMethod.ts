@@ -1,9 +1,8 @@
-import { LedgerIndex } from '../common'
+import { APIVersion, LedgerIndex } from '../common'
 
 import type { Request } from '.'
 
 export interface BaseRequest {
-  [x: string]: unknown
   /**
    * A unique value to identify this request. The response to this request uses
    * the same id field. This way, even if responses arrive out of order, you
@@ -12,8 +11,12 @@ export interface BaseRequest {
   id?: number | string
   /** The name of the API method. */
   command: string
-  /** The API version to use. If omitted, use version 1. */
-  api_version?: number
+  /**
+   * The API version to use. If omitted, the client's `apiVersion` (by default
+   * version 2) is sent. Setting a literal `1` here also selects the version 1
+   * response type in {@link RequestResponseMap}.
+   */
+  api_version?: APIVersion
 }
 
 export interface LookupByLedgerRequest {

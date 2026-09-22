@@ -1,0 +1,8 @@
+{
+  "repository": "https://github.com/theahaco/xrpl.js",
+  "branch": "aha/devx-audit-2026-09",
+  "sourceCommit": "65f64fe717160894ba6789f777b5333ceb9eed84",
+  "baseCommit": "f79b82c906a6379b51bc08cb64eb1bef2557d77e",
+  "version": "5.3.0-aha.devx.0",
+  "note": "SDK source, tests, package manifest and lockfile commit. A following commit adds the audit deliverables. Compiled dist files are generated and are not tracked."
+}

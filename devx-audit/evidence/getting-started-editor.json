@@ -1,0 +1,63 @@
+{
+  "typescript": "5.9.3",
+  "prototype": "/Users/willem/.codex/.chatgpt-projects/g-p-6ab298cc94e0819193fda09c1334961b/audit/worktrees/xrpl.js/packages/xrpl/dist/npm/index.d.ts",
+  "scope": "Actual TypeScript language-service completion and compiler checks, without transaction annotations, satisfies or casts.",
+  "results": [
+    {
+      "name": "Inline Payment infers parsed metadata",
+      "passed": true,
+      "diagnostics": []
+    },
+    {
+      "name": "Missing required Amount is rejected",
+      "passed": true,
+      "diagnostics": [
+        "No overload matches this call.\n  Overload 1 of 2, '(transaction: StrictTransaction<SubmittableTransaction>, opts?: { autofill?: boolean | undefined; failHard?: boolean | undefined; wallet?: Wallet | undefined; } | undefined): Promise<...>', gave the following error.\n    Argument of type '{ TransactionType: \"Payment\"; Account: string; Destination: string; }' is not assignable to parameter of type 'StrictTransaction<SubmittableTransaction>'.\n      Type '{ TransactionType: \"Payment\"; Account: string; Destination: string; }' is not assignable to type 'Payment & {}'.\n        Property 'Amount' is missing in type '{ TransactionType: \"Payment\"; Account: string; Destination: string; }' but required in type 'Payment'.\n  Overload 2 of 2, '(transaction: string | SignedBlob<SubmittableTransaction>, opts?: { autofill?: boolean | undefined; failHard?: boolean | undefined; wallet?: Wallet | undefined; } | undefined): Promise<...>', gave the following error.\n    Argument of type '{ TransactionType: string; Account: string; Destination: string; }' is not assignable to parameter of type 'string | SignedBlob<SubmittableTransaction>'."
+      ]
+    },
+    {
+      "name": "Optional field typo is rejected",
+      "passed": true,
+      "diagnostics": [
+        "No overload matches this call.\n  Overload 2 of 2, '(transaction: string | SignedBlob<SubmittableTransaction>, opts?: { autofill?: boolean | undefined; failHard?: boolean | undefined; wallet?: Wallet | undefined; } | undefined): Promise<...>', gave the following error.\n    Argument of type '{ TransactionType: string; Account: string; Destination: string; Amount: string; DestinationTagg: number; }' is not assignable to parameter of type 'string | SignedBlob<SubmittableTransaction>'."
+      ]
+    },
+    {
+      "name": "Inline account_info infers response",
+      "passed": true,
+      "diagnostics": []
+    },
+    {
+      "name": "Payment discriminator guides field completion",
+      "passed": true,
+      "completions": [
+        "Amount",
+        "Destination",
+        "AccountTxnID",
+        "CredentialIDs",
+        "Delegate",
+        "DeliverMax",
+        "DeliverMin",
+        "DestinationTag",
+        "DomainID",
+        "Fee",
+        "Flags",
+        "InvoiceID",
+        "LastLedgerSequence",
+        "Memos",
+        "NetworkID",
+        "Paths",
+        "SendMax",
+        "Sequence",
+        "Signers",
+        "SigningPubKey",
+        "SourceTag",
+        "Sponsor",
+        "SponsorFlags",
+        "SponsorSignature",
+        "TicketSequence",
+        "TxnSignature"
+      ]
+    }
+  ]
+}

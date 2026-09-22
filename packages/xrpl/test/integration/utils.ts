@@ -14,6 +14,7 @@ import {
   ECDSA,
   AccountLinesRequest,
   IssuedCurrency,
+  LedgerAcceptResponse,
   XRP,
 } from '../../src'
 import {
@@ -31,8 +32,10 @@ import { hashSignedTx } from '../../src/utils/hashes'
 export const GENESIS_ACCOUNT = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh'
 const GENESIS_SECRET = 'snoPBrXtMeMyMHUVTgbuqAfg1SUTb'
 
-export async function sendLedgerAccept(client: Client): Promise<unknown> {
-  return client.connection.request({ command: 'ledger_accept' })
+export async function sendLedgerAccept(
+  client: Client,
+): Promise<LedgerAcceptResponse> {
+  return client.request({ command: 'ledger_accept' })
 }
 
 /**

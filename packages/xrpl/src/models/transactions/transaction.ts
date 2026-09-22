@@ -270,6 +270,55 @@ export type PseudoTransaction = EnableAmendment | SetFee | UNLModify
 export type Transaction = SubmittableTransaction | PseudoTransaction
 
 /**
+ * A transaction prepared by {@link Client.autofill} for signing.
+ *
+ * Fee, Sequence and LastLedgerSequence have been populated. Flags have been
+ * normalized from their optional object form into a numeric mask. The input's
+ * Flags type is replaced, because preserving it would describe a value that
+ * no longer exists after normalization.
+ *
+ * @category Transaction Models
+ */
+export type Autofilled<
+  T extends SubmittableTransaction = SubmittableTransaction,
+> = T extends SubmittableTransaction
+  ? Omit<T, 'Flags' | 'Fee' | 'Sequence' | 'LastLedgerSequence'> & {
+      Sequence: number
+      Fee: string
+      LastLedgerSequence: number
+      Flags: number
+    }
+  : never
+
+/**
+ * A transaction that may carry fields the models do not (yet) declare.
+ *
+ * `BaseTransaction` has no index signature, so `keyof`, `Omit`, `Partial` and
+ * excess-property checks work on every transaction type. Use this type at
+ * forward-compatible boundaries instead: decoded blobs, ledger responses, or
+ * literals that must carry a field newer than this library.
+ *
+ * @category Transaction Models
+ */
+export type LenientTransaction = Transaction & Record<string, unknown>
+
+type TransactionKeys<T> = T extends unknown ? keyof T : never
+
+/**
+ * Preserve an inferred transaction's fields while rejecting misspelled keys.
+ * Apply `satisfies Payment` (or the matching transaction model) to stored drafts
+ * for field-specific completion and diagnostics at their declaration.
+ */
+export type StrictTransaction<T extends SubmittableTransaction> = T & {
+  [K in Exclude<
+    keyof T,
+    TransactionKeys<
+      Extract<SubmittableTransaction, { TransactionType: T['TransactionType'] }>
+    >
+  >]?: never
+}
+
+/**
  * @category Transaction Models
  */
 export interface TransactionAndMetadata<
@@ -287,8 +336,10 @@ export interface TransactionAndMetadata<
  * @throws ValidationError When the Transaction is malformed.
  * @category Utilities
  */
-export function validate(transaction: Record<string, unknown>): void {
-  const tx = { ...transaction }
+export function validate(
+  transaction: BaseTransaction | Record<string, unknown>,
+): void {
+  const tx: Record<string, unknown> = { ...transaction }
 
   // should already be done in the tx-specific validation, but doesn't hurt to check again
   validateBaseTransaction(tx)

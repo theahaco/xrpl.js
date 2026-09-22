@@ -11,7 +11,6 @@ import {
   parseMPTokenIssuanceImmutableFlags,
   TransactionMetadata,
 } from '../../../src'
-import type { MPTokenIssuance } from '../../../src/models/ledger/MPTokenIssuance'
 import serverUrl from '../serverUrl'
 import {
   setupClient,
@@ -83,17 +82,12 @@ describe('MPTokenIssuanceCreate', function () {
         1,
         'Should be exactly one issuance on the ledger',
       )
-      assert.equal(
-        // @ts-expect-error: Known issue with unknown object type
-        accountObjectsResponse.result.account_objects[0].MaximumAmount,
-        `9223372036854775807`,
-      )
+      const issuance = accountObjectsResponse.result.account_objects[0]
+      assert.equal(issuance.MaximumAmount, `9223372036854775807`)
 
+      assert(issuance.MPTokenMetadata != null)
       assert.deepStrictEqual(
-        decodeMPTokenMetadata(
-          // @ts-expect-error: Known issue with unknown object type
-          accountObjectsResponse.result.account_objects[0].MPTokenMetadata,
-        ),
+        decodeMPTokenMetadata(issuance.MPTokenMetadata),
         metadata,
       )
     },
@@ -135,7 +129,7 @@ describe('MPTokenIssuanceCreate', function () {
       const issuance = accountObjectsResponse.result.account_objects.find(
         (node) =>
           (node as { mpt_issuance_id?: string }).mpt_issuance_id === issuanceId,
-      ) as MPTokenIssuance | undefined
+      )
       assert.exists(issuance, 'Created MPTokenIssuance not found')
 
       const lsf = parseMPTokenIssuanceFlags(issuance.Flags)

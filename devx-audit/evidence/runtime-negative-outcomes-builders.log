@@ -1,0 +1,4 @@
+Prepared fee: 12
+baseline: validated tecUNFUNDED_PAYMENT; failure surfaced to the actual Send XRP entrypoint; sender charged only 12 drops
+Prepared fee: 12
+prototype: validated tecUNFUNDED_PAYMENT; failure surfaced to the actual Send XRP entrypoint; sender charged only 12 drops

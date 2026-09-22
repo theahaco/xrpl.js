@@ -1,4 +1,6 @@
-/* eslint-disable max-classes-per-file -- Errors can be defined in the same file */
+/* eslint-disable max-classes-per-file -- Error subclasses share this module. */
+import type { ValidatedTxResponse } from './models/methods/tx'
+
 /**
  * Base Error class for xrpl.js. All Errors thrown by xrpl.js should throw
  * XrplErrors.
@@ -118,6 +120,53 @@ class ResponseFormatError extends ConnectionError {}
 class ValidationError extends XrplError {}
 
 /**
+ * A transaction with a known unsuccessful result.
+ * submitAndWait throws this after an unsuccessful validated outcome. The response
+ * retains the transaction hash and parsed metadata; ledger fees may still apply.
+ * Preliminary retryable results continue through the existing confirmation loop.
+ *
+ * @category Errors
+ */
+class TransactionFailedError extends XrplError {
+  /** The engine result code, e.g. `temMALFORMED`, `tefPAST_SEQ`, `terQUEUED`. */
+  public readonly engineResult: string
+  /** rippled's human-readable description of `engineResult`, when it was available. */
+  public readonly engineResultMessage: string | undefined
+  /** Whether failure was detected at submission, expiry or validated inclusion. */
+  public readonly phase: 'submit' | 'expired' | 'validated'
+  /** The validated failure, when available. */
+  public readonly response?: ValidatedTxResponse
+
+  /**
+   * Construct a TransactionFailedError.
+   *
+   * @param message - The error message.
+   * @param details - The engine result that caused the failure and the phase it was detected in.
+   * @param details.engineResult - The engine result code.
+   * @param details.engineResultMessage - rippled's description of the engine result, if any.
+   * @param details.phase - The phase in which failure was established.
+   * @param details.response - Validated response carrying the unsuccessful outcome.
+   * @param data - The data that caused the error (the `submit` result, when available).
+   */
+  public constructor(
+    message: string,
+    details: {
+      engineResult: string
+      engineResultMessage?: string
+      phase: 'submit' | 'expired' | 'validated'
+      response?: ValidatedTxResponse
+    },
+    data?: unknown,
+  ) {
+    super(message, data)
+    this.engineResult = details.engineResult
+    this.engineResultMessage = details.engineResultMessage
+    this.phase = details.phase
+    this.response = details.response
+  }
+}
+
+/**
  * Error thrown when a client cannot generate a wallet from the testnet/devnet
  * faucets, or when the client cannot infer the faucet URL (i.e. when the Client
  * is connected to mainnet).
@@ -155,5 +204,6 @@ export {
   ResponseFormatError,
   ValidationError,
   NotFoundError,
+  TransactionFailedError,
   XRPLFaucetError,
 }

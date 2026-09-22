@@ -1,0 +1,222 @@
+{
+  "label": "prototype",
+  "compiler": "5.9.3",
+  "packageVersion": "5.3.0",
+  "declarationEntry": "/Users/willem/.codex/.chatgpt-projects/g-p-6ab298cc94e0819193fda09c1334961b/audit/worktrees/xrpl.js/packages/xrpl/dist/npm/index.d.ts",
+  "options": {
+    "strict": true,
+    "skipLibCheck": true,
+    "module": "NodeNext",
+    "target": "ES2022"
+  },
+  "note": "This is a deliberately selected demonstration set, not a prevalence estimate or general score of SDK quality. Addresses are placeholders because these probes compile only.",
+  "results": [
+    {
+      "id": "J01",
+      "title": "A valid Payment is accepted",
+      "criterion": "accept",
+      "issue": null,
+      "source": "import type { Payment } from 'xrpl';\nconst payment = { TransactionType: 'Payment', Account: 'rSource', Destination: 'rDestination', Amount: '100', DestinationTag: 12 } satisfies Payment;",
+      "accepted": true,
+      "satisfiesCriterion": true,
+      "diagnostics": []
+    },
+    {
+      "id": "J02",
+      "title": "Misspelled optional transaction fields are rejected",
+      "criterion": "reject",
+      "issue": "https://github.com/theahaco/xrpl.js/issues/7",
+      "source": "import type { Payment } from 'xrpl';\nconst payment = { TransactionType: 'Payment', Account: 'rSource', Destination: 'rDestination', Amount: '100', DestinationTagg: 12 } satisfies Payment;",
+      "accepted": false,
+      "satisfiesCriterion": true,
+      "diagnostics": [
+        {
+          "code": 2561,
+          "line": 2,
+          "message": "Object literal may only specify known properties, but 'DestinationTagg' does not exist in type 'Payment'. Did you mean to write 'DestinationTag'?"
+        }
+      ]
+    },
+    {
+      "id": "J03",
+      "title": "Misspelled request fields are rejected",
+      "criterion": "reject",
+      "issue": "https://github.com/theahaco/xrpl.js/issues/8",
+      "source": "import type { AccountInfoRequest } from 'xrpl';\nconst request = { command: 'account_info', account: 'rSource', ledger_indx: 'validated' } satisfies AccountInfoRequest;",
+      "accepted": false,
+      "satisfiesCriterion": true,
+      "diagnostics": [
+        {
+          "code": 2561,
+          "line": 2,
+          "message": "Object literal may only specify known properties, but 'ledger_indx' does not exist in type 'AccountInfoRequest'. Did you mean to write 'ledger_index'?"
+        }
+      ]
+    },
+    {
+      "id": "J04",
+      "title": "Omitting Account preserves other required Payment fields",
+      "criterion": "reject",
+      "issue": "https://github.com/theahaco/xrpl.js/issues/7",
+      "source": "import type { Payment } from 'xrpl';\nconst incomplete: Omit<Payment, 'Account'> = { TransactionType: 'Payment' };",
+      "accepted": false,
+      "satisfiesCriterion": true,
+      "diagnostics": [
+        {
+          "code": 2739,
+          "line": 2,
+          "message": "Type '{ TransactionType: \"Payment\"; }' is missing the following properties from type 'Omit<Payment, \"Account\">': Destination, Amount"
+        }
+      ]
+    },
+    {
+      "id": "J05",
+      "title": "Autofill exposes the Fee and LastLedgerSequence it populates",
+      "criterion": "accept",
+      "issue": "https://github.com/theahaco/xrpl.js/issues/5",
+      "source": "import { Client } from 'xrpl';\nasync function example(client: Client) {\n  const prepared = await client.autofill({ TransactionType: 'Payment', Account: 'rSource', Destination: 'rDestination', Amount: '100' });\n  const fee: string = prepared.Fee;\n  const expiry: number = prepared.LastLedgerSequence;\n}",
+      "accepted": true,
+      "satisfiesCriterion": true,
+      "diagnostics": []
+    },
+    {
+      "id": "J06",
+      "title": "An MPT issuance lookup infers MPTokenIssuance",
+      "criterion": "accept",
+      "issue": "https://github.com/theahaco/xrpl.js/issues/4",
+      "source": "import { Client } from 'xrpl';\nasync function example(client: Client) {\n  const response = await client.request({ command: 'ledger_entry', mpt_issuance: 'A'.repeat(48), ledger_index: 'validated' });\n  const metadata: string | undefined = response.result.node.MPTokenMetadata;\n}",
+      "accepted": true,
+      "satisfiesCriterion": true,
+      "diagnostics": []
+    },
+    {
+      "id": "J07",
+      "title": "An account root lookup infers AccountRoot",
+      "criterion": "accept",
+      "issue": "https://github.com/theahaco/xrpl.js/issues/4",
+      "source": "import { Client } from 'xrpl';\nasync function example(client: Client) {\n  const response = await client.request({ command: 'ledger_entry', account_root: 'rSource', ledger_index: 'validated' });\n  const balance: string = response.result.node.Balance;\n}",
+      "accepted": true,
+      "satisfiesCriterion": true,
+      "diagnostics": []
+    },
+    {
+      "id": "J08",
+      "title": "An offer filter narrows account_objects entries",
+      "criterion": "accept",
+      "issue": "https://github.com/theahaco/xrpl.js/issues/4",
+      "source": "import { Client } from 'xrpl';\nasync function example(client: Client) {\n  const response = await client.request({ command: 'account_objects', account: 'rSource', type: 'offer' });\n  for (const offer of response.result.account_objects) console.log(offer.TakerGets);\n}",
+      "accepted": true,
+      "satisfiesCriterion": true,
+      "diagnostics": []
+    },
+    {
+      "id": "J09",
+      "title": "submitAndWait exposes parsed final metadata",
+      "criterion": "accept",
+      "issue": "https://github.com/theahaco/xrpl.js/issues/5",
+      "source": "import { Client, Wallet } from 'xrpl';\nasync function example(client: Client, wallet: Wallet) {\n  const response = await client.submitAndWait({ TransactionType: 'Payment', Account: wallet.address, Destination: 'rDestination', Amount: '100' }, { wallet });\n  const resultCode: string = response.result.meta.TransactionResult;\n}",
+      "accepted": true,
+      "satisfiesCriterion": true,
+      "diagnostics": []
+    },
+    {
+      "id": "J10",
+      "title": "Signing and submitting preserve issuance metadata type",
+      "criterion": "accept",
+      "issue": "https://github.com/theahaco/xrpl.js/issues/5",
+      "source": "import { Client, Wallet } from 'xrpl';\nasync function example(client: Client, wallet: Wallet) {\n  const prepared = await client.autofill({ TransactionType: 'MPTokenIssuanceCreate', Account: wallet.address });\n  const signed = wallet.sign(prepared);\n  const response = await client.submitAndWait(signed.tx_blob);\n  if (response.result.meta && typeof response.result.meta !== 'string') {\n    const id: string | undefined = response.result.meta.mpt_issuance_id;\n  }\n}",
+      "accepted": true,
+      "satisfiesCriterion": true,
+      "diagnostics": []
+    },
+    {
+      "id": "J11",
+      "title": "A literal API version selects the matching response shape",
+      "criterion": "accept",
+      "issue": "https://github.com/theahaco/xrpl.js/issues/4",
+      "source": "import { Client } from 'xrpl';\nasync function example(client: Client) {\n  const response = await client.request({ command: 'tx', transaction: 'A'.repeat(64), api_version: 1 });\n  const account: string = response.result.Account;\n}",
+      "accepted": true,
+      "satisfiesCriterion": true,
+      "diagnostics": []
+    },
+    {
+      "id": "J12",
+      "title": "A stored broadly typed request keeps a safe response union",
+      "criterion": "reject",
+      "issue": "https://github.com/theahaco/xrpl.js/issues/4",
+      "source": "import { Client, type LedgerEntryRequest } from 'xrpl';\nasync function example(client: Client, request: LedgerEntryRequest) {\n  const response = await client.request(request);\n  const metadata: string | undefined = response.result.node.MPTokenMetadata;\n}",
+      "accepted": false,
+      "satisfiesCriterion": true,
+      "diagnostics": [
+        {
+          "code": 18048,
+          "line": 4,
+          "message": "'response.result.node' is possibly 'undefined'."
+        },
+        {
+          "code": 2339,
+          "line": 4,
+          "message": "Property 'MPTokenMetadata' does not exist on type 'LedgerEntry'.\n  Property 'MPTokenMetadata' does not exist on type 'AccountRoot'."
+        }
+      ]
+    },
+    {
+      "id": "J13",
+      "title": "A binary ledger request must not expose a JSON node",
+      "criterion": "reject",
+      "issue": "https://github.com/theahaco/xrpl.js/issues/4",
+      "source": "import { Client } from 'xrpl';\nasync function example(client: Client) {\n  const response = await client.request({ command: 'ledger_entry', mpt_issuance: 'A'.repeat(48), binary: true });\n  console.log(response.result.node.MPTokenMetadata);\n}",
+      "accepted": false,
+      "satisfiesCriterion": true,
+      "diagnostics": [
+        {
+          "code": 2339,
+          "line": 4,
+          "message": "Property 'node' does not exist on type 'LedgerEntryResponseResultBase & { node_binary: string; }'."
+        }
+      ]
+    },
+    {
+      "id": "J14",
+      "title": "Known options on request literals reject typos at the call",
+      "criterion": "reject",
+      "issue": "https://github.com/theahaco/xrpl.js/issues/8",
+      "source": "import { Client } from 'xrpl';\nasync function example(client: Client) {\n  await client.request({ command: 'account_info', account: 'rSource', ledger_indx: 'validated' });\n}",
+      "accepted": false,
+      "satisfiesCriterion": true,
+      "diagnostics": [
+        {
+          "code": 2769,
+          "line": 3,
+          "message": "No overload matches this call.\n  Overload 2 of 2, '(req: UnknownCommandRequest<{ command: \"account_info\"; account: string; ledger_indx: string; }>): Promise<BaseResponse>', gave the following error.\n    Type 'string' is not assignable to type 'never'."
+        }
+      ]
+    },
+    {
+      "id": "J15",
+      "title": "Unknown transaction fields are rejected at the submission call",
+      "criterion": "reject",
+      "issue": "https://github.com/theahaco/xrpl.js/issues/7",
+      "source": "import { Client, Wallet } from 'xrpl';\nasync function example(client: Client, wallet: Wallet) {\n  await client.submitAndWait({ TransactionType: 'Payment', Account: wallet.address, Destination: 'rDestination', Amount: '100', DestinationTagg: 12 }, { wallet });\n}",
+      "accepted": false,
+      "satisfiesCriterion": true,
+      "diagnostics": [
+        {
+          "code": 2769,
+          "line": 3,
+          "message": "No overload matches this call.\n  Overload 2 of 2, '(transaction: string | SignedBlob<SubmittableTransaction>, opts?: { autofill?: boolean | undefined; failHard?: boolean | undefined; wallet?: Wallet | undefined; } | undefined): Promise<...>', gave the following error.\n    Argument of type '{ TransactionType: string; Account: string; Destination: string; Amount: string; DestinationTagg: number; }' is not assignable to parameter of type 'string | SignedBlob<SubmittableTransaction>'."
+        }
+      ]
+    },
+    {
+      "id": "J16",
+      "title": "Object flags become a numeric mask after autofill",
+      "criterion": "accept",
+      "issue": "https://github.com/theahaco/xrpl.js/issues/5",
+      "source": "import { Client } from 'xrpl';\nasync function example(client: Client) {\n  const prepared = await client.autofill({ TransactionType: 'Payment', Account: 'rSource', Destination: 'rDestination', Amount: '100', Flags: { tfPartialPayment: true } });\n  const flags: number = prepared.Flags;\n}",
+      "accepted": true,
+      "satisfiesCriterion": true,
+      "diagnostics": []
+    }
+  ]
+}

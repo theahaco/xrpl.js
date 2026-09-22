@@ -192,7 +192,6 @@ describe('Payment', function () {
         type: 'mpt_issuance',
       })
       assert.equal(
-        // @ts-expect-error -- Object type not known
         accountObjectsResponse.result.account_objects[0].OutstandingAmount,
         `100`,
       )

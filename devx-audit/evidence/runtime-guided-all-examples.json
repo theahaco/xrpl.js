@@ -1,0 +1,68 @@
+{
+  "label": "guided-all-examples",
+  "endpoint": "ws://127.0.0.1:16006",
+  "server": {
+    "build_version": "3.4.0-rc1",
+    "validated_ledger": {
+      "age": 20,
+      "base_fee_xrp": 0.00001,
+      "hash": "2ED958480315689C376D8B0350247229D3E652890AF5D03A80D94D6C975F7E73",
+      "reserve_base_xrp": 10,
+      "reserve_inc_xrp": 2,
+      "seq": 2
+    }
+  },
+  "image": "rippleci/xrpld@sha256:898feb090a777fddce725b6e4af776194bbead943a02e8cc80b4b0c4556d2a52",
+  "node": "v26.7.0",
+  "scope": "Real transactions on isolated standalone ledger. No production accounts, assets, or public faucet. This does not validate public network amendment availability or every branch of the samples.",
+  "sdk": "audit/worktrees/xrpl.js/packages/xrpl/dist/npm/index.js",
+  "results": [
+    {
+      "name": "Get Started TypeScript",
+      "path": "devx-after/dist/get-started.js",
+      "passed": true,
+      "elapsedMs": 3242,
+      "output": [
+        "Account sequence: 3",
+        "Payment confirmed: D3FFE42C9E57C57ACEC219DD1878EF5CE1972B91EE055EA3536CB05DDAD53BE4"
+      ]
+    },
+    {
+      "name": "Send XRP TypeScript",
+      "path": "devx-after/dist/send-xrp.js",
+      "passed": true,
+      "elapsedMs": 3144,
+      "output": [
+        "Payment confirmed: D1F52B77F5259B9FB30E7305273920D39DCD4C07DE1F6562509CF89A3232AF1A",
+        "Confirmed destination: rLjRxuXEJRGLwGuKnx47yivTJ1xWeS16nJ",
+        "Receiver balance: 1001 XRP"
+      ]
+    },
+    {
+      "name": "MPT metadata TypeScript",
+      "path": "devx-after/dist/issue-mpt-with-metadata.js",
+      "passed": true,
+      "elapsedMs": 3153,
+      "output": [
+        "Issuer: rUimfKFRFp5cJveLLTtsb2z8yiATobrE2x",
+        "MPT created: https://devnet.xrpl.org/mpt/0000000F8212960C2DCED328B4E34DA97E02B8BE4D61FC8A",
+        "Metadata: {\"asset_class\":\"rwa\",\"additional_info\":{\"interest_rate\":\"5.00%\",\"maturity_date\":\"2045-06-30\"},\"asset_subclass\":\"treasury\",\"desc\":\"Demonstration token backed by fictional short-term Treasuries.\",\"icon\":\"https://example.org/tbill-icon.png\",\"issuer_name\":\"Example Yield Co.\",\"name\":\"T-Bill Yield Token\",\"ticker\":\"TBILL\",\"uris\":[{\"category\":\"website\",\"title\":\"Product\",\"uri\":\"https://example.org/tbill\"}]}",
+        "Transfer fee: 10",
+        "Updated metadata: {\"asset_class\":\"rwa\",\"additional_info\":{\"interest_rate\":\"4.75%\",\"maturity_date\":\"2045-06-30\"},\"asset_subclass\":\"treasury\",\"desc\":\"Demonstration token backed by fictional short-term Treasuries.\",\"icon\":\"https://example.org/tbill-icon.png\",\"issuer_name\":\"Example Yield Co.\",\"name\":\"T-Bill Yield Token\",\"ticker\":\"TBILL\",\"uris\":[{\"category\":\"website\",\"title\":\"Product\",\"uri\":\"https://example.org/tbill\"}]}"
+      ]
+    },
+    {
+      "name": "Guided Create AMM TypeScript",
+      "path": "devx-after/dist/create-amm.js",
+      "passed": true,
+      "elapsedMs": 6275,
+      "output": [
+        "AMM created: https://devnet.xrpl.org/transactions/B2BF7A379E1E0F5F613B546874ED11ECAC782D464F9B1E0DDE3608129147DAA2",
+        "Pool: 100 FOO.rQsWTEkNsw3mXYxYnxRFb9XRAvk5JBZmH3 / 10 XRP",
+        "LP tokens: 31622.77660168379 031D4857BE920E5830EF5EC8DD77C29050FCD8F9",
+        "LP-token trust lines: [{\"account\":\"rLrX12ss13Un2jsa4eujvGknMwwXrWP77R\",\"balance\":\"31622.77660168379\",\"currency\":\"031D4857BE920E5830EF5EC8DD77C29050FCD8F9\",\"limit\":\"0\",\"limit_peer\":\"0\",\"no_ripple\":true,\"quality_in\":0,\"quality_out\":0}]"
+      ]
+    }
+  ],
+  "advanceErrors": []
+}

@@ -1,0 +1,18 @@
+{
+  "tutorial": "audit/worktrees/xrpl-dev-portal/docs/tutorials/get-started/get-started-typescript.md",
+  "uniqueReferences": 7,
+  "missing": [],
+  "unknownChunkTags": [],
+  "remainingTags": [
+    "build-tx-tag",
+    "connect-tag",
+    "disconnect-node-tag",
+    "disconnect-web-tag",
+    "get-account-create-wallet-tag",
+    "import-node-tag",
+    "import-web-tag",
+    "listen-for-events-tag",
+    "query-xrpl-tag"
+  ],
+  "primarySourcesHaveNoWorkarounds": true
+}

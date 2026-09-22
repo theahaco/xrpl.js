@@ -1,0 +1,14 @@
+{
+  "sdk": "aha fork prototype working tree (unreleased)",
+  "declarations": "audit/worktrees/xrpl.js/packages/xrpl/dist/npm/index.d.ts",
+  "compiler": "5.9.3",
+  "command": "tsc --project _code-samples/devx-after/tsconfig.json",
+  "exitCode": 0,
+  "compiledWorkflows": [
+    "get-started.ts",
+    "send-xrp.ts",
+    "issue-mpt-with-metadata.ts",
+    "create-amm.ts"
+  ],
+  "runtime": "root integration harness reports separately"
+}

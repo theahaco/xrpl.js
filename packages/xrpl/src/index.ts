@@ -25,3 +25,11 @@ export { keyToRFC1751Mnemonic, rfc1751MnemonicToKey } from './Wallet/rfc1751'
 // a confidential builder first runs, not on `import 'xrpl'`. (The small builder glue does
 // ship with the main entry now that it's re-exported here rather than behind a subpath.)
 export * from './confidential'
+
+export { WalletClient, WalletClientOptions } from './client/WalletClient'
+export {
+  TransactionBuilder,
+  TransactionBuilders,
+  TransactionInput,
+} from './client/TransactionBuilder'
+export { Commands } from './client/commands'

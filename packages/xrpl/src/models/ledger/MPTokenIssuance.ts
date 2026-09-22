@@ -98,6 +98,13 @@ export interface MPTokenIssuance extends BaseLedgerEntry, HasPreviousTxnID {
    * this object instead of the owner.
    */
   Sponsor?: string
+  /**
+   * The 192-bit MPTokenIssuanceID (`Sequence` ‖ `Issuer` AccountID) of this
+   * issuance. It is not stored on the ledger; rippled adds it to every JSON
+   * view of the entry (`ledger_entry`, `account_objects`, `ledger_data`).
+   * Use it as `MPTokenIssuanceID` / `mpt_issuance_id` in later transactions.
+   */
+  mpt_issuance_id: string
 }
 
 export interface MPTokenIssuanceFlagsInterface {

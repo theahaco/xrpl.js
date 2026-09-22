@@ -1,0 +1,25 @@
+{
+  "quickInfo": [
+    {
+      "label": "Client constructor",
+      "documentationCharacters": 69
+    },
+    {
+      "label": "Client.on",
+      "documentationCharacters": 39
+    },
+    {
+      "label": "Client.request",
+      "documentationCharacters": 590
+    },
+    {
+      "label": "Wallet.generate",
+      "documentationCharacters": 320
+    },
+    {
+      "label": "xrpToDrops",
+      "documentationCharacters": 47
+    }
+  ],
+  "unrelatedDiagnostics": []
+}

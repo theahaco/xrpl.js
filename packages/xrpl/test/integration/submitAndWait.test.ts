@@ -56,6 +56,7 @@ describe('client.submitAndWait', function () {
 
           assert.equal(response.type, 'response')
           assert.equal(response.result.validated, true)
+          assert.equal(response.result.meta.TransactionResult, 'tesSUCCESS')
           retries = 0
           break
         } catch (err) {
@@ -117,6 +118,7 @@ describe('client.submitAndWait', function () {
         ([response, _ledger]) => {
           assert.equal(response.type, 'response')
           assert.equal(response.result.validated, true)
+          assert.equal(response.result.meta.TransactionResult, 'tesSUCCESS')
         },
       )
     },
@@ -140,6 +142,7 @@ describe('client.submitAndWait', function () {
         ([response, _ledger]) => {
           assert.equal(response.type, 'response')
           assert.equal(response.result.validated, true)
+          assert.equal(response.result.meta.TransactionResult, 'tesSUCCESS')
         },
       )
     },

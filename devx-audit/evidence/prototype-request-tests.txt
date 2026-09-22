@@ -1,0 +1,57 @@
+(node:46311) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+  console.warn
+    For LoanSet transaction the auto calculated Fee accounts for total number of signers the counterparty has to avoid transaction failure.
+
+      455 |     )
+      456 |     // eslint-disable-next-line no-console -- necessary to inform users about autofill behavior
+    > 457 |     console.warn(
+          |             ^
+      458 |       `For LoanSet transaction the auto calculated Fee accounts for total number of signers the counterparty has to avoid transaction failure.`,
+      459 |     )
+      460 |   }
+
+      at calculateFeePerTransactionType (src/sugar/autofill.ts:457:13)
+      at getTransactionFee (src/sugar/autofill.ts:496:15)
+          at async Promise.all (index 1)
+      at Object.<anonymous> (test/client/autofill.test.ts:806:22)
+
+  console.warn
+    For sponsored transaction the auto calculated Fee accounts for sponsor signers to avoid transaction failure.
+
+      367 |
+      368 |   // eslint-disable-next-line no-console -- necessary to inform users about autofill behavior
+    > 369 |   console.warn(
+          |           ^
+      370 |     `For sponsored transaction the auto calculated Fee accounts for sponsor signers to avoid transaction failure.`,
+      371 |   )
+      372 |   return new BigNumber(scaleValue(netFeeDrops, sponsorSignersCount))
+
+      at calculateSponsorFee (src/sugar/autofill.ts:369:11)
+      at calculateFeePerTransactionType (src/sugar/autofill.ts:463:22)
+      at getTransactionFee (src/sugar/autofill.ts:496:15)
+          at async Promise.all (index 1)
+      at Object.<anonymous> (test/client/autofill.test.ts:897:24)
+
+  console.warn
+    For sponsored transaction the auto calculated Fee accounts for sponsor signers to avoid transaction failure.
+
+      367 |
+      368 |   // eslint-disable-next-line no-console -- necessary to inform users about autofill behavior
+    > 369 |   console.warn(
+          |           ^
+      370 |     `For sponsored transaction the auto calculated Fee accounts for sponsor signers to avoid transaction failure.`,
+      371 |   )
+      372 |   return new BigNumber(scaleValue(netFeeDrops, sponsorSignersCount))
+
+      at calculateSponsorFee (src/sugar/autofill.ts:369:11)
+      at calculateFeePerTransactionType (src/sugar/autofill.ts:463:22)
+      at getTransactionFee (src/sugar/autofill.ts:496:15)
+          at async Promise.all (index 1)
+      at Object.<anonymous> (test/client/autofill.test.ts:945:24)
+
+Test Suites: 3 passed, 3 total
+Tests:       57 passed, 57 total
+Snapshots:   0 total
+Time:        1.528 s
+Ran all test suites matching test/client/request.test.ts|test/models/responseNarrowing.test.ts|test/client/autofill.test.ts.

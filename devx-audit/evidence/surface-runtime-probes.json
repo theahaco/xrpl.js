@@ -1,0 +1,56 @@
+{
+  "baseline": "5.3.0",
+  "network": "No network calls. Request pagination uses a local fake connection.",
+  "results": [
+    {
+      "id": "nft-pagination-all",
+      "resolved": false,
+      "error": {
+        "name": "ValidationError",
+        "message": "no collect key for command account_nfts"
+      }
+    },
+    {
+      "id": "unsigned-submit-no-wallet",
+      "resolved": false,
+      "error": {
+        "name": "ValidationError",
+        "message": "Wallet must be provided when submitting an unsigned transaction"
+      }
+    },
+    {
+      "id": "event-on-wrong-listener",
+      "resolved": false,
+      "error": {
+        "name": "TypeError",
+        "message": "ledger.toUpperCase is not a function"
+      }
+    },
+    {
+      "id": "pagination-default-multiple-pages",
+      "resolved": true,
+      "result": {
+        "requests": 2,
+        "pages": 2
+      }
+    },
+    {
+      "id": "amount-precision-roundtrip",
+      "resolved": true,
+      "result": {
+        "inputDrops": "9007199254740991",
+        "xrp": 9007199254.740992,
+        "outputDrops": "9007199254740992",
+        "equal": false
+      }
+    },
+    {
+      "id": "mpt-balance-change-coverage",
+      "resolved": true,
+      "result": {
+        "inputChange": "Public MPTAmount 10 → 25",
+        "balanceChanges": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "package": "xrpl",
+  "version": "5.3.0-aha.devx.0",
+  "sha512Integrity": "sha512-fB2WcjbDdHD5POOZm/4ojsuer4rhxbOmHExUu2eSc2+JGlIvXcWDCci8aUiiiAT4ULCN2vM59mqz84qhZ9YidQ==",
+  "tarballSHA256": "aa1b5df9df867cc1e781edce8854aa72671bb6e8f2fd2c43e4df06d9e70d57c1",
+  "method": "npm pack --ignore-scripts after successful library build; extract and exercise actual packed consumer declarations using TypeScript 5.9.3. Dependencies resolved from the pinned audit harness. This is not an npm publication or browser bundle test.",
+  "criteriaPassed": 16,
+  "criteriaTotal": 16,
+  "hoverDescriptions": [
+    {
+      "label": "Client constructor",
+      "characters": 69
+    },
+    {
+      "label": "Client.on",
+      "characters": 39
+    },
+    {
+      "label": "Client.request",
+      "characters": 590
+    },
+    {
+      "label": "Wallet.generate",
+      "characters": 320
+    },
+    {
+      "label": "xrpToDrops",
+      "characters": 47
+    }
+  ],
+  "unrelatedDiagnostics": [],
+  "browserBundleFiles": [],
+  "nodeRuntime": "v26.7.0",
+  "notes": [
+    "Packed archive contains compiled Node library and declarations; no browser bundle was built.",
+    "Prototype package is versioned 5.3.0-aha.devx.0 solely to distinguish the evaluation build; it was not published to npm."
+  ]
+}

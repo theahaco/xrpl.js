@@ -1,0 +1,37 @@
+[
+  {
+    "family": "get-started/ts",
+    "exitCode": 0,
+    "output": ""
+  },
+  {
+    "family": "create-amm/ts",
+    "exitCode": 0,
+    "output": ""
+  },
+  {
+    "family": "claim-payment-channel/js",
+    "exitCode": 0,
+    "output": ""
+  },
+  {
+    "family": "get-tx/js",
+    "exitCode": 0,
+    "output": ""
+  },
+  {
+    "family": "partial-payment/js",
+    "exitCode": 0,
+    "output": ""
+  },
+  {
+    "family": "paths/js",
+    "exitCode": 2,
+    "output": "audit/evidence/portal-tracked-baseline/_code-samples/paths/js/paths.ts(35,17): error TS2532: Object is possibly 'undefined'.\n"
+  },
+  {
+    "family": "reliable-tx-submission/js",
+    "exitCode": 0,
+    "output": ""
+  }
+]

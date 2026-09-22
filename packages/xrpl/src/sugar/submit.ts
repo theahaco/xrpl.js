@@ -8,7 +8,7 @@ import type {
 } from '..'
 import { ValidationError, XrplError } from '../errors'
 import { Signer } from '../models/common'
-import { TxResponse } from '../models/methods'
+import { ValidatedTxResponse } from '../models/methods'
 import { BaseTransaction } from '../models/transactions/common'
 import { decode, encode } from '../utils'
 
@@ -76,7 +76,8 @@ export async function submitRequest(
  * @param txHash - The hash of the transaction to wait for.
  * @param lastLedger - The last ledger sequence of the transaction.
  * @param submissionResult - The preliminary result of the transaction.
- * @returns A promise that resolves with the final transaction response.
+ * @returns A promise that resolves with the validated API v2 transaction response and decoded metadata.
+ * The lookup explicitly requests API v2, independently of `client.apiVersion`.
  *
  * @throws {XrplError} If the latest ledger sequence surpasses the transaction's lastLedgerSequence.
  *
@@ -115,7 +116,7 @@ export async function waitForFinalTransactionOutcome<
   txHash: string,
   lastLedger: number,
   submissionResult: string,
-): Promise<TxResponse<T>> {
+): Promise<ValidatedTxResponse<T>> {
   await sleep(LEDGER_CLOSE_TIME)
 
   const latestLedger = await client.getLedgerIndex()
@@ -131,6 +132,7 @@ export async function waitForFinalTransactionOutcome<
     .request({
       command: 'tx',
       transaction: txHash,
+      api_version: 2,
     })
     .catch(async (error) => {
       // error is of an unknown type and hence we assert type to extract the value we need.
@@ -151,10 +153,18 @@ export async function waitForFinalTransactionOutcome<
       )
     })
 
-  if (txResponse.result.validated) {
-    // TODO: resolve the type assertion below
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- we know that txResponse is of type TxResponse
-    return txResponse as TxResponse<T>
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare -- check the wire value
+  if (txResponse.result.validated === true) {
+    const { meta } = txResponse.result
+    if (meta == null || typeof meta !== 'object' || Array.isArray(meta)) {
+      throw new XrplError(
+        'Validated transaction response must include decoded metadata.',
+        txResponse.result,
+      )
+    }
+    // The hash identifies the submitted transaction; validated and decoded metadata were checked above.
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- a hash cannot infer the submitted type
+    return txResponse as ValidatedTxResponse<T>
   }
 
   return waitForFinalTransactionOutcome<T>(

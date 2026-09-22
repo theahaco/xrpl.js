@@ -33,8 +33,10 @@ import {
 } from './accountNFTs'
 import {
   AccountObject,
+  AccountObjectByFilter,
   AccountObjectsRequest,
   AccountObjectsResponse,
+  AccountObjectsResponseMap,
   AccountObjectType,
 } from './accountObjects'
 import {
@@ -103,6 +105,7 @@ import {
   LedgerRequestExpandedTransactionsBinary,
   LedgerVersionResponseMap,
 } from './ledger'
+import { LedgerAcceptRequest, LedgerAcceptResponse } from './ledgerAccept'
 import { LedgerClosedRequest, LedgerClosedResponse } from './ledgerClosed'
 import { LedgerCurrentRequest, LedgerCurrentResponse } from './ledgerCurrent'
 import {
@@ -115,6 +118,8 @@ import {
 import {
   LedgerEntryBinaryRequest,
   LedgerEntryJsonRequest,
+  LedgerEntryLookupMap,
+  LedgerEntryNode,
   LedgerEntryRequest,
   LedgerEntryBinaryResponse,
   LedgerEntryJsonResponse,
@@ -195,7 +200,15 @@ import {
   TransactionEntryRequest,
   TransactionEntryResponse,
 } from './transactionEntry'
-import { TxRequest, TxResponse, TxV1Response, TxVersionResponseMap } from './tx'
+import {
+  TxRequest,
+  TxResponse,
+  TxV1Response,
+  TxVersionResponseMap,
+  ValidatedTxResponse,
+  SuccessfulTxResponse,
+  SubmitResult,
+} from './tx'
 import {
   UnsubscribeBook,
   UnsubscribeRequest,
@@ -263,6 +276,8 @@ type Request =
   | GetAggregatePriceRequest
   // Vault methods
   | VaultInfoRequest
+  // admin methods (stand-alone mode)
+  | LedgerAcceptRequest
 
 /**
  * @category Responses
@@ -325,6 +340,8 @@ type Response<Version extends APIVersion = typeof DEFAULT_API_VERSION> =
   | GetAggregatePriceResponse
   // Vault methods
   | VaultInfoResponse
+  // admin methods (stand-alone mode)
+  | LedgerAcceptResponse
 
 export type RequestResponseMap<
   T,
@@ -340,7 +357,7 @@ export type RequestResponseMap<
   : T extends AccountNFTsRequest
   ? AccountNFTsResponse
   : T extends AccountObjectsRequest
-  ? AccountObjectsResponse
+  ? AccountObjectsResponseMap<T>
   : T extends AccountOffersRequest
   ? AccountOffersResponse
   : T extends AccountSponsoringRequest
@@ -430,9 +447,9 @@ export type RequestResponseMap<
   : T extends LedgerEntryBinaryRequest
   ? LedgerEntryBinaryResponse
   : T extends LedgerEntryJsonRequest
-  ? LedgerEntryJsonResponse
+  ? LedgerEntryJsonResponse<LedgerEntryNode<T>>
   : T extends LedgerEntryRequest
-  ? LedgerEntryJsonResponse
+  ? LedgerEntryResponse<LedgerEntryNode<T>>
   : T extends SimulateBinaryRequest
   ? SimulateBinaryResponse
   : T extends SimulateJsonRequest
@@ -491,7 +508,34 @@ export type RequestResponseMap<
   ? NFTHistoryResponse
   : T extends VaultInfoRequest
   ? VaultInfoResponse
+  : T extends LedgerAcceptRequest
+  ? LedgerAcceptResponse
   : Response<Version>
+
+/** Keys present in any member of a union. */
+export type KeysOfUnion<T> = T extends unknown ? keyof T : never
+
+/** Reject unknown fields for a known command, including inferred literals. */
+export type StrictRequest<R extends BaseRequest> = R & {
+  [K in Exclude<keyof R, KeysOfUnion<Extract<Request, { command: R['command'] }>>>]?: never
+}
+
+/** Permit unmodeled commands without weakening checks on known commands. */
+export type UnknownCommandRequest<R extends BaseRequest> = R & {
+  command: R['command'] extends Request['command'] ? never : R['command']
+}
+
+/**
+ * The API version a request pins through its `api_version` field, or
+ * {@link DEFAULT_API_VERSION} when it leaves the field unset.
+ * An optional or union version preserves every possible response version.
+ */
+export type RequestAPIVersion<T> = T extends unknown
+  ? 'api_version' extends keyof T
+    ? Extract<T['api_version'], APIVersion> |
+        (undefined extends T['api_version'] ? typeof DEFAULT_API_VERSION : never)
+    : typeof DEFAULT_API_VERSION
+  : never
 
 export type MarkerRequest = Request & {
   limit?: number
@@ -514,7 +558,7 @@ export type RequestAllResponseMap<
   : T extends AccountLinesRequest
   ? AccountLinesResponse
   : T extends AccountObjectsRequest
-  ? AccountObjectsResponse
+  ? AccountObjectsResponseMap<T>
   : T extends AccountOffersRequest
   ? AccountOffersResponse
   : T extends AccountTxRequest
@@ -551,9 +595,11 @@ export {
   AccountNFTsRequest,
   AccountNFTsResponse,
   AccountObject,
+  AccountObjectByFilter,
   AccountObjectType,
   AccountObjectsRequest,
   AccountObjectsResponse,
+  AccountObjectsResponseMap,
   AccountOffer,
   AccountOffersRequest,
   AccountOffersResponse,
@@ -588,10 +634,15 @@ export {
   LedgerDataLedgerState,
   LedgerEntryBinaryRequest,
   LedgerEntryJsonRequest,
+  LedgerEntryLookupMap,
+  LedgerEntryNode,
   LedgerEntryRequest,
   LedgerEntryBinaryResponse,
   LedgerEntryJsonResponse,
   LedgerEntryResponse,
+  // admin methods (stand-alone mode)
+  LedgerAcceptRequest,
+  LedgerAcceptResponse,
   // transaction methods with types
   SimulateRequest,
   SimulateResponse,
@@ -605,6 +656,9 @@ export {
   TxRequest,
   TxResponse,
   TxV1Response,
+  ValidatedTxResponse,
+  SuccessfulTxResponse,
+  SubmitResult,
   // path and order book methods with types
   BookOffersRequest,
   BookOffer,

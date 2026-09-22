@@ -1,6 +1,6 @@
 import { Amount, Currency, IssuedCurrencyAmount } from '../common'
 
-import { BaseRequest, BaseResponse } from './baseMethod'
+import { BaseRequest, BaseResponse, LookupByLedgerRequest } from './baseMethod'
 
 /**
  * The `amm_info` method gets information about an Automated Market Maker (AMM) instance.
@@ -8,7 +8,7 @@ import { BaseRequest, BaseResponse } from './baseMethod'
  *
  * @category Requests
  */
-export interface AMMInfoRequest extends BaseRequest {
+export interface AMMInfoRequest extends BaseRequest, LookupByLedgerRequest {
   command: 'amm_info'
 
   /**

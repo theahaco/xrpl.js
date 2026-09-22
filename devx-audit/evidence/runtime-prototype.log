@@ -1,0 +1,84 @@
+Account sequence: 34
+Payment confirmed: DBC8F7375CD356DD7C782EEFD67BA4DA84101A79AA4F52CFBBA0A7D335D37B0C
+Ledger #40: 1 transactions
+Ledger #41: 0 transactions
+Ledger #42: 1 transactions
+Ledger #43: 0 transactions
+Prepared fee: 12
+Ledger #44: 1 transactions
+Ledger #45: 0 transactions
+Payment confirmed: DF618457C7AD93D38BA0A93E48FA0DFC799951642F9440215F7276BA1E9E4A92
+Confirmed destination: rUM3gWKJQhMTYLFmC4w8FHuQNPhwQ4BRD3
+Receiver balance: 1001 XRP
+Ledger #46: 1 transactions
+Ledger #47: 0 transactions
+Issuer: rB2nJ5pa3uEdQn17tJJBAQHAcvXLYbE3Cv
+Ledger #48: 1 transactions
+Ledger #49: 0 transactions
+MPT created: https://devnet.xrpl.org/mpt/0000002E73F29415CD8ED89DC71F271006BCF9DC5936E3B7
+Metadata: {
+  asset_class: 'rwa',
+  additional_info: { interest_rate: '5.00%', maturity_date: '2045-06-30' },
+  asset_subclass: 'treasury',
+  desc: 'Demonstration token backed by fictional short-term Treasuries.',
+  icon: 'https://example.org/tbill-icon.png',
+  issuer_name: 'Example Yield Co.',
+  name: 'T-Bill Yield Token',
+  ticker: 'TBILL',
+  uris: [
+    {
+      category: 'website',
+      title: 'Product',
+      uri: 'https://example.org/tbill'
+    }
+  ]
+}
+Ledger #50: 0 transactions
+Ledger #51: 1 transactions
+Ledger #52: 0 transactions
+Transfer fee: 10
+Updated metadata: {
+  asset_class: 'rwa',
+  additional_info: { interest_rate: '4.75%', maturity_date: '2045-06-30' },
+  asset_subclass: 'treasury',
+  desc: 'Demonstration token backed by fictional short-term Treasuries.',
+  icon: 'https://example.org/tbill-icon.png',
+  issuer_name: 'Example Yield Co.',
+  name: 'T-Bill Yield Token',
+  ticker: 'TBILL',
+  uris: [
+    {
+      category: 'website',
+      title: 'Product',
+      uri: 'https://example.org/tbill'
+    }
+  ]
+}
+Ledger #53: 1 transactions
+Ledger #54: 0 transactions
+Ledger #55: 1 transactions
+Ledger #56: 0 transactions
+Ledger #57: 1 transactions
+Ledger #58: 0 transactions
+Ledger #59: 1 transactions
+Ledger #60: 0 transactions
+Ledger #61: 1 transactions
+Ledger #62: 0 transactions
+Ledger #63: 1 transactions
+Ledger #64: 0 transactions
+AMM created: https://devnet.xrpl.org/transactions/8F2651BEB26BEBE3C93F96E1796B6911C43BF25147CA672E89573865BF5D3702
+Pool: 100 FOO.rG2d3FLp7wuzJD5MTQa4FiFM3NNWAXnPAY / 10 XRP
+LP tokens: 31622.77660168379 031D4857BE920E5830EF5EC8DD77C29050FCD8F9
+LP-token trust lines: [
+  {
+    account: 'rJMQMV4ZEiqbPVv9fqQ8BABj79XEStB4xz',
+    balance: '31622.77660168379',
+    currency: '031D4857BE920E5830EF5EC8DD77C29050FCD8F9',
+    limit: '0',
+    limit_peer: '0',
+    no_ripple: true,
+    quality_in: 0,
+    quality_out: 0
+  }
+]
+4/4 example workflows completed

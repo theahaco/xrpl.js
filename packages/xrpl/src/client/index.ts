@@ -7,6 +7,7 @@ import {
   RippledError,
   NotFoundError,
   ValidationError,
+  TransactionFailedError,
   XrplError,
 } from '../errors'
 import {
@@ -24,7 +25,7 @@ import {
   AccountLinesRequest,
   AccountLinesResponse,
   AccountObjectsRequest,
-  AccountObjectsResponse,
+  AccountObjectsResponseMap,
   AccountOffersRequest,
   AccountOffersResponse,
   AccountTxRequest,
@@ -32,15 +33,21 @@ import {
   // ledger methods
   LedgerDataRequest,
   LedgerDataResponse,
-  TxResponse,
+  SuccessfulTxResponse,
+  SubmitResult,
 } from '../models/methods'
 import type {
+  BaseRequest,
+  BaseResponse,
+  RequestAPIVersion,
   RequestResponseMap,
   RequestAllResponseMap,
   MarkerRequest,
   MarkerResponse,
+  StrictRequest,
   SubmitResponse,
   SimulateRequest,
+  UnknownCommandRequest,
 } from '../models/methods'
 import type { BookOffer, BookOfferCurrency } from '../models/methods/bookOffers'
 import {
@@ -51,7 +58,11 @@ import type {
   EventTypes,
   OnEventToListenerMap,
 } from '../models/methods/subscribe'
-import type { SubmittableTransaction } from '../models/transactions'
+import type {
+  Autofilled,
+  StrictTransaction,
+  SubmittableTransaction,
+} from '../models/transactions'
 import { convertTxFlagsToNumber } from '../models/utils/flags'
 import {
   ensureClassicAddress,
@@ -81,14 +92,20 @@ import {
   separateBuySellOrders,
   sortAndLimitOffers,
 } from '../sugar/getOrderbook'
-import { dropsToXrp, hashes, isValidClassicAddress } from '../utils'
-import { Wallet } from '../Wallet'
+import {
+  dropsToXrp,
+  hashes,
+  isValidClassicAddress,
+  isTesSuccess,
+} from '../utils'
+import { SignedBlob, Wallet } from '../Wallet'
 import {
   type FaucetRequestBody,
   FundingOptions,
   requestFunding,
 } from '../Wallet/fundWallet'
 
+import { createCommands, Commands } from './commands'
 import {
   Connection,
   ConnectionUserOptions,
@@ -100,6 +117,8 @@ import {
 } from './partialPayment'
 
 export interface ClientOptions extends ConnectionUserOptions {
+  /** Default signing wallet. WalletClient also exposes transaction builders. */
+  wallet?: Wallet
   /**
    * Multiplication factor to multiply estimated fee by to provide a cushion in case the
    * required fee rises during submission of a transaction. Defaults to 1.2.
@@ -134,7 +153,7 @@ type RequestNextPageReturnMap<T> = T extends AccountChannelsRequest
   : T extends AccountLinesRequest
     ? AccountLinesResponse
     : T extends AccountObjectsRequest
-      ? AccountObjectsResponse
+      ? AccountObjectsResponseMap<T>
       : T extends AccountOffersRequest
         ? AccountOffersResponse
         : T extends AccountTxRequest
@@ -226,10 +245,24 @@ class Client extends EventEmitter<EventTypes> {
   public buildVersion: string | undefined
 
   /**
-   * API Version used by the server this client is connected to
+   * API version sent with every request that does not set its own
+   * `api_version`. Changing it changes the runtime shape of responses but not
+   * their TypeScript types: {@link Client.request} infers the response type
+   * from the request's own `api_version` field, so set `api_version: 1` on the
+   * request itself to get the version 1 response type.
    *
    */
   public apiVersion: APIVersion = DEFAULT_API_VERSION
+
+  /** Default wallet used to sign unsigned transactions. */
+  public readonly wallet?: Wallet
+
+  /**
+   * Discover modeled server commands and their inferred replies.
+   * Pass api_version explicitly when overriding the client API version:
+   * response inference cannot track mutations to this.apiVersion.
+   */
+  public readonly command: Commands = createCommands(this)
 
   /**
    * Creates a new Client with a websocket connection to a rippled server.
@@ -263,6 +296,7 @@ class Client extends EventEmitter<EventTypes> {
       )
     }
 
+    this.wallet = options.wallet
     this.feeCushion = options.feeCushion ?? DEFAULT_FEE_CUSHION
     this.maxFeeXRP = options.maxFeeXRP ?? DEFAULT_MAX_FEE_XRP
 
@@ -339,6 +373,16 @@ class Client extends EventEmitter<EventTypes> {
    * Makes a request to the client with the given command and
    * additional request body parameters.
    *
+   * Literal lookup fields, filters and API versions determine the response
+   * type. Stored requests with optional or union-valued options keep the
+   * corresponding broader response type.
+   *
+   * A key that the command's request type does not declare is a compile
+   * error, so a misspelled key (`ledger_indx`, `typ`) cannot be silently
+   * ignored by the server. To send a key that xrpl.js does not know about
+   * yet, assert the literal to the command's request type
+   * (`{ ... } as LedgerEntryRequest`); the key is still sent.
+   *
    * @category Network
    * @param req - Request to send to the server.
    * @returns The response from the server.
@@ -353,16 +397,29 @@ class Client extends EventEmitter<EventTypes> {
    * ```
    */
   public async request<
-    R extends Request,
-    V extends APIVersion = typeof DEFAULT_API_VERSION,
+    const R extends Request,
+    V extends APIVersion = RequestAPIVersion<R>,
     T = RequestResponseMap<R, V>,
-  >(req: R): Promise<T> {
+  >(req: StrictRequest<R>): Promise<T>
+
+  /**
+   * Send an unmodeled command. Known commands use the typed overload above.
+   * The result remains unknown unless the caller supplies a response model.
+   *
+   * @param req - Experimental or administrative request.
+   * @returns The server response.
+   */
+  public async request<
+    R extends BaseRequest,
+    T extends BaseResponse = BaseResponse,
+  >(req: UnknownCommandRequest<R>): Promise<T>
+
+  public async request<R extends BaseRequest, T>(req: R): Promise<T> {
+    const account: unknown = 'account' in req ? req.account : undefined
     const request = {
       ...req,
       account:
-        typeof req.account === 'string'
-          ? ensureClassicAddress(req.account)
-          : undefined,
+        typeof account === 'string' ? ensureClassicAddress(account) : undefined,
       api_version: req.api_version ?? this.apiVersion,
     }
     const response = await this.connection.request<R, T>(request)
@@ -406,7 +463,7 @@ class Client extends EventEmitter<EventTypes> {
         new NotFoundError('response does not have a next page'),
       )
     }
-    const nextPageRequest = { ...req, marker: resp.result.marker }
+    const nextPageRequest: Request = { ...req, marker: resp.result.marker }
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Necessary for overloading
     return this.request(nextPageRequest) as unknown as U
   }
@@ -477,7 +534,7 @@ class Client extends EventEmitter<EventTypes> {
 
   public async requestAll<
     T extends MarkerRequest,
-    U = RequestAllResponseMap<T, APIVersion>,
+    U = RequestAllResponseMap<T, RequestAPIVersion<T>>,
   >(request: T, collect?: string): Promise<U[]> {
     /*
      * The data under collection is keyed based on the command. Fail if command
@@ -686,7 +743,7 @@ class Client extends EventEmitter<EventTypes> {
     transaction: T,
     signersCount?: number,
     sponsorSignersCount?: number,
-  ): Promise<T> {
+  ): Promise<Autofilled<T>> {
     const tx = { ...transaction }
 
     setValidAddresses(tx)
@@ -715,7 +772,12 @@ class Client extends EventEmitter<EventTypes> {
       handleDeliverMax(tx)
     }
 
-    return Promise.all(promises).then(() => tx)
+    /*
+     * Every field `Autofilled` adds is either already present on `tx` or set by one of the
+     * promises above, but TypeScript cannot see that through the mutating helpers.
+     */
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- see above
+    return Promise.all(promises).then(() => tx as unknown as Autofilled<T>)
   }
 
   /**
@@ -798,71 +860,54 @@ class Client extends EventEmitter<EventTypes> {
       wallet?: Wallet
     },
   ): Promise<SubmitResponse> {
-    const signedTx = await getSignedTx(this, transaction, opts)
+    const signedTx = await getSignedTx(this, transaction, {
+      ...opts,
+      wallet: opts?.wallet ?? this.wallet,
+    })
     return submitRequest(this, signedTx, opts?.failHard)
   }
 
   /**
-   * Asynchronously submits a transaction and verifies that it has been included in a
-   * validated ledger (or has errored/will not be included for some reason).
-   * See [Reliable Transaction Submission](https://xrpl.org/reliable-transaction-submission.html).
+   * Prepare, sign and submit a transaction; resolve only after validated success.
+   * No result-code string comparisons are needed in the application.
+   * Use trySubmitAndWait for an explicit success/error result instead of exceptions.
    *
-   * @category Core
-   *
-   * @example
-   *
-   * ```ts
-   * const { Client, Wallet } = require('xrpl')
-   * const client = new Client('wss://s.altnet.rippletest.net:51233')
-   *
-   * async function submitTransaction() {
-   *   const senderWallet = client.fundWallet()
-   *   const recipientWallet = client.fundWallet()
-   *
-   *   const transaction = {
-   *     TransactionType: 'Payment',
-   *     Account: senderWallet.address,
-   *     Destination: recipientWallet.address,
-   *     Amount: '10'
-   *   }
-   *
-   *   try {
-   *     await client.submit(signedTransaction, { wallet: senderWallet })
-   *     console.log(result)
-   *   } catch (error) {
-   *     console.error(`Failed to submit transaction: ${error}`)
-   *   }
-   * }
-   *
-   * submitTransaction()
-   * ```
-   *
-   * In this example we submit a payment transaction between two newly created testnet accounts.
-   *
-   * Under the hood, `submit` will call `client.autofill` by default, and because we've passed in a `Wallet` it
-   * Will also sign the transaction for us before submitting the signed transaction binary blob to the ledger.
-   *
-   * This is similar to `submit`, which does all of the above, but also waits to see if the transaction has been validated.
-   * @param transaction - A transaction to autofill, sign & encode, and submit.
-   * @param opts - (Optional) Options used to sign and submit a transaction.
-   * @param opts.autofill - If true, autofill a transaction.
-   * @param opts.failHard - If true, and the transaction fails locally, do not retry or relay the transaction to other servers.
-   * @param opts.wallet - A wallet to sign a transaction. It must be provided when submitting an unsigned transaction.
-   * @throws Connection errors: If the `Client` object is unable to establish a connection to the specified WebSocket endpoint,
-   * an error will be thrown.
-   * @throws Transaction errors: If the submitted transaction is invalid or cannot be included in a validated ledger for any
-   * reason, the promise returned by `submitAndWait()` will be rejected with an error. This could include issues with insufficient
-   * balance, invalid transaction fields, or other issues specific to the transaction being submitted.
-   * @throws Ledger errors: If the ledger being used to submit the transaction is undergoing maintenance or otherwise unavailable,
-   * an error will be thrown.
-   * @throws Timeout errors: If the transaction takes longer than the specified timeout period to be included in a validated
-   * ledger, the promise returned by `submitAndWait()` will be rejected with an error.
-   * @returns A promise that contains TxResponse, that will return when the transaction has been validated.
+   * @remarks Submit sequentially per account, or manage Tickets explicitly.
+   * Confirmation requests API v2 independently of client.apiVersion.
+   * A transport error can leave the outcome unknown: inspect by hash before retrying.
+   * @param transaction - A transaction or signed blob.
+   * @param opts - Signing and submission options; the client wallet is the default.
+   * @returns A successful validated response with decoded metadata.
+   * @throws TransactionFailedError for an unsuccessful validated outcome.
+   * @throws Error for validation, submission, transport or expiry failures.
    */
+  public async submitAndWait<
+    const T extends SubmittableTransaction = SubmittableTransaction,
+  >(
+    transaction: StrictTransaction<T>,
+    opts?: {
+      autofill?: boolean
+      failHard?: boolean
+      wallet?: Wallet
+    },
+  ): Promise<SuccessfulTxResponse<T>>
+
   public async submitAndWait<
     T extends SubmittableTransaction = SubmittableTransaction,
   >(
-    transaction: T | string,
+    // eslint-disable-next-line @typescript-eslint/unified-signatures -- JSON/blob union breaks transaction-union inference
+    transaction: SignedBlob<T> | string,
+    opts?: {
+      autofill?: boolean
+      failHard?: boolean
+      wallet?: Wallet
+    },
+  ): Promise<SuccessfulTxResponse<T>>
+
+  public async submitAndWait<
+    T extends SubmittableTransaction = SubmittableTransaction,
+  >(
+    transaction: T | SignedBlob<T> | string,
     opts?: {
       // If true, autofill a transaction.
       autofill?: boolean
@@ -871,31 +916,68 @@ class Client extends EventEmitter<EventTypes> {
       // A wallet to sign a transaction. It must be provided when submitting an unsigned transaction.
       wallet?: Wallet
     },
-  ): Promise<TxResponse<T>> {
-    const signedTx = await getSignedTx(this, transaction, opts)
+  ): Promise<SuccessfulTxResponse<T>> {
+    return this.submitSuccessfulTransaction(transaction, opts)
+  }
 
-    const lastLedger = getLastLedgerSequence(signedTx)
-    if (lastLedger == null) {
-      throw new ValidationError(
-        'Transaction must contain a LastLedgerSequence value for reliable submission.',
-      )
+  /**
+   * Submit and wait without throwing: inspect ok, then response or error.
+   * Transport and expiry errors may leave the ledger outcome unknown.
+   *
+   * @param transaction - Transaction or signed blob.
+   * @param opts - Optional signing and submission settings.
+   * @returns An explicit success or error result.
+   */
+  public async trySubmitAndWait<
+    const T extends SubmittableTransaction = SubmittableTransaction,
+  >(
+    transaction: StrictTransaction<T>,
+    opts?: {
+      autofill?: boolean
+      failHard?: boolean
+      wallet?: Wallet
+    },
+  ): Promise<SubmitResult<T>>
+
+  public async trySubmitAndWait<
+    T extends SubmittableTransaction = SubmittableTransaction,
+  >(
+    // eslint-disable-next-line @typescript-eslint/unified-signatures -- JSON/blob union breaks transaction-union inference
+    transaction: SignedBlob<T> | string,
+    opts?: {
+      autofill?: boolean
+      failHard?: boolean
+      wallet?: Wallet
+    },
+  ): Promise<SubmitResult<T>>
+
+  public async trySubmitAndWait<
+    T extends SubmittableTransaction = SubmittableTransaction,
+  >(
+    transaction: T | SignedBlob<T> | string,
+    opts?: {
+      // If true, autofill a transaction.
+      autofill?: boolean
+      // If true, and the transaction fails locally, do not retry or relay the transaction to other servers.
+      failHard?: boolean
+      // A wallet to sign a transaction. It must be provided when submitting an unsigned transaction.
+      wallet?: Wallet
+    },
+  ): Promise<SubmitResult<T>> {
+    try {
+      return {
+        ok: true,
+        response: await this.submitSuccessfulTransaction(transaction, opts),
+      }
+    } catch (error) {
+      return {
+        ok: false,
+        error:
+          error instanceof Error
+            ? error
+            : new XrplError('Submission failed', error),
+      }
     }
-
-    const response = await submitRequest(this, signedTx, opts?.failHard)
-
-    if (response.result.engine_result.startsWith('tem')) {
-      throw new XrplError(
-        `Transaction failed, ${response.result.engine_result}: ${response.result.engine_result_message}`,
-      )
-    }
-
-    const txHash = hashes.hashSignedTx(signedTx)
-    return waitForFinalTransactionOutcome(
-      this,
-      txHash,
-      lastLedger,
-      response.result.engine_result,
-    )
   }
 
   /**
@@ -913,7 +995,7 @@ class Client extends EventEmitter<EventTypes> {
     transaction: SubmittableTransaction,
     signersCount?: number,
     sponsorSignersCount?: number,
-  ): ReturnType<Client['autofill']> {
+  ): Promise<Autofilled> {
     return this.autofill(transaction, signersCount, sponsorSignersCount)
   }
 
@@ -1265,6 +1347,52 @@ class Client extends EventEmitter<EventTypes> {
       walletToFund,
       postBody,
     )
+  }
+
+  private async submitSuccessfulTransaction<T extends SubmittableTransaction>(
+    transaction: T | SignedBlob<T> | string,
+    opts?: { autofill?: boolean; failHard?: boolean; wallet?: Wallet },
+  ): Promise<SuccessfulTxResponse<T>> {
+    const signedTx = await getSignedTx(this, transaction, {
+      ...opts,
+      wallet: opts?.wallet ?? this.wallet,
+    })
+
+    const lastLedger = getLastLedgerSequence(signedTx)
+    if (lastLedger == null) {
+      throw new ValidationError(
+        'Transaction must contain a LastLedgerSequence value for reliable submission.',
+      )
+    }
+
+    const submission = await submitRequest(this, signedTx, opts?.failHard)
+
+    if (submission.result.engine_result.startsWith('tem')) {
+      throw new XrplError(
+        `Transaction failed, ${submission.result.engine_result}: ${submission.result.engine_result_message}`,
+      )
+    }
+
+    const txHash = hashes.hashSignedTx(signedTx)
+    const response = await waitForFinalTransactionOutcome<T>(
+      this,
+      txHash,
+      lastLedger,
+      submission.result.engine_result,
+    )
+    if (!isTesSuccess(response.result.meta.TransactionResult)) {
+      throw new TransactionFailedError(
+        `Transaction failed: ${response.result.meta.TransactionResult}`,
+        {
+          engineResult: response.result.meta.TransactionResult,
+          phase: 'validated',
+          response,
+        },
+        response,
+      )
+    }
+    // The success code is checked above; all other response fields are preserved.
+    return response as SuccessfulTxResponse<T>
   }
 }
 

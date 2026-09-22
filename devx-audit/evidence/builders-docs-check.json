@@ -1,0 +1,22 @@
+{
+  "references": 7,
+  "missing": [],
+  "sourceChecks": [
+    {
+      "file": "_code-samples/get-started/ts/get-acct-info.ts",
+      "chunkCount": 7,
+      "endCount": 7,
+      "missingSteps": [],
+      "manualProtocolSuccessChecks": false,
+      "redundantTypeAssertions": false
+    },
+    {
+      "file": "_code-samples/get-started/ts/browser.ts",
+      "chunkCount": 7,
+      "endCount": 7,
+      "missingSteps": [],
+      "manualProtocolSuccessChecks": false,
+      "redundantTypeAssertions": false
+    }
+  ]
+}

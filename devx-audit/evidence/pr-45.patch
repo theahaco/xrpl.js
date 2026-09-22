@@ -1,0 +1,1247 @@
+diff --git a/packages/xrpl/HISTORY.md b/packages/xrpl/HISTORY.md
+index 81df487f97..fc59f3d437 100644
+--- a/packages/xrpl/HISTORY.md
++++ b/packages/xrpl/HISTORY.md
+@@ -6,6 +6,14 @@ Subscribe to [the **xrpl-announce** mailing list](https://groups.google.com/g/xr
+ 
+ ### Added
+ * Add `LendingProtocolV1_1` support.
++* Add `getTransactionResultCode` and `isTesSuccess` utility functions to make it easier to check whether a transaction succeeded, since `submitAndWait` resolves normally for transactions that reached a validated ledger even when they failed on-ledger (e.g. `tec*` results).
++* Add `TransactionFailedError` (extends `XrplError`) with typed `engineResult`, `engineResultMessage` and `phase` (`'submit'` | `'expired'`) properties. `submitAndWait` now throws it for a terminal preliminary result and when `LastLedgerSequence` passes, instead of a plain `XrplError` with the code embedded in the message.
++
++### Fixed
++* `submitAndWait` no longer reports a transaction as expired when it was validated in its last allowed ledger (`LastLedgerSequence`) but two or more ledgers closed between polls: the transaction is looked up before expiry is declared.
++* `submitAndWait` throws immediately for `tef*` / `tel*` preliminary results (e.g. `tefPAST_SEQ` from concurrent submissions) that rippled does not already know, rather than polling until `LastLedgerSequence` passes. Re-submitting a signed blob that an earlier submission got validated still resolves with the validated transaction.
++* Errors other than `txnNotFound` raised while `submitAndWait` polls for the transaction (`TimeoutError`, `DisconnectedError`, `RippledError` such as `tooBusy`) propagate with their original class and `data` instead of being re-thrown as a plain `Error` whose message starts with `undefined`.
++* `submitAndWait`'s `@throws` documentation now states that validated `tec*` results resolve normally (with the fee charged) and that concurrent submissions from one account collide on `Sequence`.
+ ## 5.2.0 (2026-09-11)
+ 
+ ### BREAKING CHANGES
+diff --git a/packages/xrpl/src/client/index.ts b/packages/xrpl/src/client/index.ts
+index 1035b3a93b..e9e006e96c 100644
+--- a/packages/xrpl/src/client/index.ts
++++ b/packages/xrpl/src/client/index.ts
+@@ -58,6 +58,7 @@ import {
+   submitRequest,
+   getSignedTx,
+   getLastLedgerSequence,
++  handleTerminalSubmission,
+   waitForFinalTransactionOutcome,
+ } from '../sugar'
+ import {
+@@ -843,20 +844,35 @@ class Client extends EventEmitter<EventTypes> {
+    * Will also sign the transaction for us before submitting the signed transaction binary blob to the ledger.
+    *
+    * This is similar to `submit`, which does all of the above, but also waits to see if the transaction has been validated.
++   *
++   * The promise resolves as soon as the transaction is in a validated ledger, **whatever its result**. A transaction
++   * validated with a `tec*` code (e.g. `tecNO_AUTH`, `tecLOCKED`, `tecINSUFFICIENT_FUNDS`, `tecUNFUNDED_PAYMENT`) did
++   * not have its intended effect but did reach the ledger and charged its fee, so it resolves normally: always read
++   * `result.meta.TransactionResult` (see `getTransactionResultCode` and `isTesSuccess`) before treating a resolved
++   * promise as success.
++   *
++   * @remarks `autofill` reads the account's `Sequence` from the server and reserves nothing, so concurrent
++   * `submitAndWait` calls for the same account collide on `Sequence` and all but one fail with `tefPAST_SEQ`.
++   * Submit one transaction at a time per account, or use Tickets (`TicketCreate` + `TicketSequence`) for
++   * parallel submissions.
+    * @param transaction - A transaction to autofill, sign & encode, and submit.
+    * @param opts - (Optional) Options used to sign and submit a transaction.
+    * @param opts.autofill - If true, autofill a transaction.
+    * @param opts.failHard - If true, and the transaction fails locally, do not retry or relay the transaction to other servers.
+    * @param opts.wallet - A wallet to sign a transaction. It must be provided when submitting an unsigned transaction.
+-   * @throws Connection errors: If the `Client` object is unable to establish a connection to the specified WebSocket endpoint,
+-   * an error will be thrown.
+-   * @throws Transaction errors: If the submitted transaction is invalid or cannot be included in a validated ledger for any
+-   * reason, the promise returned by `submitAndWait()` will be rejected with an error. This could include issues with insufficient
+-   * balance, invalid transaction fields, or other issues specific to the transaction being submitted.
+-   * @throws Ledger errors: If the ledger being used to submit the transaction is undergoing maintenance or otherwise unavailable,
+-   * an error will be thrown.
+-   * @throws Timeout errors: If the transaction takes longer than the specified timeout period to be included in a validated
+-   * ledger, the promise returned by `submitAndWait()` will be rejected with an error.
++   * @throws {ValidationError} If the transaction is unsigned and no wallet is given, or it has no `LastLedgerSequence`.
++   * @throws {TransactionFailedError} With `phase: 'submit'` if the preliminary `submit` result is terminal: `tem*`
++   * (malformed), or `tef*` / `tel*` (neither applied, queued, nor relayed, e.g. `tefPAST_SEQ`). `engineResult`
++   * carries the code. Thrown immediately, without waiting for expiry. Re-submitting a signed blob that an earlier
++   * submission already got validated resolves with that validated transaction instead, and `tefALREADY` (the
++   * transaction is already in the open ledger) keeps waiting for validation.
++   * @throws {TransactionFailedError} With `phase: 'expired'` if `LastLedgerSequence` is passed by the validated ledger
++   * before the transaction is validated (e.g. a `ter*` transaction that was never applied); `engineResult` is the
++   * preliminary result.
++   * @throws {ConnectionError} (`NotConnectedError`, `DisconnectedError`, `TimeoutError`, ...) if the connection fails
++   * while submitting or polling. The transaction may still have been submitted: look it up by hash before
++   * re-submitting.
++   * @throws {RippledError} If a request other than the submission fails on the server (e.g. `tooBusy`) while polling.
+    * @returns A promise that contains TxResponse, that will return when the transaction has been validated.
+    */
+   public async submitAndWait<
+@@ -883,13 +899,16 @@ class Client extends EventEmitter<EventTypes> {
+ 
+     const response = await submitRequest(this, signedTx, opts?.failHard)
+ 
+-    if (response.result.engine_result.startsWith('tem')) {
+-      throw new XrplError(
+-        `Transaction failed, ${response.result.engine_result}: ${response.result.engine_result_message}`,
+-      )
++    const txHash = hashes.hashSignedTx(signedTx)
++    const alreadyValidated = await handleTerminalSubmission<T>(
++      this,
++      response,
++      txHash,
++    )
++    if (alreadyValidated) {
++      return alreadyValidated
+     }
+ 
+-    const txHash = hashes.hashSignedTx(signedTx)
+     return waitForFinalTransactionOutcome(
+       this,
+       txHash,
+diff --git a/packages/xrpl/src/errors.ts b/packages/xrpl/src/errors.ts
+index ffde0de5aa..4124b65de4 100644
+--- a/packages/xrpl/src/errors.ts
++++ b/packages/xrpl/src/errors.ts
+@@ -117,6 +117,55 @@ class ResponseFormatError extends ConnectionError {}
+  */
+ class ValidationError extends XrplError {}
+ 
++/**
++ * Error thrown by `submitAndWait` when a transaction will never reach a validated ledger.
++ *
++ * It is thrown in two situations, distinguished by `phase`:
++ * - `'submit'`: the preliminary result of the `submit` request was terminal (`tem*`,
++ *   `tef*` or `tel*`), so rippled neither applied, queued, nor relayed the transaction.
++ * - `'expired'`: the transaction's `LastLedgerSequence` was passed by the validated
++ *   ledger without the transaction being included in a validated ledger.
++ *
++ * A validated `tec*` result does NOT throw this error: the transaction reached a
++ * validated ledger (and charged its fee), so `submitAndWait` resolves and the code is
++ * in `result.meta.TransactionResult`. See `getTransactionResultCode` and `isTesSuccess`.
++ *
++ * @category Errors
++ */
++class TransactionFailedError extends XrplError {
++  /** The engine result code, e.g. `temMALFORMED`, `tefPAST_SEQ`, `terQUEUED`. */
++  public readonly engineResult: string
++  /** rippled's human-readable description of `engineResult`, when it was available. */
++  public readonly engineResultMessage: string | undefined
++  /** Whether the failure was detected at submission or after `LastLedgerSequence` passed. */
++  public readonly phase: 'submit' | 'expired'
++
++  /**
++   * Construct a TransactionFailedError.
++   *
++   * @param message - The error message.
++   * @param details - The engine result that caused the failure and the phase it was detected in.
++   * @param details.engineResult - The engine result code.
++   * @param details.engineResultMessage - rippled's description of the engine result, if any.
++   * @param details.phase - `'submit'` for a terminal preliminary result, `'expired'` when `LastLedgerSequence` passed.
++   * @param data - The data that caused the error (the `submit` result, when available).
++   */
++  public constructor(
++    message: string,
++    details: {
++      engineResult: string
++      engineResultMessage?: string
++      phase: 'submit' | 'expired'
++    },
++    data?: unknown,
++  ) {
++    super(message, data)
++    this.engineResult = details.engineResult
++    this.engineResultMessage = details.engineResultMessage
++    this.phase = details.phase
++  }
++}
++
+ /**
+  * Error thrown when a client cannot generate a wallet from the testnet/devnet
+  * faucets, or when the client cannot infer the faucet URL (i.e. when the Client
+@@ -155,5 +204,6 @@ export {
+   ResponseFormatError,
+   ValidationError,
+   NotFoundError,
++  TransactionFailedError,
+   XRPLFaucetError,
+ }
+diff --git a/packages/xrpl/src/sugar/submit.ts b/packages/xrpl/src/sugar/submit.ts
+index c87954642f..51c9ba306c 100644
+--- a/packages/xrpl/src/sugar/submit.ts
++++ b/packages/xrpl/src/sugar/submit.ts
+@@ -6,7 +6,12 @@ import type {
+   Transaction,
+   Wallet,
+ } from '..'
+-import { ValidationError, XrplError } from '../errors'
++import {
++  RippledError,
++  TransactionFailedError,
++  ValidationError,
++  XrplError,
++} from '../errors'
+ import { Signer } from '../models/common'
+ import { TxResponse } from '../models/methods'
+ import { BaseTransaction } from '../models/transactions/common'
+@@ -66,11 +71,87 @@ export async function submitRequest(
+   return client.request(request)
+ }
+ 
++/**
++ * Looks a transaction up by hash, distinguishing "rippled does not know this transaction"
++ * from every other failure.
++ *
++ * @param client - The client to use for the `tx` request.
++ * @param txHash - The hash of the transaction to look up.
++ * @param submissionResult - The preliminary result of the transaction, for the error message.
++ * @returns The `tx` response, or `undefined` if rippled answered `txnNotFound`.
++ * @throws {XrplError} Any other library error (`RippledError`, `TimeoutError`,
++ * `DisconnectedError`, ...) is re-thrown unchanged so callers keep its class and `data`;
++ * anything else is wrapped in an `XrplError` whose `data` is the original error.
++ */
++async function lookupTransaction(
++  client: Client,
++  txHash: string,
++  submissionResult: string,
++): Promise<TxResponse | undefined> {
++  try {
++    return await client.request({ command: 'tx', transaction: txHash })
++  } catch (error: unknown) {
++    if (error instanceof RippledError && isTxnNotFound(error.data)) {
++      return undefined
++    }
++    if (error instanceof XrplError) {
++      throw error
++    }
++    throw new XrplError(
++      `Failed to look up transaction ${txHash} while waiting for its final outcome.\n` +
++        `Preliminary result: ${submissionResult}`,
++      error,
++    )
++  }
++}
++
++function isTxnNotFound(data: unknown): boolean {
++  return (
++    typeof data === 'object' &&
++    data != null &&
++    'error' in data &&
++    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- narrowed by the `in` check above
++    (data as { error: unknown }).error === 'txnNotFound'
++  )
++}
++
++/**
++ * Whether a preliminary `submit` result means rippled neither applied, queued, nor relayed
++ * the transaction, so this submission can never reach a ledger on its own.
++ *
++ * - `tem*`: malformed.
++ * - `tef*`: failed; cannot be applied to the current ledger or any later one.
++ * - `tel*`: local error; not applied and not relayed.
++ *
++ * `tefALREADY` is the exception: it means the exact transaction is already in the open ledger
++ * (a re-submission), so it is still expected to be validated.
++ *
++ * `tes*`, `tec*` and `ter*` are not terminal: the transaction was applied (charging a fee
++ * for `tec*`) or held for retry (`ter*`, e.g. `terQUEUED`) and may still be validated.
++ *
++ * @param engineResult - The `engine_result` of a `submit` response.
++ * @returns `true` if the submission is terminal.
++ */
++export function isTerminalSubmissionResult(engineResult: string): boolean {
++  if (engineResult === 'tefALREADY') {
++    return false
++  }
++  return (
++    engineResult.startsWith('tem') ||
++    engineResult.startsWith('tef') ||
++    engineResult.startsWith('tel')
++  )
++}
++
+ /**
+  * Waits for the final outcome of a transaction by polling the ledger until the result can be considered final,
+  * meaning it has either been included in a validated ledger, or the transaction's lastLedgerSequence has been
+  * surpassed by the latest ledger sequence (meaning it will never be included in a validated ledger).
+  *
++ * Each poll reads the latest validated ledger index *before* looking the transaction up, and only reports
++ * expiry when the transaction is not validated after that lookup. This way a transaction validated in its
++ * last allowed ledger is returned even when several ledgers close between two polls.
++ *
+  * @template T - The type of the transaction. Defaults to `Transaction`.
+  * @param client - The client to use for requesting transaction information.
+  * @param txHash - The hash of the transaction to wait for.
+@@ -78,7 +159,11 @@ export async function submitRequest(
+  * @param submissionResult - The preliminary result of the transaction.
+  * @returns A promise that resolves with the final transaction response.
+  *
+- * @throws {XrplError} If the latest ledger sequence surpasses the transaction's lastLedgerSequence.
++ * @throws {TransactionFailedError} With `phase: 'expired'` and `engineResult` set to the preliminary result
++ * if the latest validated ledger sequence surpasses the transaction's lastLedgerSequence without the
++ * transaction being validated.
++ * @throws {XrplError} If a `tx` lookup fails for a reason other than `txnNotFound` (e.g. `TimeoutError`,
++ * `DisconnectedError`, or a `RippledError` such as `tooBusy`); the original error is re-thrown unchanged.
+  *
+  * @example
+  * import { hashes, Client } from "xrpl"
+@@ -107,7 +192,7 @@ export async function submitRequest(
+  *   response.result.engine_result,
+  * )
+  */
+-// eslint-disable-next-line max-params, max-lines-per-function -- this function needs to display and do with more information.
++// eslint-disable-next-line max-params -- this function needs to display and do with more information.
+ export async function waitForFinalTransactionOutcome<
+   T extends BaseTransaction = SubmittableTransaction,
+ >(
+@@ -118,45 +203,26 @@ export async function waitForFinalTransactionOutcome<
+ ): Promise<TxResponse<T>> {
+   await sleep(LEDGER_CLOSE_TIME)
+ 
++  // Read the validated ledger index before the lookup: if it is already past `lastLedger`, every ledger
++  // the transaction could have landed in is validated too, so a non-validated lookup result is final.
+   const latestLedger = await client.getLedgerIndex()
+ 
+-  if (lastLedger < latestLedger) {
+-    throw new XrplError(
+-      `The latest ledger sequence ${latestLedger} is greater than the transaction's LastLedgerSequence (${lastLedger}).\n` +
+-        `Preliminary result: ${submissionResult}`,
+-    )
+-  }
+-
+-  const txResponse = await client
+-    .request({
+-      command: 'tx',
+-      transaction: txHash,
+-    })
+-    .catch(async (error) => {
+-      // error is of an unknown type and hence we assert type to extract the value we need.
+-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions,@typescript-eslint/no-unsafe-member-access -- ^
+-      const message = error?.data?.error as string
+-      if (message === 'txnNotFound') {
+-        return waitForFinalTransactionOutcome<T>(
+-          client,
+-          txHash,
+-          lastLedger,
+-          submissionResult,
+-        )
+-      }
+-      throw new Error(
+-        `${message} \n Preliminary result: ${submissionResult}.\nFull error details: ${String(
+-          error,
+-        )}`,
+-      )
+-    })
++  const txResponse = await lookupTransaction(client, txHash, submissionResult)
+ 
+-  if (txResponse.result.validated) {
++  if (txResponse?.result.validated) {
+     // TODO: resolve the type assertion below
+     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- we know that txResponse is of type TxResponse
+     return txResponse as TxResponse<T>
+   }
+ 
++  if (lastLedger < latestLedger) {
++    throw new TransactionFailedError(
++      `The latest ledger sequence ${latestLedger} is greater than the transaction's LastLedgerSequence (${lastLedger}).\n` +
++        `Preliminary result: ${submissionResult}`,
++      { engineResult: submissionResult, phase: 'expired' },
++    )
++  }
++
+   return waitForFinalTransactionOutcome<T>(
+     client,
+     txHash,
+@@ -165,6 +231,59 @@ export async function waitForFinalTransactionOutcome<
+   )
+ }
+ 
++/**
++ * Handles a terminal preliminary `submit` result: throws a `TransactionFailedError`, unless an earlier
++ * submission of the same signed blob already got the transaction into a validated ledger, in which case
++ * that validated transaction is returned.
++ *
++ * A `tem*` result is malformed and thrown at once. A `tef*` or `tel*` result means this submission was
++ * neither applied, queued, nor relayed, so polling until `LastLedgerSequence` passes would only delay the
++ * same answer. The one way such a transaction can still be validated is if an earlier submission got it
++ * there (e.g. `tefPAST_SEQ` when re-submitting after a disconnect), so the hash is looked up once. rippled
++ * also keeps rejected transactions in its local cache and reports them as not validated, so only a
++ * `validated` lookup counts.
++ *
++ * @template T - The type of the transaction.
++ * @param client - The client to use for the lookup.
++ * @param response - The `submit` response.
++ * @param txHash - The hash of the submitted transaction.
++ * @returns The validated transaction if it is already on the ledger; `undefined` when the submission is
++ * not terminal and the caller should keep polling.
++ * @throws {TransactionFailedError} With `phase: 'submit'` when the transaction will never reach a ledger.
++ */
++export async function handleTerminalSubmission<
++  T extends BaseTransaction = SubmittableTransaction,
++>(
++  client: Client,
++  response: SubmitResponse,
++  txHash: string,
++): Promise<TxResponse<T> | undefined> {
++  const {
++    engine_result: engineResult,
++    engine_result_message: engineResultMessage,
++  } = response.result
++  if (!isTerminalSubmissionResult(engineResult)) {
++    return undefined
++  }
++
++  const failure = new TransactionFailedError(
++    `Transaction failed, ${engineResult}: ${engineResultMessage}`,
++    { engineResult, engineResultMessage, phase: 'submit' },
++    response.result,
++  )
++
++  if (engineResult.startsWith('tem')) {
++    throw failure
++  }
++
++  const txResponse = await lookupTransaction(client, txHash, engineResult)
++  if (txResponse?.result.validated) {
++    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- we know that txResponse is of type TxResponse
++    return txResponse as TxResponse<T>
++  }
++  throw failure
++}
++
+ // checks if the transaction has been signed
+ function isSigned(transaction: SubmittableTransaction | string): boolean {
+   const tx = typeof transaction === 'string' ? decode(transaction) : transaction
+diff --git a/packages/xrpl/src/utils/getTransactionResultCode.ts b/packages/xrpl/src/utils/getTransactionResultCode.ts
+new file mode 100644
+index 0000000000..2992f8babc
+--- /dev/null
++++ b/packages/xrpl/src/utils/getTransactionResultCode.ts
+@@ -0,0 +1,56 @@
++import { decode } from 'ripple-binary-codec'
++
++import { TransactionMetadata } from '../models/transactions/metadata'
++
++/**
++ * Ensures that the metadata is in a deserialized format to parse.
++ *
++ * @param meta - the metadata from a `tx` method call. Can be in json format or binary format.
++ * @returns the metadata in a deserialized format.
++ */
++function ensureDecodedMeta(
++  meta: TransactionMetadata | string,
++): TransactionMetadata {
++  if (typeof meta === 'string') {
++    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Meta is either metadata or serialized metadata.
++    return decode(meta) as unknown as TransactionMetadata
++  }
++  return meta
++}
++
++/**
++ * Gets the transaction engine result code (e.g. `tesSUCCESS`, `tecUNFUNDED_PAYMENT`)
++ * from the metadata of a validated transaction. This is the field to check to determine
++ * whether a transaction succeeded, since `submitAndWait` only throws for submission-level
++ * problems (such as an expired `LastLedgerSequence`) and resolves normally for any
++ * transaction that reached a validated ledger, including ones that failed on-ledger.
++ *
++ * @param meta - Metadata from the response to `submitAndWait`, a `tx` method call, or any
++ *               other response that includes transaction metadata. Can be in JSON or binary format.
++ * @returns The `TransactionResult` engine result code.
++ * @throws {TypeError} if meta is missing, or is metadata from an un-validated transaction.
++ * @category Utilities
++ */
++export default function getTransactionResultCode(
++  meta: TransactionMetadata | string | undefined,
++): string {
++  if (meta == null) {
++    throw new TypeError(`Unable to parse the parameter given to getTransactionResultCode.
++      'meta' must be the metadata from a validated transaction. Received ${JSON.stringify(
++        meta,
++      )} instead.`)
++  }
++
++  const decodedMeta = ensureDecodedMeta(meta)
++
++  if (
++    !decodedMeta.TransactionResult ||
++    typeof decodedMeta.TransactionResult !== 'string'
++  ) {
++    throw new TypeError(
++      'Cannot get the transaction result code from an un-validated transaction',
++    )
++  }
++
++  return decodedMeta.TransactionResult
++}
+diff --git a/packages/xrpl/src/utils/index.ts b/packages/xrpl/src/utils/index.ts
+index 76ee4417b7..59863b5f7a 100644
+--- a/packages/xrpl/src/utils/index.ts
++++ b/packages/xrpl/src/utils/index.ts
+@@ -33,6 +33,7 @@ import { Transaction } from '../models/transactions/transaction'
+ import { deriveKeypair, deriveAddress, deriveXAddress } from './derive'
+ import getBalanceChanges from './getBalanceChanges'
+ import getNFTokenID from './getNFTokenID'
++import getTransactionResultCode from './getTransactionResultCode'
+ import getXChainClaimID from './getXChainClaimID'
+ import {
+   hashSignedTx,
+@@ -51,6 +52,7 @@ import {
+   hashLoanBroker,
+   hashLoan,
+ } from './hashes'
++import isTesSuccess from './isTesSuccess'
+ import parseNFTokenID from './parseNFTokenID'
+ import {
+   percentToTransferRate,
+@@ -247,4 +249,6 @@ export {
+   getNFTokenID,
+   parseNFTokenID,
+   getXChainClaimID,
++  getTransactionResultCode,
++  isTesSuccess,
+ }
+diff --git a/packages/xrpl/src/utils/isTesSuccess.ts b/packages/xrpl/src/utils/isTesSuccess.ts
+new file mode 100644
+index 0000000000..9276e48f3e
+--- /dev/null
++++ b/packages/xrpl/src/utils/isTesSuccess.ts
+@@ -0,0 +1,17 @@
++/**
++ * Checks whether a transaction engine result code indicates that the transaction
++ * was successfully applied to the ledger.
++ *
++ * Only `tesSUCCESS` indicates success. Other classes of result code (`tec*`, `tef*`,
++ * `tem*`, `tel*`, `ter*`) all indicate that the transaction did not have its intended
++ * effect, even though some of them (`tec*`) are still recorded in a validated ledger
++ * and charge a fee.
++ *
++ * @param resultCode - A transaction engine result code, such as the value returned by
++ *                      {@link getTransactionResultCode} or `SubmitResponse.result.engine_result`.
++ * @returns `true` if the result code is `tesSUCCESS`, `false` otherwise.
++ * @category Utilities
++ */
++export default function isTesSuccess(resultCode: string): boolean {
++  return resultCode === 'tesSUCCESS'
++}
+diff --git a/packages/xrpl/test/client/errors.test.ts b/packages/xrpl/test/client/errors.test.ts
+index d6a3e3c0e0..680bfce033 100644
+--- a/packages/xrpl/test/client/errors.test.ts
++++ b/packages/xrpl/test/client/errors.test.ts
+@@ -1,6 +1,6 @@
+ import { assert } from 'chai'
+ 
+-import { XrplError, NotFoundError } from '../../src'
++import { XrplError, NotFoundError, TransactionFailedError } from '../../src'
+ 
+ describe('client errors', function () {
+   it('XrplError with data', async function () {
+@@ -12,4 +12,38 @@ describe('client errors', function () {
+     const error = new NotFoundError()
+     assert.strictEqual(error.toString(), '[NotFoundError(Not found)]')
+   })
++
++  it('TransactionFailedError exposes the engine result and phase', async function () {
++    const error = new TransactionFailedError(
++      'Transaction failed, tefPAST_SEQ: This sequence number has already passed.',
++      {
++        engineResult: 'tefPAST_SEQ',
++        engineResultMessage: 'This sequence number has already passed.',
++        phase: 'submit',
++      },
++      { engine_result: 'tefPAST_SEQ' },
++    )
++    assert.instanceOf(error, XrplError)
++    assert.strictEqual(error.name, 'TransactionFailedError')
++    assert.strictEqual(error.engineResult, 'tefPAST_SEQ')
++    assert.strictEqual(
++      error.engineResultMessage,
++      'This sequence number has already passed.',
++    )
++    assert.strictEqual(error.phase, 'submit')
++    assert.strictEqual(
++      error.toString(),
++      '[TransactionFailedError(Transaction failed, tefPAST_SEQ: This sequence number has already passed., {"engine_result":"tefPAST_SEQ"})]',
++    )
++  })
++
++  it('TransactionFailedError leaves engineResultMessage undefined when rippled gave none', async function () {
++    const error = new TransactionFailedError('expired', {
++      engineResult: 'terQUEUED',
++      phase: 'expired',
++    })
++    assert.isUndefined(error.engineResultMessage)
++    assert.isUndefined(error.data)
++    assert.strictEqual(error.phase, 'expired')
++  })
+ })
+diff --git a/packages/xrpl/test/client/submitAndWait.test.ts b/packages/xrpl/test/client/submitAndWait.test.ts
+index 8138c64f2e..029e2cce55 100644
+--- a/packages/xrpl/test/client/submitAndWait.test.ts
++++ b/packages/xrpl/test/client/submitAndWait.test.ts
+@@ -1,4 +1,14 @@
+-import { XrplError } from '../../src'
++import { assert } from 'chai'
++
++import {
++  RippledError,
++  TimeoutError,
++  TransactionFailedError,
++  XrplError,
++  getTransactionResultCode,
++  isTesSuccess,
++} from '../../src'
++import type { Request } from '../../src'
+ import { Transaction } from '../../src/models/transactions'
+ import rippled from '../fixtures/rippled'
+ import {
+@@ -8,6 +18,9 @@ import {
+ } from '../setupClient'
+ import { assertRejects } from '../testUtils'
+ 
++/** One poll of `waitForFinalTransactionOutcome` sleeps this long before looking the transaction up. */
++const LEDGER_CLOSE_TIME = 1000
++
+ describe('client.submitAndWait', function () {
+   let testContext: XrplTestContext
+ 
+@@ -30,15 +43,369 @@ describe('client.submitAndWait', function () {
+     Destination: 'rQ3PTWGLCbPz8ZCicV5tCX3xuymojTng5r',
+   }
+ 
+-  it('should exit early with a tem error', async function () {
+-    const signedTx = { ...signedTransaction }
++  function submitResponse(
++    engineResult: string,
++    engineResultMessage: string,
++  ): Record<string, unknown> {
++    return {
++      ...rippled.submit.success,
++      result: {
++        ...rippled.submit.success.result,
++        engine_result: engineResult,
++        engine_result_message: engineResultMessage,
++      },
++    }
++  }
++
++  function ledgerResponse(ledgerIndex: number): Record<string, unknown> {
++    return {
++      ...rippled.ledger.normal,
++      result: { ...rippled.ledger.normal.result, ledger_index: ledgerIndex },
++    }
++  }
++
++  function txError(error: string, errorMessage: string) {
++    return (request: Request): Record<string, unknown> => ({
++      id: request.id,
++      status: 'error',
++      type: 'response',
++      error,
++      error_code: 29,
++      error_message: errorMessage,
++      request,
++    })
++  }
++
++  const txnNotFound = txError('txnNotFound', 'Transaction not found.')
++
++  const validatedTx = rippled.tx.Payment
++
++  async function assertTransactionFailed(
++    promise: Promise<unknown>,
++    expected: {
++      engineResult: string
++      phase: 'submit' | 'expired'
++      message?: string | RegExp
++    },
++  ): Promise<TransactionFailedError> {
++    try {
++      await promise
++    } catch (error) {
++      assert(
++        error instanceof TransactionFailedError,
++        `expected TransactionFailedError, got ${String(error)}`,
++      )
++      assert(error instanceof XrplError)
++      assert.strictEqual(error.name, 'TransactionFailedError')
++      assert.strictEqual(error.engineResult, expected.engineResult)
++      assert.strictEqual(error.phase, expected.phase)
++      if (typeof expected.message === 'string') {
++        assert.strictEqual(error.message, expected.message)
++      } else if (expected.message instanceof RegExp) {
++        assert.match(error.message, expected.message)
++      }
++      return error
++    }
++    throw new Error('Expected submitAndWait to reject')
++  }
++
++  describe('terminal preliminary results', function () {
++    it('throws TransactionFailedError immediately for a tem result', async function () {
++      testContext.mockRippled!.addResponse('submit', rippled.submit.temError)
++
++      const started = Date.now()
++      const error = await assertTransactionFailed(
++        testContext.client.submitAndWait({ ...signedTransaction }),
++        {
++          engineResult: 'temMALFORMED',
++          phase: 'submit',
++          message: 'Transaction failed, temMALFORMED: Malformed transaction.',
++        },
++      )
++      assert.strictEqual(error.engineResultMessage, 'Malformed transaction.')
++      assert.deepStrictEqual(error.data, rippled.submit.temError.result)
++      assert.isBelow(Date.now() - started, LEDGER_CLOSE_TIME)
++    })
++
++    it('throws TransactionFailedError immediately for a tef result rippled does not know', async function () {
++      testContext.mockRippled!.addResponse(
++        'submit',
++        submitResponse(
++          'tefPAST_SEQ',
++          'This sequence number has already passed.',
++        ),
++      )
++      testContext.mockRippled!.addResponse('tx', txnNotFound)
++
++      const started = Date.now()
++      const error = await assertTransactionFailed(
++        testContext.client.submitAndWait({ ...signedTransaction }),
++        {
++          engineResult: 'tefPAST_SEQ',
++          phase: 'submit',
++          message:
++            'Transaction failed, tefPAST_SEQ: This sequence number has already passed.',
++        },
++      )
++      assert.strictEqual(
++        error.engineResultMessage,
++        'This sequence number has already passed.',
++      )
++      // No polling: the answer must not wait for LastLedgerSequence to pass.
++      assert.isBelow(Date.now() - started, LEDGER_CLOSE_TIME)
++    })
++
++    it('throws TransactionFailedError immediately for a tel result', async function () {
++      testContext.mockRippled!.addResponse(
++        'submit',
++        submitResponse('telINSUF_FEE_P', 'Fee insufficient.'),
++      )
++      testContext.mockRippled!.addResponse('tx', txnNotFound)
++
++      const started = Date.now()
++      await assertTransactionFailed(
++        testContext.client.submitAndWait({ ...signedTransaction }),
++        { engineResult: 'telINSUF_FEE_P', phase: 'submit' },
++      )
++      assert.isBelow(Date.now() - started, LEDGER_CLOSE_TIME)
++    })
++
++    it('throws TransactionFailedError for a tef result when rippled only kept the rejected transaction', async function () {
++      // rippled keeps a rejected tefPAST_SEQ transaction in its local cache, so `tx` finds it with
++      // `validated: false`. That is not "in flight": it must still fail immediately.
++      testContext.mockRippled!.addResponse(
++        'submit',
++        submitResponse(
++          'tefPAST_SEQ',
++          'This sequence number has already passed.',
++        ),
++      )
++      testContext.mockRippled!.addResponse('tx', {
++        ...validatedTx,
++        result: { ...validatedTx.result, validated: false },
++      })
++
++      const started = Date.now()
++      await assertTransactionFailed(
++        testContext.client.submitAndWait({ ...signedTransaction }),
++        { engineResult: 'tefPAST_SEQ', phase: 'submit' },
++      )
++      assert.isBelow(Date.now() - started, LEDGER_CLOSE_TIME)
++    })
++
++    it('keeps polling for tefALREADY because the transaction is in the open ledger', async function () {
++      let txLookups = 0
++      testContext.mockRippled!.addResponse(
++        'submit',
++        submitResponse(
++          'tefALREADY',
++          'The exact transaction was already in this ledger.',
++        ),
++      )
++      testContext.mockRippled!.addResponse('ledger', ledgerResponse(12300))
++      testContext.mockRippled!.addResponse('tx', () => {
++        txLookups += 1
++        return txLookups < 2
++          ? {
++              ...validatedTx,
++              result: { ...validatedTx.result, validated: false },
++            }
++          : validatedTx
++      })
++
++      const response = await testContext.client.submitAndWait({
++        ...signedTransaction,
++      })
++
++      assert.strictEqual(response.result.validated, true)
++      assert.strictEqual(txLookups, 2)
++    })
++
++    it('resolves for a tef result when an earlier submission already got the transaction validated', async function () {
++      // Re-submitting the same signed blob after a disconnect answers tefPAST_SEQ / tefALREADY, but the
++      // transaction is on the ledger: the caller must get it back, not an error.
++      testContext.mockRippled!.addResponse(
++        'submit',
++        submitResponse(
++          'tefPAST_SEQ',
++          'This sequence number has already passed.',
++        ),
++      )
++      testContext.mockRippled!.addResponse('tx', validatedTx)
++
++      const started = Date.now()
++      const response = await testContext.client.submitAndWait({
++        ...signedTransaction,
++      })
++
++      assert.strictEqual(response.result.validated, true)
++      assert.isBelow(Date.now() - started, LEDGER_CLOSE_TIME)
++    })
++  })
++
++  describe('polling until validated', function () {
++    it('returns a transaction validated in its last allowed ledger even when the validated ledger has moved past it', async function () {
++      // Finding 062: LastLedgerSequence is 12312, the validated ledger is already past it, and the
++      // transaction *is* validated. It must be returned, not reported as expired.
++      testContext.mockRippled!.addResponse('submit', rippled.submit.success)
++      testContext.mockRippled!.addResponse('ledger', ledgerResponse(12314))
++      testContext.mockRippled!.addResponse('tx', validatedTx)
++
++      const response = await testContext.client.submitAndWait({
++        ...signedTransaction,
++      })
++
++      assert.strictEqual(response.result.validated, true)
++      assert.isTrue(
++        isTesSuccess(getTransactionResultCode(response.result.meta)),
++      )
++    })
++
++    it('keeps polling while the transaction is not found and LastLedgerSequence has not passed', async function () {
++      let txLookups = 0
++      testContext.mockRippled!.addResponse('submit', rippled.submit.success)
++      testContext.mockRippled!.addResponse('ledger', ledgerResponse(12300))
++      testContext.mockRippled!.addResponse('tx', (request: Request) => {
++        txLookups += 1
++        return txLookups < 2 ? txnNotFound(request) : validatedTx
++      })
++
++      const response = await testContext.client.submitAndWait({
++        ...signedTransaction,
++      })
++
++      assert.strictEqual(response.result.validated, true)
++      assert.strictEqual(txLookups, 2)
++    })
++
++    it('throws TransactionFailedError with phase expired once LastLedgerSequence passes without validation', async function () {
++      testContext.mockRippled!.addResponse(
++        'submit',
++        submitResponse('terQUEUED', 'Held until escalated fee drops.'),
++      )
++      testContext.mockRippled!.addResponse('ledger', ledgerResponse(12314))
++      testContext.mockRippled!.addResponse('tx', txnNotFound)
++
++      const error = await assertTransactionFailed(
++        testContext.client.submitAndWait({ ...signedTransaction }),
++        {
++          engineResult: 'terQUEUED',
++          phase: 'expired',
++          message:
++            "The latest ledger sequence 12314 is greater than the transaction's LastLedgerSequence (12312).\n" +
++            'Preliminary result: terQUEUED',
++        },
++      )
++      assert.isUndefined(error.engineResultMessage)
++    })
++
++    it('resolves a validated tec result instead of throwing', async function () {
++      testContext.mockRippled!.addResponse(
++        'submit',
++        submitResponse(
++          'tecUNFUNDED_PAYMENT',
++          'Insufficient XRP balance to send.',
++        ),
++      )
++      testContext.mockRippled!.addResponse('ledger', ledgerResponse(12300))
++      testContext.mockRippled!.addResponse('tx', {
++        ...validatedTx,
++        result: {
++          ...validatedTx.result,
++          meta: {
++            ...validatedTx.result.meta,
++            TransactionResult: 'tecUNFUNDED_PAYMENT',
++          },
++        },
++      })
++
++      const response = await testContext.client.submitAndWait({
++        ...signedTransaction,
++      })
++
++      const code = getTransactionResultCode(response.result.meta)
++      assert.strictEqual(code, 'tecUNFUNDED_PAYMENT')
++      assert.isFalse(isTesSuccess(code))
++    })
++  })
++
++  describe('lookup errors while polling', function () {
++    it('propagates a RippledError other than txnNotFound with its class and data', async function () {
++      testContext.mockRippled!.addResponse('submit', rippled.submit.success)
++      testContext.mockRippled!.addResponse('ledger', ledgerResponse(12300))
++      testContext.mockRippled!.addResponse(
++        'tx',
++        txError('tooBusy', 'The server is too busy to help you now.'),
++      )
++
++      try {
++        await testContext.client.submitAndWait({ ...signedTransaction })
++        assert.fail('Expected submitAndWait to reject')
++      } catch (error) {
++        assert(error instanceof RippledError, String(error))
++        assert.strictEqual(
++          error.message,
++          'The server is too busy to help you now.',
++        )
++
++        assert.strictEqual((error.data as { error: string }).error, 'tooBusy')
++      }
++    })
++
++    it('propagates a TimeoutError from the tx lookup unchanged', async function () {
++      testContext.mockRippled!.addResponse('submit', rippled.submit.success)
++      testContext.mockRippled!.addResponse('ledger', ledgerResponse(12300))
++
++      const originalRequest = testContext.client.request.bind(
++        testContext.client,
++      )
++      jest
++        .spyOn(testContext.client, 'request')
++        .mockImplementation(async (request: Request) => {
++          if (request.command === 'tx') {
++            throw new TimeoutError('tx lookup timed out')
++          }
++          return originalRequest(request)
++        })
++
++      await assertRejects(
++        testContext.client.submitAndWait({ ...signedTransaction }),
++        TimeoutError,
++        'tx lookup timed out',
++      )
++    })
++
++    it('wraps a non-library error from the tx lookup in an XrplError that keeps the cause', async function () {
++      testContext.mockRippled!.addResponse('submit', rippled.submit.success)
++      testContext.mockRippled!.addResponse('ledger', ledgerResponse(12300))
+ 
+-    testContext.mockRippled!.addResponse('submit', rippled.submit.temError)
++      const originalRequest = testContext.client.request.bind(
++        testContext.client,
++      )
++      const cause = new Error('socket exploded')
++      jest
++        .spyOn(testContext.client, 'request')
++        .mockImplementation(async (request: Request) => {
++          if (request.command === 'tx') {
++            throw cause
++          }
++          return originalRequest(request)
++        })
+ 
+-    await assertRejects(
+-      testContext.client.submitAndWait(signedTx),
+-      XrplError,
+-      'Transaction failed, temMALFORMED: Malformed transaction.',
+-    )
++      try {
++        await testContext.client.submitAndWait({ ...signedTransaction })
++        assert.fail('Expected submitAndWait to reject')
++      } catch (error) {
++        assert(error instanceof XrplError, String(error))
++        assert.notInstanceOf(error, TransactionFailedError)
++        assert.match(
++          error.message,
++          /^Failed to look up transaction [0-9A-F]{64}/u,
++        )
++        assert.notMatch(error.message, /undefined/u)
++        assert.include(error.message, 'Preliminary result: tesSUCCESS')
++        assert.strictEqual(error.data, cause)
++      }
++    })
+   })
+ })
+diff --git a/packages/xrpl/test/integration/submitAndWait.test.ts b/packages/xrpl/test/integration/submitAndWait.test.ts
+index 2006eca3d9..6d1d7ea651 100644
+--- a/packages/xrpl/test/integration/submitAndWait.test.ts
++++ b/packages/xrpl/test/integration/submitAndWait.test.ts
+@@ -1,6 +1,14 @@
+ import { assert } from 'chai'
+ 
+-import { AccountSet, convertStringToHex, ValidationError } from '../../src'
++import {
++  AccountSet,
++  convertStringToHex,
++  getTransactionResultCode,
++  isTesSuccess,
++  Payment,
++  TransactionFailedError,
++  ValidationError,
++} from '../../src'
+ import { assertRejects } from '../testUtils'
+ 
+ import serverUrl from './serverUrl'
+@@ -9,11 +17,14 @@ import {
+   teardownClient,
+   type XrplIntegrationTestContext,
+ } from './setup'
+-import { ledgerAccept } from './utils'
++import { GENESIS_ACCOUNT, getXRPBalance, ledgerAccept } from './utils'
+ 
+ // how long before each test case times out
+ const TIMEOUT = 60000
+ 
++/** One poll of `waitForFinalTransactionOutcome` sleeps this long before looking the transaction up. */
++const LEDGER_CLOSE_TIME = 1000
++
+ describe('client.submitAndWait', function () {
+   let testContext: XrplIntegrationTestContext
+ 
+@@ -59,17 +70,13 @@ describe('client.submitAndWait', function () {
+           retries = 0
+           break
+         } catch (err) {
+-          if (!(err instanceof Error)) {
++          if (!(err instanceof TransactionFailedError)) {
+             throw err
+           }
+-          const errorCodeRegex = /(?:Preliminary result:\s)(?<errorCode>.*)$/gu
+-          const message = err.message
+-          const matches = errorCodeRegex.exec(message)
+-          const errorCode = matches?.groups?.errorCode
+ 
+           // Retry if another transaction finished before this one
+ 
+-          if (['tefPAST_SEQ', 'tefMAX_LEDGER'].includes(errorCode ?? '')) {
++          if (['tefPAST_SEQ', 'tefMAX_LEDGER'].includes(err.engineResult)) {
+             // eslint-disable-next-line no-await-in-loop, no-promise-executor-return -- We are waiting on retries
+             await new Promise((resolve) => setTimeout(resolve, 1000))
+           } else {
+@@ -145,4 +152,122 @@ describe('client.submitAndWait', function () {
+     },
+     TIMEOUT,
+   )
++
++  async function signAccountSet(
++    overrides: Partial<AccountSet> = {},
++  ): Promise<string> {
++    const accountSet: AccountSet = {
++      TransactionType: 'AccountSet',
++      Account: testContext.wallet.classicAddress,
++      Domain: convertStringToHex('example.com'),
++    }
++    const autofilled = await testContext.client.autofill(accountSet)
++    return testContext.wallet.sign({ ...autofilled, ...overrides }).tx_blob
++  }
++
++  it(
++    'returns a transaction validated in its last allowed ledger even when the validated ledger has moved past it',
++    async () => {
++      // Finding 062: LastLedgerSequence = validated + 1, and two ledgers close between the submission and the
++      // first poll. The transaction is in ledger validated + 1, so it must be returned, not reported as expired.
++      const validated = await testContext.client.getLedgerIndex()
++      const signed = await signAccountSet({ LastLedgerSequence: validated + 1 })
++
++      const responsePromise = testContext.client.submitAndWait(signed)
++      // Give the `submit` round trip time to land in the open ledger, then close two ledgers before the
++      // poll's LEDGER_CLOSE_TIME sleep ends.
++      await new Promise<void>((resolve) => {
++        setTimeout(resolve, 200)
++      })
++      await ledgerAccept(testContext.client)
++      await ledgerAccept(testContext.client)
++
++      const response = await responsePromise
++      assert.equal(response.result.validated, true)
++      assert.equal(response.result.ledger_index, validated + 1)
++      assert.isTrue(
++        isTesSuccess(getTransactionResultCode(response.result.meta)),
++      )
++      assert.isAtLeast(await testContext.client.getLedgerIndex(), validated + 2)
++    },
++    TIMEOUT,
++  )
++
++  it(
++    'throws TransactionFailedError immediately for tefPAST_SEQ instead of waiting for expiry',
++    async () => {
++      const accountSet: AccountSet = {
++        TransactionType: 'AccountSet',
++        Account: testContext.wallet.classicAddress,
++        Domain: convertStringToHex('example.com'),
++      }
++      const autofilled = await testContext.client.autofill(accountSet)
++      const stale = await signAccountSet({
++        Sequence: (autofilled.Sequence ?? 1) - 1,
++      })
++
++      const started = Date.now()
++      try {
++        await testContext.client.submitAndWait(stale)
++        assert.fail('Expected submitAndWait to reject')
++      } catch (error) {
++        assert(error instanceof TransactionFailedError, String(error))
++        assert.strictEqual(error.engineResult, 'tefPAST_SEQ')
++        assert.strictEqual(error.phase, 'submit')
++        assert.isString(error.engineResultMessage)
++      }
++      // No ledger closes in standalone mode unless the test asks for them, so before the fix this
++      // call could only end by expiry (never) or the jest timeout.
++      assert.isBelow(Date.now() - started, LEDGER_CLOSE_TIME)
++    },
++    TIMEOUT,
++  )
++
++  it(
++    'resolves when re-submitting a signed blob that an earlier submission already got validated',
++    async () => {
++      const signed = await signAccountSet()
++      const first = await Promise.all([
++        testContext.client.submitAndWait(signed),
++        delayedLedgerAccept(),
++      ]).then(([response]) => response)
++      assert.equal(first.result.validated, true)
++
++      // rippled answers tefPAST_SEQ (or tefALREADY) to the re-submission; the transaction is on the ledger.
++      const second = await testContext.client.submitAndWait(signed)
++      assert.equal(second.result.validated, true)
++      assert.equal(second.result.hash, first.result.hash)
++    },
++    TIMEOUT,
++  )
++
++  it(
++    'resolves a validated tec result instead of throwing',
++    async () => {
++      const balance = await getXRPBalance(
++        testContext.client,
++        testContext.wallet,
++      )
++      const payment: Payment = {
++        TransactionType: 'Payment',
++        Account: testContext.wallet.classicAddress,
++        Destination: GENESIS_ACCOUNT,
++        // more than the account holds: applied as tecUNFUNDED_PAYMENT, fee charged
++        Amount: (BigInt(balance) * BigInt(2)).toString(),
++      }
++
++      const [response] = await Promise.all([
++        testContext.client.submitAndWait(payment, {
++          wallet: testContext.wallet,
++        }),
++        delayedLedgerAccept(),
++      ])
++
++      assert.equal(response.result.validated, true)
++      const code = getTransactionResultCode(response.result.meta)
++      assert.strictEqual(code, 'tecUNFUNDED_PAYMENT')
++      assert.isFalse(isTesSuccess(code))
++    },
++    TIMEOUT,
++  )
+ })
+diff --git a/packages/xrpl/test/utils/getTransactionResultCode.test.ts b/packages/xrpl/test/utils/getTransactionResultCode.test.ts
+new file mode 100644
+index 0000000000..79743b635e
+--- /dev/null
++++ b/packages/xrpl/test/utils/getTransactionResultCode.test.ts
+@@ -0,0 +1,54 @@
++import { assert } from 'chai'
++import { encode } from 'ripple-binary-codec'
++
++import { getTransactionResultCode } from '../../src'
++import { TransactionMetadata } from '../../src/models/transactions/metadata'
++import fixtures from '../fixtures/rippled'
++
++const failedMeta: TransactionMetadata = {
++  AffectedNodes: [],
++  TransactionIndex: 0,
++  TransactionResult: 'tecUNFUNDED_PAYMENT',
++}
++
++describe('getTransactionResultCode', function () {
++  it('gets tesSUCCESS from a validated transaction', function () {
++    const result = getTransactionResultCode(fixtures.tx.NFTokenMint.meta)
++    assert.equal(result, 'tesSUCCESS')
++  })
++
++  it('gets a tec code from a failed but validated transaction', function () {
++    const result = getTransactionResultCode(failedMeta)
++    assert.equal(result, 'tecUNFUNDED_PAYMENT')
++  })
++
++  it('decodes binary-encoded metadata', function () {
++    const encoded = encode(failedMeta as never)
++    const result = getTransactionResultCode(encoded)
++    assert.equal(result, 'tecUNFUNDED_PAYMENT')
++  })
++
++  it('throws with a nice error when meta is undefined', function () {
++    assert.throws(() => {
++      getTransactionResultCode(undefined)
++    }, /^Unable to parse the parameter given to getTransactionResultCode.*/u)
++  })
++
++  it('throws when given metadata from an un-validated transaction', function () {
++    assert.throws(() => {
++      // @ts-expect-error -- on purpose, to check the error
++      getTransactionResultCode({ AffectedNodes: [], TransactionIndex: 0 })
++    }, /Cannot get the transaction result code from an un-validated transaction/u)
++  })
++
++  it('throws when TransactionResult is a truthy non-string value', function () {
++    assert.throws(() => {
++      getTransactionResultCode({
++        AffectedNodes: [],
++        TransactionIndex: 0,
++        // @ts-expect-error -- on purpose, to check the error
++        TransactionResult: 105,
++      })
++    }, /Cannot get the transaction result code from an un-validated transaction/u)
++  })
++})
+diff --git a/packages/xrpl/test/utils/isTesSuccess.test.ts b/packages/xrpl/test/utils/isTesSuccess.test.ts
+new file mode 100644
+index 0000000000..4040d2f27e
+--- /dev/null
++++ b/packages/xrpl/test/utils/isTesSuccess.test.ts
+@@ -0,0 +1,20 @@
++import { assert } from 'chai'
++
++import { isTesSuccess } from '../../src'
++
++describe('isTesSuccess', function () {
++  it('returns true for tesSUCCESS', function () {
++    assert.isTrue(isTesSuccess('tesSUCCESS'))
++  })
++
++  it('returns false for a tec code', function () {
++    assert.isFalse(isTesSuccess('tecUNFUNDED_PAYMENT'))
++  })
++
++  it('returns false for tem, tef, tel, and ter codes', function () {
++    assert.isFalse(isTesSuccess('temBAD_AMOUNT'))
++    assert.isFalse(isTesSuccess('tefPAST_SEQ'))
++    assert.isFalse(isTesSuccess('telINSUF_FEE_P'))
++    assert.isFalse(isTesSuccess('terQUEUED'))
++  })
++})
