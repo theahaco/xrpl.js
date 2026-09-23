@@ -24,3 +24,25 @@ await issuer.withWallet(regularKey).tx.accountSet({}).signAndSubmit()
 Scopes share the original connection and request settings. Creating one opens no
 socket, and address-only drafts expose no local signing method. Factory names,
 field completion and strict input checking remain the same in either scope.
+
+## Immutable multisig preparation
+
+```ts
+await client.forAccount(issuerAddress).tx.payment({ Amount, Destination })
+  .multisignAndSubmit(localWallets)
+
+const proposal = await client.forAccount(issuerAddress).tx.payment({ Amount, Destination })
+  .prepareMultisig({ signersCount: 2 })
+const signed = proposal.sign(firstWallet).addSignature(externalSignedBlob)
+await signed.submit()
+```
+
+`signersCount` budgets actual signatures; it is not a weighted quorum. Every
+signature is verified against the same canonical payload. Duplicate signers,
+changed fields and excess signatures are rejected before submission. Signer-list
+authority, regular-key authorization and quorum remain ledger checks.
+
+External ceremonies can explicitly choose `expiry: 'none'`; such payloads can be
+handed off with `toJSON()` / `toBlob()` but cannot use the bounded wait method.
+They remain usable until the sequence is consumed and need deliberate handling
+in the app. Default preparation retains the SDK's bounded ledger expiry.
