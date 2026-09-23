@@ -33,3 +33,6 @@ export {
   TransactionInput,
 } from './client/TransactionBuilder'
 export { Commands } from './client/commands'
+
+export { TransactionDraft } from './client/TransactionDraft'
+export { AccountContext, WalletContext } from './client/AccountContext'

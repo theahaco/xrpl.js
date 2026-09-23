@@ -9,3 +9,18 @@ Tracking epic: https://github.com/theahaco/xrpl.js/issues/58
 5. Carbon Coin consumes the final SDK pin and demonstrates deleted app scaffolding.
 
 No npm release or upstream repository writes are part of this stack. Proposed APIs are exercised in the downstream application before being described as complete.
+
+## Account and wallet scopes
+
+```ts
+const issuer = client.forAccount(issuerAddress)
+const draft = issuer.tx.payment({ Amount, Destination })
+const unsigned = await draft.prepare() // external single signer
+await client.withWallet(wallet).tx.payment({ Amount, Destination }).signAndSubmit()
+// Regular keys keep the transaction account distinct from the signing wallet:
+await issuer.withWallet(regularKey).tx.accountSet({}).signAndSubmit()
+```
+
+Scopes share the original connection and request settings. Creating one opens no
+socket, and address-only drafts expose no local signing method. Factory names,
+field completion and strict input checking remain the same in either scope.
