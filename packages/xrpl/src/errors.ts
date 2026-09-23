@@ -1,4 +1,5 @@
 /* eslint-disable max-classes-per-file -- Error subclasses share this module. */
+import type { ErrorResponse } from './models/methods/baseMethod'
 import type { ValidatedTxResponse } from './models/methods/tx'
 
 /**
@@ -57,11 +58,68 @@ class XrplError extends Error {
 }
 
 /**
- * Error thrown when rippled responds with an error.
+ * The error response from rippled (or Clio) that a {@link RippledError}
+ * carries in its `data` field. Every field is optional at the type level
+ * because the server is not required to send all of them, but a real rippled
+ * error always carries `error`, the machine-readable error code (for example
+ * `entryNotFound`, `actNotFound`, `txnNotFound`, `invalidParams`,
+ * `unknownCmd`). Match on that code, not on the human-readable message.
+ *
+ * Fields beyond the universal ones are method-specific: a failed
+ * `ledger_entry` echoes `index`, `ledger_index` and `validated`, for example.
+ * They are reachable through the index signature.
  *
  * @category Errors
  */
-class RippledError extends XrplError {}
+export interface RippledErrorResponse extends Partial<ErrorResponse> {
+  [extra: string]: unknown
+}
+
+/**
+ * Error thrown when rippled responds with an error.
+ *
+ * `data` is the full error response. Use {@link RippledError.code} (or
+ * `data.error`) to tell errors apart:
+ *
+ * @example
+ * ```ts
+ * try {
+ *   await client.request({ command: 'ledger_entry', mptoken: { ... } })
+ * } catch (error) {
+ *   if (error instanceof RippledError && error.code === 'entryNotFound') {
+ *     // the account holds no MPToken for this issuance
+ *   } else {
+ *     throw error
+ *   }
+ * }
+ * ```
+ *
+ * @category Errors
+ */
+class RippledError extends XrplError {
+  declare public readonly data: RippledErrorResponse
+
+  /**
+   * Construct a RippledError.
+   *
+   * @param message - The error message.
+   * @param data - The error response from rippled.
+   */
+  public constructor(message = '', data: RippledErrorResponse = {}) {
+    super(message, data)
+  }
+
+  /**
+   * The machine-readable error code rippled returned (`data.error`), such as
+   * `entryNotFound`, `actNotFound` or `txnNotFound`. Undefined when the error
+   * was constructed without a rippled response.
+   *
+   * @returns The rippled error code, if any.
+   */
+  public get code(): string | undefined {
+    return this.data.error
+  }
+}
 
 /**
  * Error thrown when xrpl.js cannot specify error type.
