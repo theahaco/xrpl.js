@@ -36,3 +36,9 @@ export { Commands } from './client/commands'
 
 export { TransactionDraft } from './client/TransactionDraft'
 export { AccountContext, WalletContext } from './client/AccountContext'
+
+export {
+  PreparedMultisig,
+  MultisigOptions,
+  MultisigTransaction,
+} from './client/PreparedMultisig'
