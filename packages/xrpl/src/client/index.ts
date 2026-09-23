@@ -105,6 +105,7 @@ import {
   requestFunding,
 } from '../Wallet/fundWallet'
 
+import { AccountContext, WalletContext } from './AccountContext'
 import { createCommands, Commands } from './commands'
 import {
   Connection,
@@ -367,6 +368,27 @@ class Client extends EventEmitter<EventTypes> {
    */
   public get url(): string {
     return this.connection.getUrl()
+  }
+
+  /**
+   * Bind transaction drafts to an account without requiring its private keys.
+   * Uses this connection and its settings; the scope never owns or closes it.
+   *
+   * @param account - Default classic account address for transaction drafts.
+   * @returns An account scope with discoverable transaction factories.
+   */
+  public forAccount(account: string): AccountContext {
+    return new AccountContext(this, account)
+  }
+
+  /**
+   * Bind a local signing wallet to this connection without opening another socket.
+   *
+   * @param wallet - Wallet used as the default account and signer.
+   * @returns A signing scope with the same transaction factories as WalletClient.
+   */
+  public withWallet(wallet: Wallet): WalletContext {
+    return this.forAccount(wallet.address).withWallet(wallet)
   }
 
   /**

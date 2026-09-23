@@ -47,6 +47,10 @@ export class WalletClient extends Client {
     if (options?.wallet == null) {
       throw new ValidationError('WalletClient requires a signing wallet.')
     }
-    this.tx = createTransactionBuilders(this, options.wallet)
+    this.tx = createTransactionBuilders(
+      this,
+      options.wallet.address,
+      options.wallet,
+    )
   }
 }
