@@ -1349,6 +1349,7 @@ class Client extends EventEmitter<EventTypes> {
     )
   }
 
+  // eslint-disable-next-line max-lines-per-function -- Keep preparation and final outcome handling together.
   private async submitSuccessfulTransaction<T extends SubmittableTransaction>(
     transaction: T | SignedBlob<T> | string,
     opts?: { autofill?: boolean; failHard?: boolean; wallet?: Wallet },
@@ -1368,8 +1369,14 @@ class Client extends EventEmitter<EventTypes> {
     const submission = await submitRequest(this, signedTx, opts?.failHard)
 
     if (submission.result.engine_result.startsWith('tem')) {
-      throw new XrplError(
+      throw new TransactionFailedError(
         `Transaction failed, ${submission.result.engine_result}: ${submission.result.engine_result_message}`,
+        {
+          engineResult: submission.result.engine_result,
+          engineResultMessage: submission.result.engine_result_message,
+          phase: 'submit',
+        },
+        submission.result,
       )
     }
 
@@ -1392,6 +1399,7 @@ class Client extends EventEmitter<EventTypes> {
       )
     }
     // The success code is checked above; all other response fields are preserved.
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Success was checked immediately above.
     return response as SuccessfulTxResponse<T>
   }
 }

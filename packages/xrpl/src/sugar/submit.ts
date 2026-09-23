@@ -6,9 +6,14 @@ import type {
   Transaction,
   Wallet,
 } from '..'
-import { ValidationError, XrplError } from '../errors'
+import {
+  RippledError,
+  TransactionFailedError,
+  ValidationError,
+  XrplError,
+} from '../errors'
 import { Signer } from '../models/common'
-import { ValidatedTxResponse } from '../models/methods'
+import { TxResponse, ValidatedTxResponse } from '../models/methods'
 import { BaseTransaction } from '../models/transactions/common'
 import { decode, encode } from '../utils'
 
@@ -79,7 +84,8 @@ export async function submitRequest(
  * @returns A promise that resolves with the validated API v2 transaction response and decoded metadata.
  * The lookup explicitly requests API v2, independently of `client.apiVersion`.
  *
- * @throws {XrplError} If the latest ledger sequence surpasses the transaction's lastLedgerSequence.
+ * @throws {TransactionFailedError} If a final lookup finds no validated transaction after expiry.
+ * @throws {Error} The original lookup/transport error when absence cannot be established.
  *
  * @example
  * import { hashes, Client } from "xrpl"
@@ -121,40 +127,22 @@ export async function waitForFinalTransactionOutcome<
 
   const latestLedger = await client.getLedgerIndex()
 
-  if (lastLedger < latestLedger) {
-    throw new XrplError(
-      `The latest ledger sequence ${latestLedger} is greater than the transaction's LastLedgerSequence (${lastLedger}).\n` +
-        `Preliminary result: ${submissionResult}`,
-    )
-  }
-
-  const txResponse = await client
-    .request({
+  let txResponse: TxResponse | undefined
+  try {
+    txResponse = await client.request({
       command: 'tx',
       transaction: txHash,
       api_version: 2,
     })
-    .catch(async (error) => {
-      // error is of an unknown type and hence we assert type to extract the value we need.
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions,@typescript-eslint/no-unsafe-member-access -- ^
-      const message = error?.data?.error as string
-      if (message === 'txnNotFound') {
-        return waitForFinalTransactionOutcome<T>(
-          client,
-          txHash,
-          lastLedger,
-          submissionResult,
-        )
-      }
-      throw new Error(
-        `${message} \n Preliminary result: ${submissionResult}.\nFull error details: ${String(
-          error,
-        )}`,
-      )
-    })
+  } catch (error) {
+    // An unavailable server is not evidence that a transaction is absent.
+    if (!(error instanceof RippledError) || error.code !== 'txnNotFound') {
+      throw error
+    }
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare -- check the wire value
-  if (txResponse.result.validated === true) {
+  if (txResponse?.result.validated === true) {
     const { meta } = txResponse.result
     if (meta == null || typeof meta !== 'object' || Array.isArray(meta)) {
       throw new XrplError(
@@ -165,6 +153,13 @@ export async function waitForFinalTransactionOutcome<
     // The hash identifies the submitted transaction; validated and decoded metadata were checked above.
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- a hash cannot infer the submitted type
     return txResponse as ValidatedTxResponse<T>
+  }
+
+  if (lastLedger < latestLedger) {
+    throw new TransactionFailedError(
+      `Transaction ${txHash} was not validated by ledger ${lastLedger}.`,
+      { engineResult: submissionResult, phase: 'expired' },
+    )
   }
 
   return waitForFinalTransactionOutcome<T>(

@@ -17,8 +17,6 @@ export { deriveConfidentialKeypair } from './keys'
 
 export {
   accountIdHex,
-  fetchMPToken,
-  fetchMPTokenIssuance,
   getAccountSequence,
   getConfidentialBalance,
 } from './ledger'
