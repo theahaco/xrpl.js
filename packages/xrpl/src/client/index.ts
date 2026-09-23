@@ -98,6 +98,15 @@ import {
   isValidClassicAddress,
   isTesSuccess,
 } from '../utils'
+import {
+  getMptPaymentHistory,
+  MptPaymentHistory,
+} from '../utils/mptPaymentHistory'
+import {
+  getMptTransferReadiness,
+  MptTransferInput,
+  MptTransferReadiness,
+} from '../utils/mptReadiness'
 import { SignedBlob, Wallet } from '../Wallet'
 import {
   type FaucetRequestBody,
@@ -389,6 +398,32 @@ class Client extends EventEmitter<EventTypes> {
    */
   public withWallet(wallet: Wallet): WalletContext {
     return this.forAccount(wallet.address).withWallet(wallet)
+  }
+
+  /**
+   * Check direct MPT transfer eligibility at a validated snapshot.
+   *
+   * @param input - Accounts, issuance and optional raw-unit amount.
+   * @returns Advisory checks and explicit unassessed conditions.
+   */
+  public async getMptTransferReadiness(
+    input: MptTransferInput,
+  ): Promise<MptTransferReadiness> {
+    return getMptTransferReadiness(this, input)
+  }
+
+  /**
+   * Read every available page of successful outgoing payments of one MPT.
+   *
+   * @param account - Sending account.
+   * @param issuance - Exact MPT issuance ID.
+   * @returns Typed payments and the server's searched ledger range.
+   */
+  public async getMptPaymentHistory(
+    account: string,
+    issuance: string,
+  ): Promise<MptPaymentHistory> {
+    return getMptPaymentHistory(this, account, issuance)
   }
 
   /**
